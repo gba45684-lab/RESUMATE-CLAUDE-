@@ -2,7 +2,7 @@ name: Build ResuMate Android APK
 
 on:
   push:
-    branches: [main]
+    branches: [apk-build]
   workflow_dispatch:
 
 permissions:
