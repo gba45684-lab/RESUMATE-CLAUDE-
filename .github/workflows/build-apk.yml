@@ -8,6 +8,9 @@ on:
 permissions:
   contents: write
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build-apk:
     runs-on: ubuntu-latest
@@ -18,8 +21,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: npm
+          node-version: 24
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -38,6 +40,7 @@ jobs:
 
       - name: Prepare web app
         run: |
+          rm -rf www
           mkdir -p www
           cp resumate-redesign.html www/index.html
 
@@ -51,7 +54,7 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
@@ -59,6 +62,7 @@ jobs:
           name: ResuMate-Android-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+          retention-days: 30
 
       - name: Publish GitHub release APK
         env:
@@ -67,6 +71,4 @@ jobs:
           TAG="apk-${GITHUB_RUN_NUMBER}"
           gh release create "$TAG" android/app/build/outputs/apk/debug/app-debug.apk \
             --title "ResuMate Android APK ${GITHUB_RUN_NUMBER}" \
-            --notes "Android APK built from the ResuMate Claude redesign. Debug build for direct mobile installation."
-
-# Build trigger configured for direct APK generation.
+            --notes "Android APK built automatically from the main branch. Commit: ${GITHUB_SHA}"
