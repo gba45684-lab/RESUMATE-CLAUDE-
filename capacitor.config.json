@@ -1,0 +1,6 @@
+{
+  "appId": "com.resumate.claude",
+  "appName": "ResuMate",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}
