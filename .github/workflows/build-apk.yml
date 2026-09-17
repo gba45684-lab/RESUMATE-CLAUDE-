@@ -23,23 +23,56 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
-          package-manager-cache: false
+          cache: ''
 
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
 
       - name: Configure Android SDK
+        shell: bash
         run: |
+          set -euo pipefail
           echo "ANDROID_HOME=${ANDROID_HOME}"
           echo "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT}"
-          yes | sdkmanager --licenses >/dev/null 2>&1 || true
-          sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+
+          SDKMANAGER=""
+          for candidate in \
+            "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" \
+            "${ANDROID_HOME}/cmdline-tools/bin/sdkmanager" \
+            "/opt/android-sdk/cmdline-tools/latest/bin/sdkmanager"; do
+            if [ -x "$candidate" ]; then
+              SDKMANAGER="$candidate"
+              break
+            fi
+          done
+
+          if [ -z "$SDKMANAGER" ]; then
+            SDKMANAGER="$(find "${ANDROID_HOME}" -type f -name sdkmanager -perm -u+x 2>/dev/null | head -1 || true)"
+          fi
+
+          if [ -z "$SDKMANAGER" ]; then
+            echo "ERROR: Android sdkmanager was not found on the GitHub runner."
+            find "${ANDROID_HOME}" -maxdepth 4 -type f -name 'sdkmanager*' -print 2>/dev/null || true
+            exit 1
+          fi
+
+          echo "Using sdkmanager: $SDKMANAGER"
+          SDK_BIN="$(dirname "$SDKMANAGER")"
+          echo "$SDK_BIN" >> "$GITHUB_PATH"
+          export PATH="$SDK_BIN:$PATH"
+
+          yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
+          "$SDKMANAGER" "platform-tools" "platforms;android-36" "build-tools;36.0.0"
 
       - name: Verify Android SDK
+        shell: bash
         run: |
+          set -euo pipefail
+          command -v adb
+          command -v sdkmanager
           adb version
           sdkmanager --list_installed | head -80
 
