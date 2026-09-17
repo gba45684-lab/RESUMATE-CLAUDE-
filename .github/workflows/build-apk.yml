@@ -71,10 +71,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          command -v adb
-          command -v sdkmanager
-          adb version
-          sdkmanager --list_installed | head -80
+          ADB="${ANDROID_HOME}/platform-tools/adb"
+          SDKMANAGER="${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager"
+
+          test -x "$ADB"
+          test -x "$SDKMANAGER"
+
+          "$ADB" version
+          "$SDKMANAGER" --list_installed
 
       - name: Install dependencies
         run: npm install --no-audit --no-fund
