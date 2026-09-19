@@ -51,6 +51,19 @@
 <nav class="mobileNav"><button class="navBtn active" data-view="home"><span class="navIcon">⌂</span>Home</button><button class="navBtn" data-view="templates"><span class="navIcon">▦</span>Templates</button><button class="navBtn" data-view="editor"><span class="navIcon">✎</span>Edit</button><button class="navBtn" data-view="design"><span class="navIcon">◈</span>Design</button></nav></div>
 <div class="modalBack" id="modalBack"><div class="modal"><h3>Start a new resume?</h3><p>Your current resume is already saved locally. You can start a fresh document without losing the saved copy.</p><div class="modalActions"><button class="btn" id="cancelNew">Cancel</button><button class="btn primary" id="confirmNew">Create new</button></div></div></div><div class="toast" id="toast"></div>
 <script>
+/* Capgo OTA: mark the current web bundle healthy after startup. */
+(function initCapgoReady(){
+  async function ready(){
+    try{
+      const updater=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.CapacitorUpdater;
+      if(updater&&updater.notifyAppReady) await updater.notifyAppReady();
+    }catch(e){}
+  }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",()=>setTimeout(ready,150),{once:true});
+  else setTimeout(ready,150);
+})();
+</script>
+<script>
 (function(){
 "use strict";
 const layouts=[["sidebar","Sidebar"],["classic","Classic"],["split","Split"],["editorial","Editorial"],["minimal","Minimal"],["compact","Compact"],["timeline","Timeline"],["modern","Modern"],["executive","Executive"],["creative","Creative"]];
