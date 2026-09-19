@@ -5,8 +5,7 @@
   "description": "ResuMate Android packaging project",
   "scripts": {
     "android": "cap run android",
-    "sync": "cap sync android",
-    "ota:upload": "npx @capgo/cli@latest bundle upload --channel=production --auto-bump patch --delta"
+    "sync": "cap sync android"
   },
   "dependencies": {
     "@capacitor/core": "8.5.2",
