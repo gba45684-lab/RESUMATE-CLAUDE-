@@ -1,0 +1,47 @@
+name: ResuMate OTA Update
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'www/**'
+      - 'package.json'
+      - 'capacitor.config.ts'
+      - '.github/workflows/resumate-ota.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: resumate-ota-production
+  cancel-in-progress: true
+
+jobs:
+  ota:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Upload OTA bundle
+        env:
+          CAPGO_TOKEN: ${{ secrets.CAPGO_TOKEN }}
+        run: |
+          if [ -z "$CAPGO_TOKEN" ]; then
+            echo "::error::CAPGO_TOKEN GitHub secret is missing."
+            exit 1
+          fi
+          npx @capgo/cli@latest bundle upload com.krapal.resumeforge \
+            --path ./www \
+            --channel production \
+            --apikey "$CAPGO_TOKEN" \
+            --auto-bump patch \
+            --delta \
+            --fail-on-incompatible
