@@ -7,6 +7,7 @@ const config: CapacitorConfig = {
   plugins: {
     CapacitorUpdater: {
       appId: 'com.krapal.resumeforge',
+      updateUrl: 'https://resumate-claude.vercel.app/api/updates',
       autoUpdate: 'atBackground',
       version: '1.0.0',
       appReadyTimeout: 10000,
