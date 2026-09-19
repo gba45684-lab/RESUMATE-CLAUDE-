@@ -1,47 +1,53 @@
-name: ResuMate OTA Update
+name: ResuMate Free OTA Release
 
 on:
   push:
     branches: [main]
     paths:
       - 'www/**'
-      - 'package.json'
-      - 'capacitor.config.ts'
+      - 'api/updates.js'
       - '.github/workflows/resumate-ota.yml'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 concurrency:
-  group: resumate-ota-production
+  group: resumate-free-ota
   cancel-in-progress: true
 
 jobs:
-  ota:
+  release:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Setup Node
-        uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: npm
+      - name: Create OTA version
+        id: version
+        run: echo "version=1.0.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
 
-      - name: Install dependencies
-        run: npm install
-
-      - name: Upload OTA bundle
-        env:
-          CAPGO_TOKEN: ${{ secrets.CAPGO_TOKEN }}
+      - name: Package web bundle
         run: |
-          if [ -z "$CAPGO_TOKEN" ]; then
-            echo "::error::CAPGO_TOKEN GitHub secret is missing."
-            exit 1
-          fi
-          npx @capgo/cli@latest bundle upload com.krapal.resumeforge \
-            --path ./www \
-            --channel production \
-            --apikey "$CAPGO_TOKEN" \
-            --auto-bump patch \
-            --delta \
-            --fail-on-incompatible
+          cd www
+          zip -r "../resumate-bundle.zip" . -x "*.DS_Store"
+          cd ..
+          sha256sum resumate-bundle.zip > resumate-bundle.sha256
+          cat resumate-bundle.sha256
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          gh release create "v$VERSION" \
+            resumate-bundle.zip \
+            --title "ResuMate $VERSION" \
+            --generate-notes
+
+      - name: Verify release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          gh release view "v$VERSION" --json tagName,assets
