@@ -4978,22 +4978,11 @@ ${JSON.stringify(r)}`;
       try{ if(await nativeShareFile(blob, filename, filename)) return true; }
       catch(err){ if(isCancel(err)) return true; showToast("Couldn't open the share sheet — try again"); return false; }
     }
-    let saved = false;
-    if(window.claude && window.claude.use){
-      try{
-        const dl = await window.claude.use('downloads');
-        if(dl){ await dl.save({ filename, data: blob }); saved = true; }
-      }catch(err){
-        if(err && err.code === 'declined') return false;
-      }
-    }
-    if(!saved){
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = filename;
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      setTimeout(()=> URL.revokeObjectURL(url), 4000);
-    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=> URL.revokeObjectURL(url), 4000);
     return true;
   }
   function backupBlob(){
