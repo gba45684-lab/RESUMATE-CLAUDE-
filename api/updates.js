@@ -18,7 +18,11 @@ export default async function handler(req, res) {
     const ghHeaders = { 'Accept': 'application/vnd.github+json', 'User-Agent': 'ResuMate-OTA' };
     if (process.env.GITHUB_TOKEN) ghHeaders.Authorization = 'Bearer ' + process.env.GITHUB_TOKEN;
     const gh = await fetch('https://api.github.com/repos/gba45684-lab/RESUMATE-CLAUDE-/releases/latest', { headers: ghHeaders });
-    if (!gh.ok) return res.status(200).json({ message: 'No update available', version: info.version_name || '' });
+    if (!gh.ok) {
+      // log the reason (e.g. 403 = GitHub rate limit) so it shows in Vercel's function logs
+      console.error('update check: GitHub release lookup failed with status', gh.status, 'token set:', !!process.env.GITHUB_TOKEN);
+      return res.status(200).json({ message: 'No update available', version: info.version_name || '' });
+    }
 
     const release = await gh.json();
     const version = String(release.tag_name || '').replace(/^v/, '');
