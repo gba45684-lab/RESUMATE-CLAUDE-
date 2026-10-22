@@ -5931,6 +5931,8 @@ ${JSON.stringify(r)}`;
     return { ready, upgraded:cached, buy, restore, init, labels };
   })();
   window.__billing = billing; billing.labels(); billing.init();
+  // Tell the Android update plugin this version started, otherwise it rolls the update back.
+  try{ const up = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.CapacitorUpdater; if(up && up.notifyAppReady) up.notifyAppReady(); }catch(e){}
   rsInit(); rsRefreshAll(); backupNudgeUpdate();
 })();
 </script>
