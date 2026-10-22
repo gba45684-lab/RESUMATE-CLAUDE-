@@ -2,6 +2,8 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  // cache the answer for 10 minutes so many phones share one GitHub lookup (GitHub limits unauthenticated calls per IP)
+  res.setHeader('Cache-Control', 'public, s-maxage=600, stale-while-revalidate=3600');
 
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ message: 'Method not allowed' });
@@ -12,9 +14,10 @@ export default async function handler(req, res) {
       return res.status(200).json({ message: 'No update for this app', version: info.version_name || '' });
     }
 
-    const gh = await fetch('https://api.github.com/repos/gba45684-lab/RESUMATE-CLAUDE-/releases/latest', {
-      headers: { 'Accept': 'application/vnd.github+json', 'User-Agent': 'ResuMate-OTA' }
-    });
+    // optional: set GITHUB_TOKEN in Vercel's environment settings (raises GitHub's limit); never stored in the repository
+    const ghHeaders = { 'Accept': 'application/vnd.github+json', 'User-Agent': 'ResuMate-OTA' };
+    if (process.env.GITHUB_TOKEN) ghHeaders.Authorization = 'Bearer ' + process.env.GITHUB_TOKEN;
+    const gh = await fetch('https://api.github.com/repos/gba45684-lab/RESUMATE-CLAUDE-/releases/latest', { headers: ghHeaders });
     if (!gh.ok) return res.status(200).json({ message: 'No update available', version: info.version_name || '' });
 
     const release = await gh.json();
