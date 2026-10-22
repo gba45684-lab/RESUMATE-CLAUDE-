@@ -2,8 +2,8 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  // cache the answer for 10 minutes so many phones share one GitHub lookup (GitHub limits unauthenticated calls per IP)
-  res.setHeader('Cache-Control', 'public, s-maxage=600, stale-while-revalidate=3600');
+  // cache the answer for 1 minute so new releases reach phones quickly; GITHUB_TOKEN on Vercel keeps GitHub's limit high
+  res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=30');
 
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ message: 'Method not allowed' });
