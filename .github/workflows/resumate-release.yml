@@ -1,0 +1,78 @@
+name: ResuMate signed release (Play)
+
+# Manual only. Needs these repository secrets (create them once, keep the keystore file safe):
+#   ANDROID_KEYSTORE_BASE64  base64 of your release .jks/.keystore file
+#   ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+
+on:
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Check signing secrets are present
+        run: |
+          test -n "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" || { echo "Missing ANDROID_KEYSTORE_BASE64 secret"; exit 1; }
+          test -n "$ANDROID_KEYSTORE_PASSWORD" -a -n "$ANDROID_KEY_ALIAS" -a -n "$ANDROID_KEY_PASSWORD" || { echo "Missing signing password or alias secret"; exit 1; }
+
+      - run: npm install
+      - run: npx cap add android
+      - run: npx cap sync android
+
+      - name: Decode keystore
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: echo "$KEYSTORE_B64" | base64 -d > android/app/release.keystore
+
+      - name: Add signing and a version code that always goes up
+        run: |
+          python3 - <<'PY'
+          import re
+          p = 'android/app/build.gradle'
+          s = open(p, encoding='utf-8').read()
+          signing = '''    signingConfigs {
+        release {
+            storeFile file("release.keystore")
+            storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
+            keyAlias System.getenv("ANDROID_KEY_ALIAS")
+            keyPassword System.getenv("ANDROID_KEY_PASSWORD")
+        }
+    }
+'''
+          assert 'buildTypes {' in s, 'buildTypes block not found'
+          s = s.replace('    buildTypes {', signing + '    buildTypes {', 1)
+          s, n = re.subn(r'(buildTypes\s*\{\s*release\s*\{)', r'\1\n            signingConfig signingConfigs.release', s, count=1)
+          assert n == 1, 'release block not found'
+          s, n = re.subn(r'versionCode\s+\d+', 'versionCode Integer.parseInt(System.getenv("GITHUB_RUN_NUMBER") ?: "1")', s, count=1)
+          assert n == 1, 'versionCode not found'
+          open(p, 'w', encoding='utf-8').write(s)
+          print('signing configured')
+          PY
+
+      - name: Build signed App Bundle
+        working-directory: android
+        run: ./gradlew bundleRelease --no-daemon
+
+      - name: Upload App Bundle
+        uses: actions/upload-artifact@v5
+        with:
+          name: ResuMate-release-aab
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+          retention-days: 90

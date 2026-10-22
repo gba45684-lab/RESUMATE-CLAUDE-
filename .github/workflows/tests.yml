@@ -1,0 +1,34 @@
+name: ResuMate tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Check Node files parse
+        run: |
+          node --check api/updates.js
+          node --check free-ai-proxy/worker.js
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install Playwright
+        run: |
+          pip install playwright
+          python -m playwright install --with-deps chromium
+
+      - name: App smoke tests
+        run: |
+          python tests/smoke1_main_flows.py
+          python tests/smoke2_studio_flows.py
+          python tests/native_app_test.py
