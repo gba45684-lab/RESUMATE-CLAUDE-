@@ -25,7 +25,16 @@ jobs:
 
       - name: Create OTA version
         id: version
-        run: echo "version=1.0.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+        run: |
+          BASE=$(grep -o "APP_VERSION = '[^']*'" www/index.html | sed "s/.*'\(.*\)'/\1/")
+          echo "version=${BASE}.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+
+      - name: Stamp build number into the bundle
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          sed -i "s/const APP_VERSION = '[^']*'/const APP_VERSION = '${VERSION}'/" www/index.html
+          grep -o "APP_VERSION = '[^']*'" www/index.html
 
       - name: Package web bundle
         run: |
