@@ -96,6 +96,9 @@
   .rw-tones{ display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 4px; }
   .rw-tone:disabled{ opacity:.55; }
   .rw-bar{ position:fixed; left:12px; right:12px; bottom:calc(158px + env(safe-area-inset-bottom,0px)); z-index:9997; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 14px; border-radius:16px; background:var(--ink,#1d1d1d); color:#fff; font-size:14px; box-shadow:0 14px 30px -12px rgba(0,0,0,.5); }
+  .rw-picks{ display:flex; flex-direction:column; gap:8px; margin-top:10px; }
+  .rw-pick{ text-align:left; width:100%; padding:11px 12px; border-radius:12px; border:1px solid var(--line-strong); background:var(--paper); color:var(--ink); font-size:13.5px; line-height:1.45; cursor:pointer; }
+  .rw-pick .rw-lbl{ margin-bottom:2px; }
   .rw-bar button{ border:0; background:transparent; color:#F3D28A; font-weight:800; font-size:14px; padding:6px 4px; cursor:pointer; }
 </style>
 <style>
@@ -2298,6 +2301,7 @@
                 <div class="pagesize-chips" id="pageSizeChips"></div>
               </div>
               <div class="pv-more"><button type="button" class="pv-alt" id="exportDocxBtn"><i class="bd-i tl-ico" data-ic="fileword"></i>Word (.docx)</button><button type="button" class="pv-alt" id="exportAtsBtn"><i class="bd-i tl-ico" data-ic="fileword"></i>ATS text PDF</button></div>
+              <p class="pv-note rw-hint" id="rwHint">Tip: select any words in your resume, then tap Rewrite with AI.</p><div class="pv-more"><button type="button" class="pv-alt" id="rwPickBtn">✨ Rewrite a bullet or summary</button></div>
               <p class="pv-note">The ATS text PDF is plain, selectable text — the safest choice when a company's recruiting software reads your resume.</p>
               <button class="hm-btn hm-shimmer pv-dl" id="downloadPdfBtn"><svg class="lu" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>Download PDF</button>
             </div>
@@ -4854,18 +4858,36 @@ TARGET (rewrite this): ${JSON.stringify(aiScrub(target))}`;
   function rwOpen(text){
     const loc = rwLocate(text);
     if(!loc){ showToast('Select a few words inside your resume first'); return; }
-    if(aiScrub(text) !== text){ showToast('This part has contact details. Select only the wording to rewrite.'); return; }
-    const S = { fld: loc.fld, start: loc.start, span: loc.span, origSpan: loc.span };
+    rwSheet(loc.fld, loc.start, loc.span, loc.label);
+  }
+  // Opens the style sheet for any span of a resume field (a selection, or a whole bullet/summary)
+  function rwSheet(fld, start, span, label){
+    if(aiScrub(span) !== span){ showToast('This part has contact details. Choose wording without them.'); return; }
+    const S = { fld, start, span, origSpan: span };
     openSheet2(`<h3>Rewrite with AI</h3>
       <p class="lead">Choose a style. The new wording goes into your resume straight away, and you can undo it.</p>
-      <div class="ai-note" style="margin-top:0"><b>Free AI</b> · ${aiEsc(aiQuotaLine())}. Only the selected words are sent, with contact details masked.</div>
-      <div class="rw-from"><span class="rw-lbl">${aiEsc(loc.label)}</span>${aiEsc(loc.span)}</div>
+      <div class="ai-note" style="margin-top:0"><b>Free AI</b> · ${aiEsc(aiQuotaLine())}. Only this text is sent, with contact details masked.</div>
+      <div class="rw-from"><span class="rw-lbl">${aiEsc(label)}</span>${aiEsc(span)}</div>
       <div class="rw-tones">${RW_TONES.map(([k, l])=>`<button type="button" class="ai-btn2 rw-tone" data-rw-tone="${k}">${l}</button>`).join('')}</div>
       <div class="ai-status" id="rwStatus"></div>
       <div id="rwOut"></div>`);
     rwFab.hidden = true;                                   // the sheet covers the button
     sheet2Body.querySelectorAll('[data-rw-tone]').forEach(b=> b.addEventListener('click', ()=> rwRun(S, b.dataset.rwTone)));
   }
+  // No selection: pick a whole bullet, summary, project or achievement
+  function rwPick(){
+    const items = rwFields().map(f=> ({ f, v:f.get() })).filter(x=> typeof x.v === 'string' && x.v.trim());
+    if(!items.length){ showToast('Nothing to rewrite yet'); return; }
+    openSheet2(`<h3>Rewrite with AI</h3>
+      <p class="lead">Choose the part of your resume to rewrite. The whole text is rewritten in the style you pick.</p>
+      <div class="rw-picks">${items.map((x, k)=>`<button type="button" class="rw-pick" data-rw-pick="${k}"><span class="rw-lbl">${aiEsc(x.f.label)}</span>${aiEsc(x.v.length > 90 ? x.v.slice(0, 90) + '…' : x.v)}</button>`).join('')}</div>`);
+    rwFab.hidden = true;
+    sheet2Body.querySelectorAll('[data-rw-pick]').forEach(b=> b.addEventListener('click', ()=>{ const x = items[+b.dataset.rwPick]; rwSheet(x.f, 0, x.v, x.f.label); }));
+  }
+  document.getElementById('rwPickBtn').addEventListener('click', rwPick);
+  // The tip disappears once the person has used the feature once
+  const rwHint = document.getElementById('rwHint');
+  try{ if(localStorage.getItem('resumate_rw_used') === '1' && rwHint) rwHint.hidden = true; }catch(e){}
   async function rwRun(S, tone){
     if(rwBusy) return;
     const status = document.getElementById('rwStatus'), out = document.getElementById('rwOut');
@@ -4901,7 +4923,9 @@ TARGET (rewrite this): ${JSON.stringify(aiScrub(target))}`;
     document.getElementById('rwKeep').addEventListener('click', ()=>{ rwApply(S, next); closeSheet2(); rwBarShow(S); });
   }
   function rwApply(S, next){
-    aiSnapshot();                                   // also lets the AI panel's undo see this change
+    aiSnapshot();
+    try{ localStorage.setItem('resumate_rw_used', '1'); }catch(e){}
+    if(rwHint) rwHint.hidden = true;                                   // also lets the AI panel's undo see this change
     const cur = S.fld.get();
     S.fld.set(cur.slice(0, S.start) + next + cur.slice(S.start + S.span.length));
     S.span = next;

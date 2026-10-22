@@ -80,6 +80,18 @@ with sync_playwright() as p:
     check('after confirming, the change is applied', pg.evaluate("(function(){const SUM=()=>JSON.parse(localStorage.getItem('resumate_resumes_v2')).items[0].data.summary; return SUM().includes('activation 250%')})()"))
     pg.evaluate("document.getElementById('rwBarUndo').click()"); pg.wait_for_timeout(400)
 
+    # no selection: pick a whole summary from the list and rewrite it
+    pg.evaluate("document.getElementById('rwPickBtn').click()"); pg.wait_for_timeout(600)
+    check('picker lists the resume text fields', pg.evaluate("document.querySelectorAll('[data-rw-pick]').length") >= 10)
+    pg.evaluate("document.querySelector('[data-rw-pick=\"0\"]').click()"); pg.wait_for_timeout(600)
+    check('picker opens the style sheet for the whole summary', pg.evaluate("document.querySelector('.rw-from').textContent.includes('Product leader with 8+ years')"))
+    state['reply'] = REWRITE_OK
+    pg.evaluate("document.querySelector('[data-rw-tone=\"stronger\"]').click()"); pg.wait_for_timeout(1500)
+    check('whole summary replaced in the saved resume', pg.evaluate("(function(){return JSON.parse(localStorage.getItem('resumate_resumes_v2')).items[0].data.summary === 'Drives product strategy that lifts activation across three teams';})()"))
+    check('hint hides after first use', pg.evaluate("document.getElementById('rwHint').hidden === true"))
+    pg.evaluate("document.getElementById('rwBarUndo').click()"); pg.wait_for_timeout(500)
+    check('undo restores the whole summary', pg.evaluate("(function(){return JSON.parse(localStorage.getItem('resumate_resumes_v2')).items[0].data.summary.startsWith('Product leader with 8+ years');})()"))
+
     # the AI request must never carry contact details
     check('no contact details sent to AI', all('linkedin.com' not in x and '@email.com' not in x and '98765' not in x for x in state['bodies']))
     check('no page errors', not errs)
