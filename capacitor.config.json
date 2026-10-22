@@ -7,11 +7,12 @@
     "CapacitorUpdater": {
       "appId": "com.resumate.claude",
       "updateUrl": "https://resumate-claude.vercel.app/api/updates",
-      "autoUpdate": "atBackground",
+      "autoUpdate": "always",
       "version": "1.0.0",
       "appReadyTimeout": 10000,
       "autoDeleteFailed": true,
-      "autoDeletePrevious": true
+      "autoDeletePrevious": true,
+      "periodCheckDelay": 900
     }
   }
 }

@@ -6216,6 +6216,63 @@ TARGET (rewrite this): ${JSON.stringify(aiScrub(target))}`;
   window.__billing = billing; billing.labels(); billing.init();
   // Tell the Android update plugin this version started, otherwise it rolls the update back.
   try{ const up = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.CapacitorUpdater; if(up && up.notifyAppReady) up.notifyAppReady(); }catch(e){}
+
+  // ---------- App update alerts: vibrate and sound when a new version arrives ----------
+  // Open app: a toast, a short vibration and a beep. In the background: a system notification on a
+  // channel with sound and vibration. Each version alerts once.
+  (function(){
+    const plugins = () => (window.Capacitor && window.Capacitor.Plugins) || {};
+    const seenKey = 'resumate_update_seen';
+    const seen = () => { try{ return localStorage.getItem(seenKey) || ''; }catch(e){ return ''; } };
+    const markSeen = v => { try{ localStorage.setItem(seenKey, v); }catch(e){} };
+    function beep(){
+      try{
+        const AC = window.AudioContext || window.webkitAudioContext; if(!AC) return;
+        const ctx = new AC();
+        [[880, 0], [1175, 0.18]].forEach(([freq, at])=>{
+          const o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime + at;
+          o.frequency.value = freq; o.connect(g); g.connect(ctx.destination);
+          g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.25, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+          o.start(t); o.stop(t + 0.18);
+        });
+        setTimeout(()=>{ try{ ctx.close(); }catch(e){} }, 700);
+      }catch(e){}
+    }
+    function vibrate(){
+      try{ const H = plugins().Haptics; if(H && H.vibrate){ H.vibrate({ duration: 300 }); return; } }catch(e){}
+      try{ if(navigator.vibrate) navigator.vibrate([200, 120, 200]); }catch(e){}
+    }
+    async function systemAlert(title, body){
+      const LN = plugins().LocalNotifications; if(!LN) return false;
+      try{
+        let perm = await LN.checkPermissions();
+        if(perm.display !== 'granted'){ perm = await LN.requestPermissions(); if(perm.display !== 'granted') return false; }
+        await LN.createChannel({ id:'updates', name:'App updates', description:'Alerts when a new ResuMate version is ready', importance:4, vibration:true });
+        await LN.schedule({ notifications:[{ id: (Date.now() % 2000000000) + 1, title, body, channelId:'updates', schedule:{ at: new Date(Date.now() + 300) } }] });
+        return true;
+      }catch(e){ return false; }
+    }
+    function announce(version){
+      if(version && version === seen()) return;       // already alerted for this version
+      markSeen(version || String(Date.now()));
+      const label = version ? 'version ' + version : 'a new version';
+      if(document.hidden){
+        systemAlert('ResuMate update', 'ResuMate ' + label + ' is ready. Open the app to use it.');
+        vibrate(); beep();
+      } else {
+        vibrate(); beep();
+        if(typeof showToast === 'function') showToast('Update found: ' + label + ' ✓');
+      }
+    }
+    const up = plugins().CapacitorUpdater;
+    if(up && up.addListener){
+      up.addListener('updaterEvent', ev => {
+        if(!ev || ev.type !== 'updateAvailable') return;
+        const b = ev.data && ev.data.bundle;
+        announce(String((b && (b.version || b.name)) || ''));
+      }).catch(()=>{});
+    }
+  })();
   setTimeout(()=> maybeWhatsNew(0), 2500);
   rsInit(); rsRefreshAll(); backupNudgeUpdate();
 })();
