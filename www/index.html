@@ -3630,8 +3630,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   ];
   function aboutHtml(){
     return `<h3>About ResuMate</h3><p class="lead">Version ${APP_VERSION}</p>
-      <p class="empty-hint">Updates arrive automatically in the app.</p>
-      ${WHATS_NEW.map(v=> `<div class="perk"><div><div class="pt">Version ${v.version} · ${v.date}</div><ul>${v.notes.map(n=> `<li>${n}</li>`).join('')}</ul></div></div>`).join('')}`;
+      <div class="perk"><div><div class="pt">What's new in ${APP_VERSION}</div><ul>${(WHATS_NEW[0] || { notes:[] }).notes.map(n=> `<li>${n}</li>`).join('')}</ul></div></div>
+      <p class="empty-hint">Updates arrive automatically in the app.</p>`;
   }
   function whatsNewHtml(){
     const top = WHATS_NEW[0] || { notes:[] };
@@ -4562,7 +4562,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   let aiUndoSnap = null, aiLast = null;
   const aiEsc = t => String(t==null?'':t).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   function aiPanelHtml(){
-    const models = [['auto','Auto (recommended)'],['gemini-2.5-flash-lite','Gemini 2.5 Flash-Lite (fastest)'],['gemini-2.5-flash','Gemini 2.5 Flash'],['gemini-2.5-pro','Gemini 2.5 Pro'],['gemini-2.0-flash','Gemini 2.0 Flash']];
+    const models = [['auto','Auto (recommended)'],['gemini-3.5-flash-lite','Gemini 3.5 Flash-Lite (fastest)'],['gemini-3.8-flash','Gemini 3.8 Flash (smartest)']];
     const connected = aiCfg.verified && (aiCfg.key || aiProxyUrl());
     return `<h3>AI Assistant · Gemini</h3><p class="lead">Suggests better wording for the resume you have open, or improves it in one tap.</p>
       ${connected ? `<div class="ai-connected">✓ Connected — using ${aiEsc(aiCfg.model)} by default</div>` : ''}
@@ -4596,7 +4596,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     try{ localStorage.setItem(AI_KEY, JSON.stringify(aiCfg)); }catch(e){}
     const sel = document.getElementById('aiModel'); if(sel) sel.value = workingModel;
   }
-  const AI_FALLBACK_MODELS = ['gemini-2.5-flash-lite','gemini-2.5-flash','gemini-2.0-flash','gemini-2.5-pro'];
+  const AI_FALLBACK_MODELS = ['gemini-3.5-flash-lite','gemini-3.8-flash'];   // 2.0 and 2.5 models are retired or closed to new projects
   const aiProxyOk = u => /^https:\/\/[^\s"'<>]+$/i.test(u) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/i.test(u);
   const aiProxyUrl = () => (aiCfg.proxy && aiProxyOk(aiCfg.proxy) ? aiCfg.proxy : '') || (aiCfg.key ? '' : DEFAULT_AI_PROXY);
   async function aiCallOnce(model, prompt, temperature){
