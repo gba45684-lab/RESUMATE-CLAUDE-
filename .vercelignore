@@ -1,0 +1,6 @@
+tests/
+.github/
+android/
+free-ai-proxy/
+*.py
+*.md
