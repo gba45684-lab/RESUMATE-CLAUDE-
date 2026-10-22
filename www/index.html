@@ -3611,6 +3611,48 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   // The big button opens the real Gemini panel (the four cards below are fixed example tips, labelled as such)
   document.getElementById('genBtn').addEventListener('click', ()=>{ aiOpen(); });
 
+  // ---------- Version, What's new and About ----------
+  // The release workflow replaces APP_VERSION with the build number (e.g. 1.1.16) in the published copy.
+  // Add a WHATS_NEW entry for every release; the newest entry is what the update popup shows.
+  const APP_VERSION = '1.1';
+  const WHATS_NEW = [
+    { version:'1.1', date:'2026-10-22', notes:[
+      'Save, share and Word / ATS export now work in the Android app.',
+      'My Downloads: pin favourites to the top and rename them.',
+      'Preview can be pinched to zoom again.',
+      'The rupee sign (₹) prints correctly in ATS and cover-letter PDFs.',
+      'AI suggestions take your first-run goal into account.',
+      'This About screen, and an update popup that shows what changed.'
+    ] },
+    { version:'1.0', date:'2026-10-17', notes:[
+      'First release: templates, editor, PDF / Word export, resume score, job match, cover letter and free AI help.'
+    ] }
+  ];
+  function aboutHtml(){
+    return `<h3>About ResuMate</h3><p class="lead">Version ${APP_VERSION}</p>
+      <p class="empty-hint">Updates arrive automatically in the app.</p>
+      ${WHATS_NEW.map(v=> `<div class="perk"><div><div class="pt">Version ${v.version} · ${v.date}</div><ul>${v.notes.map(n=> `<li>${n}</li>`).join('')}</ul></div></div>`).join('')}`;
+  }
+  function whatsNewHtml(){
+    const top = WHATS_NEW[0] || { notes:[] };
+    return `<h3>What's new</h3><p class="lead">ResuMate ${APP_VERSION}</p>
+      <ul>${top.notes.map(n=> `<li>${n}</li>`).join('')}</ul>
+      <button class="ai-btn2" id="wnOk" style="width:100%;margin-top:10px">Got it</button>`;
+  }
+  // Shows the popup once per new version. A first run only records the version (nothing is "new" yet).
+  // Waits until the upgrade screen and any other sheet are closed.
+  function maybeWhatsNew(tries){
+    let seen = null;
+    try{ seen = localStorage.getItem('resumate_seen_version'); }catch(e){ return; }
+    if(seen === APP_VERSION) return;
+    if(seen === null){ try{ localStorage.setItem('resumate_seen_version', APP_VERSION); }catch(e){} return; }
+    const busy = !document.getElementById('paywall').hidden || sheet2.classList.contains('show');
+    if(busy){ if(tries < 60) setTimeout(()=> maybeWhatsNew(tries + 1), 3000); return; }
+    openSheet2(whatsNewHtml());
+    try{ localStorage.setItem('resumate_seen_version', APP_VERSION); }catch(e){}
+    const ok = document.getElementById('wnOk'); if(ok) ok.addEventListener('click', ()=> closeSheet2());
+  }
+
   // ---------- Profile list — real content per row ----------
   const profileRows = [
     {icon:'user', t:'Account'},
@@ -3618,6 +3660,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     {icon:'star', t:'Subscription'},
     {icon:'download', t:'My Downloads'},
     {icon:'help', t:'Help & Support'},
+    {icon:'help', t:'About ResuMate'},
     {icon:'ai', t:'AI Assistant'},
     {icon:'settings', t:'Settings'},
     {icon:'share', t:'Share ResuMate'},
@@ -3683,6 +3726,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       <button class="btn btn-primary sheet-cta" id="exportDataBtn">Save backup file (.json)</button>
       <button class="ai-btn2" id="shareBackupBtn" style="width:100%;margin-top:8px">Back up to Drive / share…</button>
       <p class="empty-hint" style="margin-top:8px;">${(()=>{ try{ const t = +localStorage.getItem('resumate_last_backup'); return t ? 'Last backup: ' + bdWhen(t) : "You haven't backed up your resume data yet."; }catch(e){ return ''; } })()}</p>`,
+    'About ResuMate': ()=> aboutHtml(),
     'Help & Support': ()=>`
       <h3>Help & Support</h3><p class="lead">Quick answers before you reach out.</p>
       <div class="perk"><div class="pic"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 015 .3c0 1.7-2.5 1.7-2.5 3.7"/><path d="M12 17h.01"/></svg></div><div><div class="pt">Is my resume saved automatically?</div><div class="ps">Yes — your edits are saved on this phone as you type.</div></div></div>
@@ -5251,7 +5295,6 @@ ${JSON.stringify(r)}`;
 
   // light vibration feedback on Android (ignored where unsupported); can be switched off in Settings
   function buzz(ms){ try{ if(localStorage.getItem('resumate_haptics') !== '0' && navigator.vibrate) navigator.vibrate(ms || 8); }catch(e){} }
-  const APP_VERSION = '1.1.0 (redesign prototype, 2026-10-17)';
   async function copyDiagnostics(){
     let errs = []; try{ errs = JSON.parse(localStorage.getItem('resumate_errors') || '[]'); }catch(e){}
     let saved = 0; try{ saved = (await dlList()).length; }catch(e){}
@@ -5933,6 +5976,7 @@ ${JSON.stringify(r)}`;
   window.__billing = billing; billing.labels(); billing.init();
   // Tell the Android update plugin this version started, otherwise it rolls the update back.
   try{ const up = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.CapacitorUpdater; if(up && up.notifyAppReady) up.notifyAppReady(); }catch(e){}
+  setTimeout(()=> maybeWhatsNew(0), 2500);
   rsInit(); rsRefreshAll(); backupNudgeUpdate();
 })();
 </script>
