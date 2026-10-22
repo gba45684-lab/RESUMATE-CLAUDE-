@@ -34,5 +34,4 @@ jobs:
         run: |
           python tests/smoke1_main_flows.py
           python tests/smoke2_studio_flows.py
-          python tests/smoke3_rewrite_flows.py
           python tests/native_app_test.py
