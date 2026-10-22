@@ -3605,7 +3605,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   function aiHeroQuota(){
     const el = document.getElementById('aiHeroQ'); if(!el) return;
     let t = '';
-    try{ if(aiProxyUrl()){ t = aiQuotaLine(); } else if(aiCfg.key){ t = 'Using your own Gemini key'; } else { t = 'Add a free Gemini key once to start — it takes a minute'; } }catch(e){}
+    try{ t = aiQuotaLine(); }catch(e){}
     el.textContent = t;
   }
   // The big button opens the real Gemini panel (the four cards below are fixed example tips, labelled as such)
@@ -3742,7 +3742,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       </div>
       <div class="ai-note" style="margin-top:10px">When on, ResuMate reopens on the template and page size you used last (currently ${getTemplateByCode(selectedTemplateCode).name}, ${PAGE_SIZES[pageSize].label}).</div>
       <button class="ai-btn2" id="clearAppDataBtn" style="width:100%;margin-top:14px">Clear data saved on this device</button>
-      <div class="ai-note">Removes your Gemini API key, saved AI results, profile photo and the remembered template/page size from this device. Your resume text is not affected.</div>`,
+      <div class="ai-note">Removes saved AI results, profile photo and the remembered template/page size from this device. Your resume text is not affected.</div>`,
     'Share ResuMate': ()=>`
       <h3>Share ResuMate</h3><p class="lead">Send the app to a friend.</p>
       <div class="plist" style="box-shadow:none; border:1px solid var(--line);">
@@ -4545,10 +4545,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   function makeEditableInPlace(root){ /* intentionally empty */ }
 
   // ---------- AI assistant (Gemini): suggestions + one-tap auto-improve for the resume that is currently open ----------
-  // The key is typed in-app and kept only in this device's storage; it is never written into this file. For a shared/published copy,
-  // use the Proxy URL field instead (your own server adds the key), so nobody can read it from the page.
-  // FREE AI FOR EVERYONE: deploy gemini-proxy-worker.js, then paste its address between the quotes below.
-  // Visitors then get AI with no key of their own (limited per device per day by the Worker); anyone can still add their own key for unlimited use.
+  // Free AI is always on: every request goes to the Cloudflare Worker, which holds the Gemini key on the server.
+  // No key or proxy is entered in the app, and no key is stored on the phone.
   const DEFAULT_AI_PROXY = 'https://resumate-ai.gba45684.workers.dev';
   const DEVICE_KEY = 'resumate_device_id';
   function deviceId(){
@@ -4558,21 +4556,13 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   }
   const AI_KEY = 'resumate_ai_cfg';
   let aiCfg = { key:'', model:'auto', proxy:'', verified:false };
-  try{ Object.assign(aiCfg, JSON.parse(localStorage.getItem(AI_KEY) || '{}')); }catch(e){}
+  try{ localStorage.removeItem(AI_KEY); }catch(e){}   // clears any key saved by an older version
   let aiUndoSnap = null, aiLast = null;
   const aiEsc = t => String(t==null?'':t).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   function aiPanelHtml(){
     const models = [['auto','Auto (recommended)'],['gemini-3.5-flash-lite','Gemini 3.5 Flash-Lite (fastest)'],['gemini-3.8-flash','Gemini 3.8 Flash (smartest)']];
-    const connected = aiCfg.verified && (aiCfg.key || aiProxyUrl());
     return `<h3>AI Assistant · Gemini</h3><p class="lead">Suggests better wording for the resume you have open, or improves it in one tap.</p>
-      ${connected ? `<div class="ai-connected">✓ Connected — using ${aiEsc(aiCfg.model)} by default</div>` : ''}
-      ${(DEFAULT_AI_PROXY && !aiCfg.key && !aiCfg.proxy) ? `<div class="ai-note" style="margin-top:0"><b>Free AI is included</b> — no key needed. ${aiEsc(aiQuotaLine())}. Add your own Gemini key below if you need more runs.</div>` : ''}
-      <label class="flab" style="display:block">Gemini API key</label>
-      <input class="finput" id="aiKey" type="password" autocomplete="off" placeholder="Paste key from Google AI Studio" value="${aiEsc(aiCfg.key)}">
-      <label class="flab" style="display:block">Model</label>
-      <select class="finput" id="aiModel">${models.map(m=>`<option value="${m[0]}" ${m[0]===aiCfg.model?'selected':''}>${m[1]}</option>`).join('')}</select>
-      <label class="flab" style="display:block">Proxy URL <span style="font-weight:500;color:var(--ink-faint)">(optional — keeps the key on your server)</span></label>
-      <input class="finput" id="aiProxy" placeholder="https://your-worker.workers.dev/gemini" value="${aiEsc(aiCfg.proxy)}">
+      <div class="ai-note" style="margin-top:0"><b>Free AI is included</b> — no key needed. ${aiEsc(aiQuotaLine())}.</div>
       <div class="ai-note">Saved on this device only. <b>What is sent</b> when you run a suggestion: your job titles, companies, summary, bullets, skills and education — <b>not</b> your name, email, phone, links or photo (those are masked). Please review every suggestion before you use it.</div>
       <label class="flab" style="display:block">Target job (optional)</label>
       <textarea class="ftextarea" id="aiJob" rows="3" placeholder="Paste the job description to tailor wording and skills"></textarea>
@@ -4582,15 +4572,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       <div id="aiOut"></div>
       <div class="ai-row"><button class="ai-btn2" id="aiUndo" ${aiUndoSnap?'':'disabled'}>Undo last AI change</button></div>`;
   }
-  function aiSaveCfg(){
-    const g = id => (document.getElementById(id)||{}).value;
-    const key = (g('aiKey')||'').trim(), model = g('aiModel')||'auto';
-    let proxy = (g('aiProxy')||'').trim();
-    if(proxy && !aiProxyOk(proxy)){ showToast('The proxy address must start with https://'); proxy = ''; const f = document.getElementById('aiProxy'); if(f) f.value = ''; }
-    const changed = key!==aiCfg.key || proxy!==aiCfg.proxy;
-    aiCfg = { key, model, proxy, verified: changed ? false : aiCfg.verified };
-    try{ localStorage.setItem(AI_KEY, JSON.stringify(aiCfg)); }catch(e){}
-  }
+  function aiSaveCfg(){ /* no user settings any more: the Worker does the work */ }
   function aiMarkVerified(workingModel){
     aiCfg = { ...aiCfg, model:workingModel, verified:true };
     try{ localStorage.setItem(AI_KEY, JSON.stringify(aiCfg)); }catch(e){}
@@ -4598,12 +4580,12 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   }
   const AI_FALLBACK_MODELS = ['gemini-3.5-flash-lite','gemini-3.8-flash'];   // 2.0 and 2.5 models are retired or closed to new projects
   const aiProxyOk = u => /^https:\/\/[^\s"'<>]+$/i.test(u) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/i.test(u);
-  const aiProxyUrl = () => (aiCfg.proxy && aiProxyOk(aiCfg.proxy) ? aiCfg.proxy : '') || (aiCfg.key ? '' : DEFAULT_AI_PROXY);
+  const aiProxyUrl = () => DEFAULT_AI_PROXY;
   async function aiCallOnce(model, prompt, temperature){
     const proxy = aiProxyUrl();
-    const url = proxy || `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
-    const headers = { 'Content-Type':'application/json' };
-    if(proxy){ headers['X-Gemini-Model'] = model; headers['X-Device-Id'] = deviceId(); } else headers['x-goog-api-key'] = aiCfg.key;
+    if(!proxy) throw Object.assign(new Error('Free AI is not available right now.'), { kind:'busy' });
+    const url = proxy;
+    const headers = { 'Content-Type':'application/json', 'X-Gemini-Model': model, 'X-Device-Id': deviceId() };
     const res = await fetch(url, { method:'POST', headers, body: JSON.stringify({
       contents:[{ role:'user', parts:[{ text:prompt }] }],
       generationConfig:{ temperature, responseMimeType:'application/json' } }) });
@@ -4637,7 +4619,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         if(st === 401 || st === 403){ err.kind = 'key'; throw err; }
         if(st === 429 || st >= 500){
           if(viaProxy){ err.kind = err.reason === 'limit' ? 'limit' : 'busy'; throw err; }
-          // with your own key every model has its own free quota, so move on to the next one (one short pause first if Google asks for it)
+          // every model has its own free quota, so move on to the next one (one short pause first if Google asks for it)
           if(st === 429 && err.retryAfter && err.retryAfter <= 6 && !err.__retried){ err.__retried = true; await aiWait(err.retryAfter * 1000); i--; continue; }
           continue;
         }
@@ -4796,20 +4778,19 @@ ${JSON.stringify(r)}`;
     function showErr(err){
       const kind = err && err.kind || (/Failed to fetch|NetworkError|TypeError/i.test(String(err)) ? 'network' : 'other');
       let msg, acts;
-      if(kind === 'limit'){ msg = "You've used today's free AI runs — they reset tomorrow. Add your own free Gemini key above to keep going, or fix things now with the offline tips."; acts = ['key', 'offline']; }
-      else if(kind === 'busy'){ msg = aiProxyUrl() ? 'Free AI is busy right now. Try again in a minute, or use your own free key.' : "Google's free quota for this key is used up for the moment. Try again later, or switch to a different model above."; acts = ['retry', 'key', 'offline']; }
-      else if(kind === 'key'){ msg = 'Google refused this key. Check that it is copied completely, with no spaces.'; acts = ['key']; }
+      if(kind === 'limit'){ msg = "You've used today's free AI runs — they reset tomorrow. You can still fix things now with the offline tips."; acts = ['offline']; }
+      else if(kind === 'busy'){ msg = 'Free AI is busy right now. Try again in a minute.'; acts = ['retry', 'offline']; }
+      else if(kind === 'key'){ msg = 'Free AI is not available right now. Try again later.'; acts = ['retry', 'offline']; }
       else if(kind === 'network'){ msg = location.protocol === 'file:' ? "Can't reach the AI from a file opened on this device. Install the app, or host the file on an https address." : "Can't reach the AI. Check your internet connection and try again."; acts = ['retry', 'offline']; }
       else { msg = (err && err.message) || 'Something went wrong.'; acts = ['retry', 'offline']; }
       status.className = 'ai-status err'; status.textContent = msg; clearErr();
       const box = document.createElement('div'); box.id = 'aiErr'; box.className = 'ai-err-actions';
-      const label = { retry:'Try again', key:'Use my own key', offline:'See offline tips' };
+      const label = { retry:'Try again', offline:'See offline tips' };
       acts.forEach(a=>{ const b = document.createElement('button'); b.type = 'button'; b.className = 'ai-btn2 sm'; b.textContent = label[a];
-        b.addEventListener('click', ()=>{ if(a === 'retry') run(lastAuto); else if(a === 'key'){ $('aiKey').focus(); $('aiKey').scrollIntoView({ block:'center', behavior:'smooth' }); } else { closeSheet2(); setTimeout(()=> toolOpen('score'), 250); } });
+        b.addEventListener('click', ()=>{ if(a === 'retry') run(lastAuto); else { closeSheet2(); setTimeout(()=> toolOpen('score'), 250); } });
         box.appendChild(b); });
       status.after(box);
     }
-    ['aiKey','aiModel','aiProxy'].forEach(id=> $(id).addEventListener('change', aiSaveCfg));
     let aiRunSeq = 0;
     async function run(auto){
       lastAuto = !!auto; aiSaveCfg();
@@ -4824,7 +4805,6 @@ ${JSON.stringify(r)}`;
         else { showToast('Loaded saved suggestions ✓'); status.textContent = 'Loaded from your saved results for this resume — no free run used. Tap Regenerate for fresh ideas.'; }
         aiRender(saved); $('aiSuggest').textContent = 'Regenerate suggestions'; return;
       }
-      if(!aiCfg.key && !aiProxyUrl()){ status.textContent = 'Add your Gemini API key (or a proxy URL) first.'; status.className = 'ai-status err'; return; }
       busy(true, auto ? 'Improving your resume…' : (regenerating ? 'Regenerating…' : 'Thinking…'));
       status.className = 'ai-status'; startProgress(auto ? 'Improving your resume…' : (regenerating ? 'Regenerating…' : 'Thinking…'));
       try{
