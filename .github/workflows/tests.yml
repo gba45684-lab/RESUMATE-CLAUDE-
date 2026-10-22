@@ -27,7 +27,7 @@ jobs:
 
       - name: Install Playwright
         run: |
-          pip install playwright python-docx
+          pip install -r tests/requirements.txt
           python -m playwright install --with-deps chromium
 
       - name: App smoke tests
