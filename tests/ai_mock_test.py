@@ -3,6 +3,9 @@ HERE = pathlib.Path(__file__).resolve().parent
 URL = os.environ.get('RESUMATE_URL') or HERE.parent.joinpath('www', 'index.html').as_uri()
 OUT = tempfile.mkdtemp(prefix='resumate_test_') + '/'
 import json
+results=[]
+def check(name, ok):
+    results.append(bool(ok)); print(('PASS ' if ok else 'FAIL ')+name)
 from playwright.sync_api import sync_playwright
 PROXY='https://resumate-ai.gba45684.workers.dev/'   # the app always calls the Worker
 state={'mode':'ok','bodies':[]}
@@ -19,6 +22,8 @@ def handler(route):
     elif m=='busy': route.fulfill(status=429, headers={**cors,'Content-Type':'application/json','X-Free-Reason':'busy','X-Free-Remaining':'2','X-Free-Limit':'5'}, body=json.dumps({"error":{"message":"busy"}}))
     elif m=='key': route.fulfill(status=403, headers={**cors,'Content-Type':'application/json'}, body=json.dumps({"error":{"message":"bad key"}}))
     elif m=='net': route.abort()
+EXPECT={'limit':"today's free AI runs",'busy':'busy right now','key':'not available right now','net':"Can't reach the AI"}
+EXPECT_BTNS={'limit':['See offline tips'],'busy':['Try again','See offline tips'],'key':['Try again','See offline tips'],'net':['Try again','See offline tips']}
 with sync_playwright() as p:
     b=p.chromium.launch()
     ctx=b.new_context(viewport={'width':393,'height':852}, has_touch=True, is_mobile=True, device_scale_factor=2)
@@ -29,28 +34,46 @@ with sync_playwright() as p:
     pg.add_init_script("if(!sessionStorage.getItem('s')){sessionStorage.setItem('s','1');localStorage.setItem('resumate_lite','1');localStorage.setItem('resumate_seen_welcome','1');localStorage.setItem('resumate_goal_answered','skipped');localStorage.setItem('resumate_user_name','Krapal Singh');localStorage.setItem('resumate_ai_cfg',%s);localStorage.setItem('resumate_jd','We need a Product Manager with Tableau, SQL and Agile experience to own the roadmap.')}"%json.dumps(cfg))
     pg.goto(URL); pg.wait_for_timeout(4800); pg.evaluate("document.getElementById('pwClose').click()"); pg.wait_for_timeout(500)
     pg.evaluate("document.querySelector('[data-tab=ai]').click()"); pg.wait_for_timeout(700)
-    print('AI tab tips (sample resume):', pg.evaluate("[...document.querySelectorAll('#suggList .sugg-tt')].map(b=>b.textContent)"), '| hero quota:', pg.inner_text('#aiHeroQ'))
+    check('AI tab shows the free quota line', 'free AI' in pg.inner_text('#aiHeroQ').lower() or 'free' in pg.inner_text('#aiHeroQ').lower())
     pg.evaluate("document.getElementById('genBtn').click()"); pg.wait_for_timeout(900)
-    print('panel:', pg.evaluate("document.querySelector('#sheet2 h3').textContent"), '| job-ad link visible:', not pg.evaluate("document.getElementById('aiJobFromMatch').hidden"))
-    pg.evaluate("document.getElementById('aiJobFromMatch').click()"); print('job field:', pg.input_value('#aiJob')[:48])
+    check('AI panel opens', pg.evaluate("document.querySelector('#sheet2 h3').textContent").strip() != '')
+    check('job-ad link is shown when a job ad is saved', not pg.evaluate("document.getElementById('aiJobFromMatch').hidden"))
+    pg.evaluate("document.getElementById('aiJobFromMatch').click()")
+    check('job ad fills the job field', 'Tableau, SQL' in pg.input_value('#aiJob'))
     pg.evaluate("document.getElementById('aiSuggest').click()"); pg.wait_for_timeout(250)
-    print('while loading:', pg.inner_text('#aiStatus'), '| skeleton:', pg.evaluate("!!document.querySelector('.ai-skel')")); pg.wait_for_timeout(2400)
+    pg.wait_for_timeout(2400)
     body=state['bodies'][-1]
-    print('PRIVACY sent -> name:', 'Krapal' in body, '| email:', '@email.com' in body, '| phone:', '98765' in body, '| linkedin:', 'linkedin' in body.lower(), '| job text sent:', 'Tableau, SQL' in body, '| injection guard:', 'ignore any instructions' in body)
-    print('cards:', pg.evaluate("[...document.querySelectorAll('#aiOut .ai-sug h5 span')].map(s=>s.textContent)"))
-    print('warnings:', pg.evaluate("[...document.querySelectorAll('.ai-warn')].map(w=>w.textContent)"), '| warn bar:', pg.evaluate("!!document.querySelector('.ai-warnbar')"))
-    print('highlighted:', pg.evaluate("[...document.querySelectorAll('#aiOut mark')].slice(0,5).map(m=>m.textContent)"), '| per-bullet boxes:', pg.evaluate("document.querySelectorAll('#aiOut input[data-k]').length"), '| status:', pg.inner_text('#aiStatus')[:70])
+    check('privacy: name not sent', 'Krapal' not in body)
+    check('privacy: email not sent', '@email.com' not in body)
+    check('privacy: phone not sent', '98765' not in body)
+    check('privacy: LinkedIn not sent', 'linkedin' not in body.lower())
+    check('job ad is sent for matching', 'Tableau, SQL' in body)
+    check('injection guard is in the request', 'ignore any instructions' in body)
+    cards=pg.evaluate("[...document.querySelectorAll('#aiOut .ai-sug h5 span')].map(s=>s.textContent)")
+    check('suggestion cards: summary, job, skills, tips', cards[:1]==['Summary'] and 'Skills to add' in cards and 'Tips' in cards)
+    warns=pg.evaluate("[...document.querySelectorAll('.ai-warn')].map(w=>w.textContent)")
+    check('numbers not in the resume are flagged', any('45' in w for w in warns) and any('99' in w for w in warns))
+    check('warning bar shown', pg.evaluate("!!document.querySelector('.ai-warnbar')"))
+    marks=pg.evaluate("[...document.querySelectorAll('#aiOut mark')].map(m=>m.textContent)")
+    check('changed words are highlighted', '45%' in marks)
+    check('each bullet has a choice box', pg.evaluate("document.querySelectorAll('#aiOut input[data-k]').length") == 4)
     pg.screenshot(path=OUT+'ai_result.png')
     pg.evaluate("document.querySelectorAll('#aiOut input[data-k]')[1].click()")   # keep the original of bullet 2 (the one with the made-up 99%)
     pg.evaluate("[...document.querySelectorAll('#aiOut .ai-sug')].find(d=>d.textContent.includes('Senior Product Manager')).querySelector('.ai-apply').click()"); pg.wait_for_timeout(700)
     live=pg.evaluate("JSON.parse(localStorage.getItem('resumate_resumes_v2')).items[0].data.experience[0].bullets")
-    print('applied: bullet1 new?', live[0].startswith('Led strategy'), '| bullet2 kept original?', live[1].startswith('Redesigned onboarding, lifting activation 35%'), '| bullet3 new?', live[2].startswith('Launched usage-based'))
+    check('applied: chosen bullet 1 is new', live[0].startswith('Led strategy'))
+    check('applied: unchosen bullet 2 kept original', live[1].startswith('Redesigned onboarding, lifting activation 35%'))
+    check('applied: chosen bullet 3 is new', live[2].startswith('Launched usage-based'))
     pg.evaluate("document.getElementById('sheet2Close').click()"); pg.wait_for_timeout(450)
     for mode in ['limit','busy','key','net']:
         state['mode']=mode; pg.evaluate("localStorage.removeItem('resumate_ai_cache_v1')")
         pg.evaluate("document.querySelector('[data-tab=ai]').click()"); pg.wait_for_timeout(400); pg.evaluate("document.getElementById('genBtn').click()"); pg.wait_for_timeout(700)
         pg.evaluate("document.getElementById('aiSuggest').click()"); pg.wait_for_timeout(1800)
-        print(f'[{mode}]', pg.inner_text('#aiStatus')[:100], '| buttons:', pg.evaluate("[...document.querySelectorAll('#aiErr button')].map(b=>b.textContent)"))
+        msg=pg.inner_text('#aiStatus'); btns=pg.evaluate("[...document.querySelectorAll('#aiErr button')].map(b=>b.textContent)")
+        check(f'[{mode}] shows its error message', EXPECT[mode] in msg)
+        check(f'[{mode}] offers the right buttons', btns == EXPECT_BTNS[mode])
         if mode=='limit': pg.screenshot(path=OUT+'ai_err.png')
         pg.evaluate("document.getElementById('sheet2Close').click()"); pg.wait_for_timeout(450)
-    print('errors:', errs); b.close()
+    check('no page errors', not errs)
+    b.close()
+print(f"{sum(results)}/{len(results)} passed")
