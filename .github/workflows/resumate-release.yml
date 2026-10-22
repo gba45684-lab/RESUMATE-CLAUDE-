@@ -41,29 +41,7 @@ jobs:
         run: echo "$KEYSTORE_B64" | base64 -d > android/app/release.keystore
 
       - name: Add signing and a version code that always goes up
-        run: |
-          python3 - <<'PY'
-          import re
-          p = 'android/app/build.gradle'
-          s = open(p, encoding='utf-8').read()
-          signing = '''    signingConfigs {
-        release {
-            storeFile file("release.keystore")
-            storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
-            keyAlias System.getenv("ANDROID_KEY_ALIAS")
-            keyPassword System.getenv("ANDROID_KEY_PASSWORD")
-        }
-    }
-'''
-          assert 'buildTypes {' in s, 'buildTypes block not found'
-          s = s.replace('    buildTypes {', signing + '    buildTypes {', 1)
-          s, n = re.subn(r'(buildTypes\s*\{\s*release\s*\{)', r'\1\n            signingConfig signingConfigs.release', s, count=1)
-          assert n == 1, 'release block not found'
-          s, n = re.subn(r'versionCode\s+\d+', 'versionCode Integer.parseInt(System.getenv("GITHUB_RUN_NUMBER") ?: "1")', s, count=1)
-          assert n == 1, 'versionCode not found'
-          open(p, 'w', encoding='utf-8').write(s)
-          print('signing configured')
-          PY
+        run: python3 .github/scripts/patch_gradle_signing.py
 
       - name: Build signed App Bundle
         working-directory: android
