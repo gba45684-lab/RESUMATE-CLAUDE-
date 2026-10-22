@@ -8,7 +8,7 @@ export default async function handler(req, res) {
 
   try {
     const info = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
-    if (info.app_id && info.app_id !== 'com.krapal.resumeforge') {
+    if (info.app_id && info.app_id !== 'com.resumate.claude') {
       return res.status(200).json({ message: 'No update for this app', version: info.version_name || '' });
     }
 
