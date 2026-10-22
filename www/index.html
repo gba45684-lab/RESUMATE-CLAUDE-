@@ -4931,7 +4931,29 @@ ${JSON.stringify(r)}`;
   })();
 
   // ---------- Export / Import resume data (.json) — same delivery pattern as the PDF ----------
+  // ---------- Android app (Capacitor) file and share helpers ----------
+  // In the APK, browser downloads (<a download>, window.open of a file) and navigator.share do not work.
+  // The Capacitor Filesystem and Share plugins do, so when running as the app we use them.
+  function isNative(){ try{ return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()); }catch(e){ return false; } }
+  function nativePlugin(name){ try{ return (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins[name]) || null; }catch(e){ return null; } }
+  function blobToBase64(blob){ return new Promise((res, rej)=>{ const r = new FileReader(); r.onload = ()=> res(String(r.result).split(',')[1] || ''); r.onerror = ()=> rej(r.error); r.readAsDataURL(blob); }); }
+  // writes the file to the app's cache and opens the phone's share sheet (Save to Files, Drive, WhatsApp, a PDF viewer…)
+  // resolves true when the sheet was opened, false when the native plugins are missing
+  async function nativeShareFile(blob, filename, title){
+    const FS = nativePlugin('Filesystem'), SH = nativePlugin('Share');
+    if(!FS || !SH) return false;
+    const safe = String(filename || 'ResuMate').replace(/[\\/:*?"<>|]+/g, '_');
+    const w = await FS.writeFile({ path: 'share/' + safe, data: await blobToBase64(blob), directory: 'CACHE', recursive: true });
+    await SH.share({ title: title || safe, files: [w.uri], dialogTitle: 'Save or share' });
+    return true;
+  }
+  function isCancel(err){ return /cancel/i.test(String((err && (err.message || err.name)) || err)); }
+
   async function deliverBlob(blob, filename){
+    if(isNative()){
+      try{ if(await nativeShareFile(blob, filename, filename)) return true; }
+      catch(err){ if(isCancel(err)) return true; showToast("Couldn't open the share sheet — try again"); return false; }
+    }
     let saved = false;
     if(window.claude && window.claude.use){
       try{
@@ -4965,6 +4987,7 @@ ${JSON.stringify(r)}`;
   async function shareBackup(){
     const blob = backupBlob(), file = new File([blob], backupName(), { type:'application/json' });
     try{
+      if(isNative()){ if(await nativeShareFile(blob, backupName(), 'ResuMate backup')){ markBackup(); showToast('Backup shared ✓'); return; } }
       if(navigator.canShare && navigator.canShare({ files:[file] })){ await navigator.share({ files:[file], title:'ResuMate backup' }); markBackup(); showToast('Backup shared ✓'); return; }
     }catch(e){ if(e && e.name === 'AbortError') return; }
     await exportResumeData();
@@ -5007,6 +5030,7 @@ ${JSON.stringify(r)}`;
   });
   document.getElementById('shareAppBtn').addEventListener('click', async ()=>{
     const shareData = { title:'ResuMate', text:`Check out my resume, built with ResuMate — ${resumeData.name}, ${resumeData.role}.`, url: (typeof location!=='undefined' && location.href.startsWith('http')) ? location.href : 'https://resumate.app' };
+    if(isNative() && nativePlugin('Share')){ try{ await nativePlugin('Share').share({ title:'ResuMate', text:shareData.text, dialogTitle:'Share ResuMate' }); }catch(err){} return; }
     if(navigator.share){
       try{ await navigator.share(shareData); } catch(err){ /* user cancelled — no-op */ }
       return;
@@ -5248,6 +5272,7 @@ ${JSON.stringify(r)}`;
   async function dlShare(id){
     try{
       const f = await dlGet(id), metas = await dlList(), m = metas.find(x=> x.id === id); if(!f || !m) return;
+      if(isNative()){ try{ await nativeShareFile(f.pdf, m.name, m.name); }catch(e){ if(!isCancel(e)) showToast("Couldn't share that file"); } return; }
       const file = new File([f.pdf], m.name, { type:'application/pdf' });
       if(navigator.canShare && navigator.canShare({ files:[file] })){ try{ await navigator.share({ files:[file], title:m.name }); }catch(e){} return; }
       await deliverBlob(f.pdf, m.name);
@@ -5284,7 +5309,9 @@ ${JSON.stringify(r)}`;
   document.getElementById('dlvShare').addEventListener('click', ()=>{ if(dlvCur) dlShare(dlvCur.id); });
   document.getElementById('dlvSave').addEventListener('click', async ()=>{ if(dlvCur && await deliverBlob(dlvCur.pdf, dlvCur.name)) showToast('Saved a copy ✓'); });
   document.getElementById('dlvOpen').addEventListener('click', async ()=>{
-    if(!dlvCur) return; const u = URL.createObjectURL(dlvCur.pdf); const w = window.open(u, '_blank');
+    if(!dlvCur) return;
+    if(isNative()){ try{ await nativeShareFile(dlvCur.pdf, dlvCur.name, dlvCur.name); }catch(e){ if(!isCancel(e)) showToast("Couldn't open that file"); } return; }
+    const u = URL.createObjectURL(dlvCur.pdf); const w = window.open(u, '_blank');
     if(!w){ await deliverBlob(dlvCur.pdf, dlvCur.name); showToast('PDF saved to your downloads'); } setTimeout(()=> URL.revokeObjectURL(u), 60000);
   });
   document.getElementById('dlvDel').addEventListener('click', async ev=>{
@@ -5790,7 +5817,7 @@ ${JSON.stringify(r)}`;
       g('clCopy').addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText(ta.value); showToast('Letter copied ✓'); }catch(e){ ta.select(); try{ document.execCommand('copy'); showToast('Letter copied ✓'); }catch(e2){ showToast("Couldn't copy"); } } });
       g('clPdf').addEventListener('click', async ()=>{ if(await deliverBlob(letterPdf(ta.value), fname('pdf'))) showToast('Cover letter PDF saved ✓'); });
       g('clDocx').addEventListener('click', async ()=>{ if(await deliverBlob(docxFromParagraphs(ta.value.split('\n')), fname('docx'))) showToast('Cover letter (Word) saved ✓'); });
-      g('clShare').addEventListener('click', async ()=>{ if(navigator.share){ try{ await navigator.share({ title:'Cover letter', text:ta.value }); }catch(e){} } else { try{ await navigator.clipboard.writeText(ta.value); showToast('Copied — paste it anywhere'); }catch(e){} } });
+      g('clShare').addEventListener('click', async ()=>{ if(isNative() && nativePlugin('Share')){ try{ await nativePlugin('Share').share({ title:'Cover letter', text:ta.value, dialogTitle:'Share cover letter' }); }catch(e){} return; } if(navigator.share){ try{ await navigator.share({ title:'Cover letter', text:ta.value }); }catch(e){} } else { try{ await navigator.clipboard.writeText(ta.value); showToast('Copied — paste it anywhere'); }catch(e){} } });
     } }
   };
 
