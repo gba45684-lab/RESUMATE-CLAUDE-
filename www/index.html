@@ -4612,7 +4612,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       <label class="flab" style="display:block" for="aiRequest">Tell the AI what to change</label>
       <textarea class="ftextarea" id="aiRequest" rows="2" maxlength="300" placeholder="e.g. make the summary shorter and more senior"></textarea>
       <div class="rw-tones" id="aiExamples">${['Make the summary shorter','Stronger action verbs in every bullet','Add a leadership point to my latest job','Make the skills list more specific'].map(x=>`<button type="button" class="ai-btn2 sm" data-ai-ex="${aiEsc(x)}">${aiEsc(x)}</button>`).join('')}</div>
-      <div class="ai-row"><button class="btn btn-primary" id="aiAsk">Make this change</button></div>
+      <div class="ai-row"><button class="btn btn-primary" id="aiAsk">Make this change</button><button class="ai-btn2" id="aiKeywords">Find missing keywords (no AI)</button></div>
       <div class="ai-status" id="aiStatus"></div>
       <div class="ai-row"><button class="btn btn-primary" id="aiSuggest">${aiLast ? 'Regenerate suggestions' : 'Get suggestions'}</button><button class="ai-btn2" id="aiAuto">Auto-improve</button></div>
       <div id="aiOut"></div>
@@ -4649,6 +4649,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   const aiWait = ms => new Promise(r=> setTimeout(r, ms));
   async function aiCall(prompt, temperature){
     const viaProxy = !!aiProxyUrl();
+    if(ownKey() && aiQuotaLeft() === 0) return aiCallDirect(prompt, temperature);   // shared runs used up today: use the person's own key
     let tryList = aiCfg.model && aiCfg.model!=='auto' ? [aiCfg.model, ...AI_FALLBACK_MODELS.filter(m=>m!==aiCfg.model)] : AI_FALLBACK_MODELS;
     if(viaProxy) tryList = tryList.slice(0, 1);                  // the proxy already tries other models and other providers itself
     let lastErr = null;
@@ -4664,7 +4665,11 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         if(st === 404 || st === 400) continue;                   // that model name does not exist for this key — try the next one
         if(st === 401 || st === 403){ err.kind = 'key'; throw err; }
         if(st === 429 || st >= 500){
-          if(viaProxy){ err.kind = err.reason === 'limit' ? 'limit' : 'busy'; throw err; }
+          if(viaProxy){
+            err.kind = err.reason === 'limit' ? 'limit' : 'busy';
+            if(err.kind === 'limit' && ownKey()) return aiCallDirect(prompt, temperature);
+            throw err;
+          }
           // every model has its own free quota, so move on to the next one (one short pause first if Google asks for it)
           if(st === 429 && err.retryAfter && err.retryAfter <= 6 && !err.__retried){ err.__retried = true; await aiWait(err.retryAfter * 1000); i--; continue; }
           continue;
@@ -4674,6 +4679,83 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     }
     if(lastErr && (lastErr.status === 429 || lastErr.status >= 500)) lastErr.kind = 'busy';
     throw lastErr || new Error('No Gemini model responded.');
+  }
+  // ---- Own free Gemini key: used only after today's shared free runs are used up. Stored on this phone only. ----
+  const OWN_KEY = 'resumate_own_key';
+  function ownKey(){ try{ return (localStorage.getItem(OWN_KEY) || '').trim(); }catch(e){ return ''; } }
+  function aiQuotaLeft(){ try{ const q = JSON.parse(localStorage.getItem(AI_QUOTA_KEY) || 'null'); return q && q.day === aiToday() ? q.left : null; }catch(e){ return null; } }
+  async function aiCallDirect(prompt, temperature){
+    const key = ownKey();
+    if(!key) throw Object.assign(new Error('Add your own key first.'), { kind:'key' });
+    let lastErr = null;
+    for(const model of AI_FALLBACK_MODELS){
+      try{
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, { method:'POST',
+          headers:{ 'Content-Type':'application/json', 'x-goog-api-key': key },
+          body: JSON.stringify({ contents:[{ role:'user', parts:[{ text:prompt }] }], generationConfig:{ temperature, responseMimeType:'application/json' } }) });
+        if(!res.ok){
+          const err = new Error(`Gemini ${res.status}`); err.status = res.status;
+          if(res.status === 401 || res.status === 403){ err.kind = 'key'; throw err; }
+          if(res.status === 429){ err.kind = 'limit'; throw err; }
+          if(res.status === 404 || res.status === 400){ lastErr = err; continue; }
+          err.kind = 'busy'; throw err;
+        }
+        const j = await res.json();
+        const part = ((j.candidates || [])[0] || {}).content;
+        const out = part && part.parts ? part.parts.map(x=>x.text || '').join('') : '';
+        if(!out) throw new Error('Gemini returned no text (the answer may have been blocked).');
+        try{ return JSON.parse(out.replace(/```json|```/g, '').trim()); }catch(e){ throw new Error('The AI answered in a format the app could not read — please try again.'); }
+      }catch(err){
+        if(!err.status && !err.kind) err.kind = /Failed to fetch|NetworkError|Load failed|TypeError/i.test(String(err)) ? 'network' : 'other';
+        if(err.status === 404 || err.status === 400){ lastErr = err; continue; }
+        throw err;
+      }
+    }
+    throw lastErr || new Error('No Gemini model responded.');
+  }
+  // Saved answers: the same prompt (same resume text, same wording request, same temperature) is answered from this phone, not sent again
+  async function aiCallCached(prompt, temperature, fresh){
+    const key = 'p' + aiHash(temperature + '|' + prompt);
+    if(!fresh){ const hit = aiCacheGet(key); if(hit) return hit; }
+    const data = await aiCall(prompt, temperature);
+    aiCachePut(key, data);
+    return data;
+  }
+  // Shown when the shared free runs are used up: the person can add their own free key
+  function aiOwnKeyHtml(){
+    const has = !!ownKey();
+    return `<div class="ai-sug" id="ownKeyBox"><h5><span>Keep going with your own free key</span></h5>
+      <p>Today's shared free AI runs are used up. You can add your own free Gemini API key from Google AI Studio (aistudio.google.com/app/apikey). It is stored only on this phone and used only when the shared runs run out.</p>
+      <input type="password" id="ownKeyIn" autocomplete="off" placeholder="Paste your key" aria-label="Your Gemini API key" style="width:100%;padding:10px;border-radius:10px;margin:6px 0">
+      <div class="ai-row"><button class="btn btn-primary" id="ownKeySave">Save key</button>${has ? '<button class="ai-btn2" id="ownKeyClear">Remove key</button>' : ''}</div></div>`;
+  }
+  document.addEventListener('click', e=>{
+    const t = e.target.closest && e.target.closest('#ownKeySave,#ownKeyClear'); if(!t) return;
+    e.preventDefault();
+    if(t.id === 'ownKeyClear'){ try{ localStorage.removeItem(OWN_KEY); }catch(_){} showToast('Own key removed'); }
+    else {
+      const v = ((document.getElementById('ownKeyIn') || {}).value || '').trim();
+      if(v.length < 20){ showToast('That key looks too short'); return; }
+      try{ localStorage.setItem(OWN_KEY, v); }catch(_){ showToast('Could not save the key on this phone'); return; }
+      showToast('Own key saved ✓ — tap your AI button again');
+    }
+    const box = document.getElementById('ownKeyBox'); if(box) box.outerHTML = aiOwnKeyHtml();
+  });
+  // ---- Local edits, no AI and no limit: weak verbs, filler words, repeated words ----
+  const QF_VERBS = [[/\bhelped\b/gi,'supported'],[/\bassisted (?:with|in)\b/gi,'supported'],[/\bworked on\b/gi,'developed'],[/\bwas responsible for\b/gi,'managed'],[/\bresponsible for\b/gi,'managed'],[/\bwas involved in\b/gi,'contributed to'],[/\bparticipated in\b/gi,'contributed to'],[/\btried to\b/gi,'worked to']];
+  const QF_FILLER = /\b(very|really|basically|quite|just|various|actually)\s+/gi;
+  function localQuickFix(text){
+    let t = String(text || '');
+    QF_VERBS.forEach(([re, rep])=>{ t = t.replace(re, m => m[0] === m[0].toUpperCase() ? rep.charAt(0).toUpperCase() + rep.slice(1) : rep); });
+    return t.replace(QF_FILLER, '').replace(/\b(\w+)(\s+\1\b)+/gi, '$1').replace(/\s{2,}/g, ' ').trim();
+  }
+  // ---- Words from a job ad that the resume does not use yet (local word count, no AI) ----
+  const KW_STOP = new Set('the and for with you your our are will this that from have has who what when where which their they them into about over under able good strong work working team role job candidate looking ability years year experience required preferred including include such also other more most must should can not new use using based plus etc need needs must join ideal help'.split(' '));
+  function missingKeywords(jobText){
+    const resume = textOf(resumeData).toLowerCase(), count = new Map();
+    (String(jobText || '').toLowerCase().match(/[a-z][a-z+#.\-]{2,}/g) || []).forEach(w=>{
+      w = w.replace(/\.$/, ''); if(w.length < 3 || KW_STOP.has(w)) return; count.set(w, (count.get(w) || 0) + 1); });
+    return [...count.entries()].filter(([w])=> !resume.includes(w)).sort((a, b)=> b[1] - a[1]).slice(0, 12).map(([w])=> w);
   }
   // What the AI actually sees of the resume (also the basis for the saved-answer key, so any real edit -> a fresh answer).
   // Personal details inside free text are masked before anything leaves the phone (and any answer that still contains a mask is dropped).
@@ -4689,7 +4771,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   }
   // ---- Saved AI answers (localStorage): same resume + same target job => reuse instantly, no run used ----
   const AI_CACHE_KEY = 'resumate_ai_cache_v1', AI_QUOTA_KEY = 'resumate_ai_quota';
-  const AI_CACHE_MAX = 25, AI_CACHE_DAYS = 30;
+  const AI_CACHE_MAX = 100, AI_CACHE_DAYS = 30;
   function aiHash(str){
     let h1 = 0x811c9dc5, h2 = 0x9e3779b1;
     for(let i=0;i<str.length;i++){ const c = str.charCodeAt(i); h1 ^= c; h1 = Math.imul(h1, 16777619); h2 ^= c + i; h2 = Math.imul(h2, 2246822519); }
@@ -4829,7 +4911,8 @@ ${JSON.stringify(r)}`;
   // Select words in the resume preview -> "Rewrite with AI" -> pick a style -> the change shows in the resume at once.
   // Only the selected words are sent (contact details are masked and selections containing them are refused).
   const RW_TONES = [
-    ['stronger', 'Stronger wording', 'Start with a strong action verb and make the impact clear. Do not add any new fact.'],
+    ['quick', 'Quick fixes (no AI)', 'Local edit: stronger verbs, no filler, no repeated words. No AI is used.'],
+    ['stronger','Stronger wording', 'Start with a strong action verb and make the impact clear. Do not add any new fact.'],
     ['shorter',  'Shorter',          'Cut it to the fewest words that keep every fact.'],
     ['clearer',  'Plainer',          'Use simple, direct words that a recruiter understands at a glance.'],
   ];
@@ -4957,12 +5040,18 @@ TARGET (rewrite this): ${JSON.stringify(aiScrub(target))}`;
     const setChips = on => sheet2Body.querySelectorAll('.rw-tone').forEach(b=> b.disabled = on);
     // the words must still be where we found them (the person may have edited the resume meanwhile)
     if(S.fld.get().slice(S.start, S.start + S.span.length) !== S.span){ showToast('That text changed. Select it again.'); closeSheet2(); return; }
+    if(tone === 'quick'){                                  // local edit: no AI call, no run used
+      const next = localQuickFix(S.span);
+      if(next === S.span){ status.className = 'ai-status'; status.textContent = 'No quick fixes here. Try Stronger wording for an AI rewrite.'; out.innerHTML = ''; return; }
+      S.tone = tone; S.next = next; status.className = 'ai-status'; status.textContent = 'Check the before and after, then apply.';
+      rwCompare(S); return;
+    }
     S.tone = tone;
     rwBusy = true; setChips(true);
     status.className = 'ai-status'; status.textContent = 'Rewriting…';
     out.innerHTML = '<div class="ai-sug ai-skel"><i></i><i></i></div>';
     try{
-      const data = await aiCall(rwPrompt(S.fld.get(), S.span, tone, tone === 'job' ? rwJobText() : ''), 0.5);
+      const data = await aiCallCached(rwPrompt(S.fld.get(), S.span, tone, tone === 'job' ? rwJobText() : ''), 0.5, false);
       const next = data && typeof data.text === 'string' ? data.text.trim().replace(/^["'“”]+|["'“”]+$/g, '').trim() : '';
       if(!next || aiHasMask(next)) throw Object.assign(new Error('The AI did not give a usable rewrite. Try another style.'), { kind:'other' });
       S.next = next;
@@ -4975,6 +5064,7 @@ TARGET (rewrite this): ${JSON.stringify(aiScrub(target))}`;
         : (err && err.message) || 'Something went wrong.';
       status.className = 'ai-status err'; status.textContent = msg;
       if(S.next) rwCompare(S); else out.innerHTML = '';   // keep the last before/after so the person can apply it
+      if(err && err.kind === 'limit') out.insertAdjacentHTML('beforeend', aiOwnKeyHtml());
     }finally{
       rwBusy = false; if(sheet2Body.isConnected) setChips(false);
     }
@@ -5077,7 +5167,7 @@ TARGET (rewrite this): ${JSON.stringify(aiScrub(target))}`;
       // Ask once; if the AI hands back the same wording, ask again with a little more freedom
       let next = '';
       for(const temp of [0.5, 0.9]){
-        const data = await aiCall(S.makePrompt(), temp);
+        const data = await aiCallCached(S.makePrompt(), temp, false);
         next = data && typeof data.text === 'string' ? data.text.trim().replace(/^["'“”]+|["'“”]+$/g, '').trim() : '';
         if(S.merge) next = S.merge(next);
         if(!next || aiHasMask(next) || next !== S.origSpan) break;
@@ -5090,6 +5180,7 @@ TARGET (rewrite this): ${JSON.stringify(aiScrub(target))}`;
     }catch(err){
       if(!status.isConnected) return;
       status.className = 'ai-status err'; status.textContent = rwErrMsg(err); out.innerHTML = '';
+      if(err && err.kind === 'limit') out.innerHTML = aiOwnKeyHtml();
     }finally{
       rwBusy = false; if(btn && btn.isConnected) btn.disabled = false;
     }
@@ -5200,7 +5291,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
       try{
         // a little randomness on every regenerate, so asking again gives fresh wording instead of the same answer back
         const temperature = regenerating ? Math.min(1, .55 + Math.random()*.35) : .5;
-        const g = aiClean(await aiCall(aiPrompt(job, request), temperature));
+        const g = aiClean(await aiCallCached(aiPrompt(job, request), temperature, regenerating));
         if(seq !== aiRunSeq) return;   // a newer click came in while this one was still in flight — drop the stale result
         aiCachePut(cacheKey, g);
         aiLast = g; $('aiOut').innerHTML = '';
@@ -5210,6 +5301,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
       }catch(err){
         if(seq !== aiRunSeq) return;
         $('aiOut').innerHTML = ''; showErr(err);
+        if(err && err.kind === 'limit') $('aiOut').insertAdjacentHTML('beforeend', aiOwnKeyHtml());
       }finally{ stopProgress(); if(seq===aiRunSeq){ ['aiSuggest','aiAuto','aiAsk'].forEach(i=>{ const el = $(i); if(el) el.disabled = false; }); } }
     }
     $('aiSuggest').addEventListener('click', ()=>run(false));
@@ -5220,6 +5312,29 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
       run(false, r);
     });
     document.querySelectorAll('[data-ai-ex]').forEach(b=> b.addEventListener('click', ()=>{ $('aiRequest').value = b.dataset.aiEx; $('aiRequest').focus(); }));
+    $('aiKeywords').addEventListener('click', ()=>{
+      let jd = ''; try{ jd = localStorage.getItem('resumate_jd') || ''; }catch(e){}
+      const job = ($('aiJob').value || '').trim() || jd.trim();
+      if(!job){ showToast('Paste the job description first'); return; }
+      const list = missingKeywords(job);
+      $('aiOut').innerHTML = ''; status.className = 'ai-status';
+      if(!list.length){ status.textContent = 'Your resume already uses the main words in this job ad.'; return; }
+      status.textContent = 'Tick only the skills you really have. Nothing is added until you tap Add.';
+      const d = document.createElement('div'); d.className = 'ai-sug';
+      d.innerHTML = `<h5><span>Words from the job ad not in your resume</span><button class="ai-apply" id="kwAdd">Add ticked</button></h5>
+        <div>${list.map(w=>`<label class="ai-pick" style="display:inline-flex;margin:4px 10px 4px 0"><input type="checkbox" value="${aiEsc(w)}"> <span>${aiEsc(w)}</span></label>`).join('')}</div>
+        <p class="ai-hint">Found on this phone. No AI and no run used.</p>`;
+      $('aiOut').appendChild(d);
+      d.querySelector('#kwAdd').addEventListener('click', ()=>{
+        const picked = [...d.querySelectorAll('input:checked')].map(x=> x.value);
+        if(!picked.length){ showToast('Tick at least one'); return; }
+        aiSnapshot();
+        const cur = resumeData.skills.trim().replace(/,\s*$/, ''), have = cur.split(',').map(x=> x.trim().toLowerCase());
+        const add = picked.filter(w=> !have.includes(w.toLowerCase())).map(w=> w.charAt(0).toUpperCase() + w.slice(1));
+        if(add.length) resumeData.skills = cur ? cur + ', ' + add.join(', ') : add.join(', ');
+        aiRefresh(); showToast('Skills added ✓');
+      });
+    });
     $('aiUndo').addEventListener('click', ()=>{
       if(!aiUndoSnap) return; Object.assign(resumeData, JSON.parse(JSON.stringify(aiUndoSnap))); aiUndoSnap = null; $('aiUndo').disabled = true;
       aiRefresh(); showToast('AI change undone ✓'); $('aiOut').innerHTML=''; status.textContent='';
