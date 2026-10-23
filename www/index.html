@@ -687,7 +687,7 @@
   .field-sec-lab{ display:flex; align-items:center; gap:7px; font-size:11px !important; }
   .field-sec-lab::before{ content:""; width:6px; height:6px; border-radius:50%; background:var(--gold); }
   .finput, .ftextarea{ height:auto; min-height:40px; border-radius:11px !important; background:var(--cream) !important; border:1px solid var(--line-strong) !important; padding:10px 12px !important; font-size:14px !important; }
-  .finput:focus, .ftextarea:focus{ border-color:var(--maroon) !important; box-shadow:0 0 0 3px color-mix(in srgb, var(--maroon) 14%, transparent) !important; background:#fff !important; }
+  .finput:focus, .ftextarea:focus{ border-color:var(--maroon) !important; box-shadow:0 0 0 3px color-mix(in srgb, var(--maroon) 14%, transparent) !important; }
   .step-nav{ position:sticky; bottom:calc(96px + env(safe-area-inset-bottom,0px)); z-index:5; padding:12px 0 2px; margin-top:8px; background:linear-gradient(to bottom, transparent, color-mix(in srgb, var(--cream) 94%, transparent) 40%); }
   .step-nav .btn{ border-radius:14px; font-weight:700; }
   .step-nav .btn-primary{ background:linear-gradient(160deg, var(--maroon-ink), var(--maroon-deep)) !important; color:var(--on-brand) !important; box-shadow:0 12px 22px -12px color-mix(in srgb, var(--maroon-deep) 70%, transparent), inset 0 1px 0 rgba(255,255,255,.14); position:relative; overflow:hidden; }
@@ -1177,7 +1177,7 @@
     outline:none; transition:border-color .18s ease, box-shadow .18s ease; margin-bottom:8px;
   }
   .finput:last-child, .ftextarea:last-child{ margin-bottom:0; }
-  .finput:focus, .ftextarea:focus{ border-color:var(--maroon); box-shadow:0 0 0 3px color-mix(in srgb, var(--maroon) 12%, transparent); background:#fff; }
+  .finput:focus, .ftextarea:focus{ border-color:var(--maroon); box-shadow:0 0 0 3px color-mix(in srgb, var(--maroon) 12%, transparent); }
   .ftextarea{ resize:vertical; min-height:52px; line-height:1.5; font-family:inherit; }
   .field-sec-lab{ font-size:10.5px; font-weight:700; letter-spacing:.05em; color:var(--maroon-deep); margin:4px 0 6px; text-transform:uppercase; }
 
@@ -1310,7 +1310,7 @@
   .q-body h2{ font-family:var(--font-serif); font-size:25px; font-weight:650; color:var(--ink); margin:0 0 8px; line-height:1.25; }
   .q-sub{ font-size:14px; color:var(--ink-soft); line-height:1.5; margin:0 0 20px; }
   .q-opts{ display:flex; flex-direction:column; gap:10px; }
-  .q-opt{ display:flex; align-items:center; gap:12px; text-align:left; width:100%; background:#fff; border:1.5px solid var(--line-strong); border-radius:16px; padding:14px 16px; font-family:var(--font-sans); font-size:14.5px; font-weight:600; color:var(--ink); cursor:pointer; transition:border-color .2s, background .2s, transform .1s; }
+  .q-opt{ display:flex; align-items:center; gap:12px; text-align:left; width:100%; background:var(--paper); border:1.5px solid var(--line-strong); border-radius:16px; padding:14px 16px; font-family:var(--font-sans); font-size:14.5px; font-weight:600; color:var(--ink); cursor:pointer; transition:border-color .2s, background .2s, transform .1s; }
   .q-opt:active{ transform:scale(.99); }
   .q-opt .q-emoji{ font-size:20px; line-height:1; }
   .q-opt .q-radio{ margin-left:auto; width:20px; height:20px; border-radius:50%; border:2px solid var(--line-strong); flex:none; transition:all .2s; }
@@ -1322,7 +1322,7 @@
   .q-cta:not(:disabled):active{ transform:scale(.98); }
   .q-hint{ font-size:12px; color:var(--ink-soft); }
   .q-step[hidden]{ display:none; }
-  .q-input{ width:100%; background:#fff; border:1.5px solid var(--line-strong); border-radius:16px; padding:15px 16px; font-family:var(--font-sans); font-size:16px; font-weight:600; color:var(--ink); outline:none; transition:border-color .2s; }
+  .q-input{ width:100%; background:var(--paper); border:1.5px solid var(--line-strong); border-radius:16px; padding:15px 16px; font-family:var(--font-sans); font-size:16px; font-weight:600; color:var(--ink); outline:none; transition:border-color .2s; }
   .q-input:focus{ border-color:var(--maroon); }
 
   /* ---------- Splash: animated logo shown on every app open, then hands off to Welcome (first run) or straight into the app ---------- */
@@ -4276,8 +4276,11 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   (function(){
     const seg = document.getElementById('themeSeg'), root = document.documentElement, flash = document.getElementById('themeFlash');
     const meta = document.querySelector('meta[name="theme-color"]');
+    let themeSeq = 0;   // the newest choice wins: an animated switch that finishes late must not undo a newer one
     function apply(name, animate, ev){
+      const seq = ++themeSeq;
       const swap = ()=>{
+        if(seq !== themeSeq) return;
         if(name === 'golden') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', 'branchdesk');
         if(name === 'midnight') root.setAttribute('data-mode', 'dark'); else root.removeAttribute('data-mode');
         seg.querySelectorAll('.th-opt').forEach(b=> b.setAttribute('aria-checked', b.dataset.th === name));
