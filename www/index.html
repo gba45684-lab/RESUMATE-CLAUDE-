@@ -1897,6 +1897,19 @@
   .ai-bl{ list-style:none; padding:0; margin:0; } .ai-bl li{ margin:0 0 9px; }
   .ai-pick{ display:flex; gap:9px; align-items:flex-start; cursor:pointer; } .ai-pick input{ width:20px; height:20px; margin:1px 0 0; flex:none; accent-color:var(--maroon); }
   .ai-same{ font-size:11px; color:var(--ink-soft); font-style:normal; margin-left:4px; } .ai-hint{ margin:6px 0 0; font-size:11.5px; color:var(--ink-soft); }
+  .ai-hub{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:12px 0 4px; }
+  .ai-tile{ text-align:left; border:1px solid var(--line); background:var(--paper); color:inherit; border-radius:14px; padding:11px 12px; cursor:pointer; display:flex; flex-direction:column; gap:3px; min-height:44px; font:inherit; }
+  .ai-tile b{ font-size:13px; } .ai-tile span{ font-size:11.5px; color:var(--ink-soft); }
+  .ai-tile:hover{ border-color:var(--maroon); }
+  .ai-sec{ border-top:1px solid var(--line); margin-top:14px; padding-top:12px; }
+  .ai-sec h4{ margin:0 0 4px; font-size:14px; }
+  .ai-tag{ font-size:10.5px; font-weight:600; color:var(--ink-soft); border:1px solid var(--line); border-radius:999px; padding:1px 7px; margin-left:4px; vertical-align:middle; }
+  .ai-details{ margin-top:10px; } .ai-details summary{ cursor:pointer; font-size:13px; font-weight:600; min-height:44px; display:flex; align-items:center; }
+  .ai-pre{ white-space:pre-wrap; word-break:break-word; font-size:11px; max-height:220px; overflow:auto; background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:10px; }
+  .ai-ok{ color:var(--maroon); font-weight:700; margin-right:4px; } .ai-no{ color:var(--ink-soft); font-weight:700; margin-right:4px; }
+  .ai-hub button:focus-visible, .ai-sec button:focus-visible, .ai-sec summary:focus-visible, .ai-pre:focus-visible{ outline:2px solid var(--maroon); outline-offset:2px; }
+  @media (max-width: 380px){ .ai-hub{ grid-template-columns:1fr; } }
+  @media (prefers-reduced-motion: reduce){ .ai-tile{ transition:none; } }
   .ai-skel{ display:flex; flex-direction:column; gap:8px; padding:14px; } .ai-skel i{ display:block; height:11px; border-radius:6px; background:var(--line-strong); animation:skelPulse 1.2s ease-in-out infinite; } .ai-skel i:nth-child(2){ width:82%; } .ai-skel i:nth-child(3){ width:60%; }
   html.lite .ai-skel i{ animation:none; }
   .ai-err-actions{ display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 2px; } .ai-btn2.sm{ min-height:38px; padding:0 14px; font-size:12.5px; }
@@ -4601,22 +4614,72 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   try{ localStorage.removeItem(AI_KEY); }catch(e){}   // clears any key saved by an older version
   let aiUndoSnap = null, aiLast = null;
   const aiEsc = t => String(t==null?'':t).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  // The AI Assistant is one hub. Sections follow the order people use them:
+  // 0 usage and privacy, 1 check (no AI), 2 tailor to a job (no AI for keywords), 3 ask for a change, 4 improve with AI, then recent changes.
+  const AI_EXAMPLES = ['Make the summary shorter','Stronger action verbs in every bullet','Add a leadership point to my latest job','Make the skills list more specific'];
   function aiPanelHtml(){
-    const models = [['auto','Auto (recommended)'],['gemini-3.5-flash-lite','Gemini 3.5 Flash-Lite (fastest)'],['gemini-3.8-flash','Gemini 3.8 Flash (smartest)']];
-    return `<h3>AI Assistant · Gemini</h3><p class="lead">Suggests better wording for the resume you have open, or improves it in one tap.</p>
-      <div class="ai-note" style="margin-top:0"><b>Free AI is included</b> — no key needed. ${aiEsc(aiQuotaLine())}.</div>
-      <div class="ai-note">Saved on this device only. <b>What is sent</b> when you run a suggestion: your job titles, companies, summary, bullets, skills and education — <b>not</b> your name, email, phone, links or photo (those are masked). Please review every suggestion before you use it.</div>
-      <label class="flab" style="display:block">Target job (optional)</label>
-      <textarea class="ftextarea" id="aiJob" rows="3" placeholder="Paste the job description to tailor wording and skills"></textarea>
-      <button type="button" class="tl-link" id="aiJobFromMatch" hidden style="text-align:left;padding-left:0">Use the job ad from Job match</button>
-      <label class="flab" style="display:block" for="aiRequest">Tell the AI what to change</label>
-      <textarea class="ftextarea" id="aiRequest" rows="2" maxlength="300" placeholder="e.g. make the summary shorter and more senior"></textarea>
-      <div class="rw-tones" id="aiExamples">${['Make the summary shorter','Stronger action verbs in every bullet','Add a leadership point to my latest job','Make the skills list more specific'].map(x=>`<button type="button" class="ai-btn2 sm" data-ai-ex="${aiEsc(x)}">${aiEsc(x)}</button>`).join('')}</div>
-      <div class="ai-row"><button class="btn btn-primary" id="aiAsk">Make this change</button><button class="ai-btn2" id="aiKeywords">Find missing keywords (no AI)</button></div>
-      <div class="ai-status" id="aiStatus"></div>
-      <div class="ai-row"><button class="btn btn-primary" id="aiSuggest">${aiLast ? 'Regenerate suggestions' : 'Get suggestions'}</button><button class="ai-btn2" id="aiAuto">Auto-improve</button></div>
+    return `<h3>AI Assistant</h3><p class="lead">Check, tailor and improve your resume. Nothing changes until you tap Apply.</p>
+      <nav class="ai-hub" aria-label="AI Assistant sections">
+        <button type="button" class="ai-tile" data-ai-go="aiSecCheck"><b>1 · Check my resume</b><span>Score and weak bullets · no AI</span></button>
+        <button type="button" class="ai-tile" data-ai-go="aiSecJob"><b>2 · Tailor to a job</b><span>Keyword match · no AI</span></button>
+        <button type="button" class="ai-tile" data-ai-go="aiSecChange"><b>3 · Ask for a change</b><span>Describe it in plain words</span></button>
+        <button type="button" class="ai-tile" data-ai-go="aiSecImprove"><b>4 · Improve with AI</b><span>Suggestions you review</span></button>
+      </nav>
+      <section class="ai-sec" id="aiSecUsage" aria-labelledby="aiUsageTitle">
+        <h4 id="aiUsageTitle">Free AI and privacy</h4>
+        <div class="ai-note" style="margin-top:0"><b>Free AI is included</b> · ${aiEsc(aiQuotaLine())}. ${aiSavedCount()} saved answers on this phone.</div>
+        <div class="ai-note">Saved on this device only. <b>What is sent</b> when you run an AI action: your job titles, companies, summary, bullets, skills and education — <b>not</b> your name, email, phone, links or photo (those are masked). Review every suggestion before you use it.</div>
+        <p class="ai-hint">${ownKey() ? 'Your own key is saved. It is used only when today\'s shared runs run out.' : 'Your own free key can be added once today\'s shared runs run out.'}</p>
+        <div class="ai-row"><button class="ai-btn2" id="aiOwnBtn">${ownKey() ? 'Change my own key' : 'Add my own key'}</button></div>
+        <div id="aiOwnSlot"></div>
+        <details class="ai-details"><summary>See exactly what is sent</summary>
+          <p class="ai-hint">Contact details are masked. This text leaves the phone only when you tap an AI button. Local checks never send anything.</p>
+          <pre class="ai-pre" tabindex="0">${aiEsc(JSON.stringify(aiResumeSnapshot(), null, 2))}</pre>
+        </details>
+      </section>
+      <section class="ai-sec" id="aiSecCheck" aria-labelledby="aiCheckTitle">
+        <h4 id="aiCheckTitle">1 · Check my resume <span class="ai-tag">no AI</span></h4>
+        <div class="ai-row"><button class="ai-btn2" id="aiHealthBtn">Run health check</button></div>
+        <div id="aiHealthOut" aria-live="polite"></div>
+      </section>
+      <section class="ai-sec" id="aiSecJob" aria-labelledby="aiJobTitle">
+        <h4 id="aiJobTitle">2 · Tailor to a job</h4>
+        <label class="flab" style="display:block" for="aiJob">Target job (optional)</label>
+        <textarea class="ftextarea" id="aiJob" rows="3" placeholder="Paste the job description to tailor wording and skills"></textarea>
+        <button type="button" class="tl-link" id="aiJobFromMatch" hidden style="text-align:left;padding-left:0">Use the job ad from Job match</button>
+        <div class="ai-row"><button class="ai-btn2" id="aiKeywords">Find missing keywords</button></div>
+        <p class="ai-hint" id="aiMatch" aria-live="polite"></p>
+      </section>
+      <section class="ai-sec" id="aiSecChange" aria-labelledby="aiChangeTitle">
+        <h4 id="aiChangeTitle">3 · Ask for a change</h4>
+        <label class="flab" style="display:block" for="aiRequest">Tell the AI what to change</label>
+        <textarea class="ftextarea" id="aiRequest" rows="2" maxlength="300" placeholder="e.g. make the summary shorter and more senior"></textarea>
+        <div class="rw-tones" id="aiExamples">${AI_EXAMPLES.map(x=>`<button type="button" class="ai-btn2 sm" data-ai-ex="${aiEsc(x)}">${aiEsc(x)}</button>`).join('')}</div>
+        <div class="ai-row"><button class="btn btn-primary" id="aiAsk">Make this change</button></div>
+      </section>
+      <section class="ai-sec" id="aiSecImprove" aria-labelledby="aiImproveTitle">
+        <h4 id="aiImproveTitle">4 · Improve with AI</h4>
+        <div class="ai-row"><button class="btn btn-primary" id="aiSuggest">${aiLast ? 'Regenerate suggestions' : 'Get suggestions'}</button><button class="ai-btn2" id="aiAuto">Auto-improve</button></div>
+      </section>
+      <div class="ai-status" id="aiStatus" aria-live="polite"></div>
       <div id="aiOut"></div>
-      <div class="ai-row"><button class="ai-btn2" id="aiUndo" ${aiUndoSnap?'':'disabled'}>Undo last AI change</button></div>`;
+      <section class="ai-sec" id="aiSecHistory" aria-labelledby="aiHistTitle">
+        <h4 id="aiHistTitle">Recent changes</h4>
+        <div id="aiHistList">${aiHistHtml()}</div>
+        <div class="ai-row"><button class="ai-btn2" id="aiUndo" ${aiUndoSnap?'':'disabled'}>Undo last AI change</button></div>
+      </section>`;
+  }
+  function aiSavedCount(){ try{ return Object.keys(aiCacheLoad().items || {}).length; }catch(e){ return 0; } }
+  // ---- Recent changes: each applied change keeps a copy of the resume (last 5 kept on this phone) ----
+  const AI_HIST_KEY = 'resumate_ai_history';
+  function aiHistLoad(){ try{ const h = JSON.parse(localStorage.getItem(AI_HIST_KEY) || '[]'); return Array.isArray(h) ? h : []; }catch(e){ return []; } }
+  function aiHistPush(label){
+    try{ const h = aiHistLoad(); h.unshift({ t:Date.now(), label, d:JSON.stringify(resumeData) }); localStorage.setItem(AI_HIST_KEY, JSON.stringify(h.slice(0, 5))); }catch(e){}
+  }
+  function aiHistHtml(){
+    const h = aiHistLoad();
+    if(!h.length) return '<p class="ai-hint">Changes you apply show up here, so you can go back to any of them.</p>';
+    return `<ul class="ai-bl">${h.map((x, i)=>`<li>${aiEsc(x.label)} · ${new Date(x.t).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' })} <button class="ai-btn2 sm" data-hist="${i}">Restore</button></li>`).join('')}</ul>`;
   }
   function aiSaveCfg(){ /* no user settings any more: the Worker does the work */ }
   function aiMarkVerified(workingModel){
@@ -4860,7 +4923,36 @@ ${JSON.stringify(r)}`;
     return `${d.added} ${w(d.added)} added, ${d.removed} ${w(d.removed)} removed`;
   }
   const aiWarnHtml = nums => nums.length ? ` <span class="ai-warn" title="This number is not in your original text — make sure it is true before you use it.">⚠ check ${aiEsc(nums.join(', '))}</span>` : '';
-  function aiSnapshot(){ aiUndoSnap = JSON.parse(JSON.stringify(resumeData)); const u=document.getElementById('aiUndo'); if(u) u.disabled=false; }
+  function aiSnapshot(label){ aiUndoSnap = JSON.parse(JSON.stringify(resumeData)); aiHistPush(label || 'Changed the resume'); const u=document.getElementById('aiUndo'); if(u) u.disabled=false; }
+  // ---- Health check (no AI): simple, visible rules and a score. Only the bullet fixes change text, and only after a tap. ----
+  const aiWordCount = s => String(s || '').trim().split(/\s+/).filter(Boolean).length;
+  const aiWeak = b => QF_VERBS.some(([re])=> new RegExp(re.source, 'i').test(b)) || new RegExp(QF_FILLER.source, 'i').test(b);
+  function aiHealthHtml(){
+    const bl = resumeData.experience.flatMap((e, i)=> e.bullets.map((b, k)=> ({ i, k, b:String(b || '').trim() }))).filter(x=> x.b);
+    const weak = bl.filter(x=> aiWeak(x.b)), long = bl.filter(x=> aiWordCount(x.b) > 30);
+    const withNum = bl.filter(x=> /\d/.test(x.b)).length, sumW = aiWordCount(resumeData.summary);
+    const checks = [
+      ['Summary of 20 to 80 words', sumW >= 20 && sumW <= 80, sumW ? `Yours has ${sumW} words.` : 'Add a short summary.'],
+      ['At least 6 skills', resumeData.skills.split(',').map(x=> x.trim()).filter(Boolean).length >= 6, 'Add the tools and methods you really use.'],
+      ['Every job has dates', resumeData.experience.length > 0 && resumeData.experience.every(e=> String(e.dates || '').trim()), 'Add dates to each role.'],
+      ['Every job has two or more bullets', resumeData.experience.length > 0 && resumeData.experience.every(e=> e.bullets.filter(b=> String(b || '').trim()).length >= 2), 'Two or more achievements per role.'],
+      ['Numbers in at least half of the bullets', bl.length > 0 && withNum * 2 >= bl.length, 'Add a number: a percentage, count, money or time.'],
+      ['No weak verbs or filler words', weak.length === 0, weak.length ? `${weak.length} bullet(s) can be stronger. Use Quick fix below.` : 'Direct and strong.'],
+      ['Bullets under 30 words', long.length === 0, long.length ? `${long.length} bullet(s) are long. Shorten them.` : 'Easy to scan.']
+    ];
+    const score = Math.round(checks.filter(c=> c[1]).length / checks.length * 100);
+    const fixable = weak.filter(x=> localQuickFix(x.b) !== x.b);
+    return `<div class="ai-sug"><h5><span>Score ${score}/100</span></h5>
+      <ul class="ai-bl">${checks.map(([t, ok, hint])=> `<li><span class="${ok ? 'ai-ok' : 'ai-no'}" aria-hidden="true">${ok ? '✓' : '⚠'}</span> <b>${aiEsc(t)}</b><div class="ai-hint">${aiEsc(hint)}</div></li>`).join('')}</ul>
+      ${fixable.length ? `<p class="ai-hint">Weak bullets, with a one-tap Quick fix (no AI):</p><ul class="ai-bl">${fixable.map(x=> `<li>${aiEsc(x.b.length > 90 ? x.b.slice(0, 90) + '…' : x.b)} <button class="ai-btn2 sm" data-qf-i="${x.i}" data-qf-k="${x.k}">Quick fix</button></li>`).join('')}</ul>` : ''}</div>`;
+  }
+  // ---- Live keyword match against the job ad (no AI) ----
+  function aiJobMatch(job){
+    const resume = textOf(resumeData).toLowerCase(), count = new Map();
+    (String(job || '').toLowerCase().match(/[a-z][a-z+#.\-]{2,}/g) || []).forEach(w=>{ w = w.replace(/\.$/, ''); if(w.length < 3 || KW_STOP.has(w)) return; count.set(w, (count.get(w) || 0) + 1); });
+    const top = [...count.entries()].sort((a, b)=> b[1] - a[1]).slice(0, 15).map(x=> x[0]);
+    return top.length ? Math.round(top.filter(w=> resume.includes(w)).length / top.length * 100) : null;
+  }
   function aiRefresh(){ renderContentTab(); syncAll(); }
   const aiApply = {
     summary(g){ resumeData.summary = g.summary; },
@@ -5338,6 +5430,37 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
     $('aiUndo').addEventListener('click', ()=>{
       if(!aiUndoSnap) return; Object.assign(resumeData, JSON.parse(JSON.stringify(aiUndoSnap))); aiUndoSnap = null; $('aiUndo').disabled = true;
       aiRefresh(); showToast('AI change undone ✓'); $('aiOut').innerHTML=''; status.textContent='';
+    });
+    // hub tiles jump to their section; focus moves to its first control
+    const reduceMotion = (()=>{ try{ return matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){ return false; } })();
+    document.querySelectorAll('[data-ai-go]').forEach(b=> b.addEventListener('click', ()=>{
+      const s = document.getElementById(b.dataset.aiGo); if(!s) return;
+      s.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block:'start' });
+      const first = s.querySelector('textarea,input,button'); if(first) first.focus({ preventScroll:true });
+    }));
+    $('aiOwnBtn').addEventListener('click', ()=>{ $('aiOwnSlot').innerHTML = aiOwnKeyHtml(); });
+    // health check and one-tap quick fixes
+    const runHealth = ()=>{ $('aiHealthOut').innerHTML = aiHealthHtml(); };
+    $('aiHealthBtn').addEventListener('click', runHealth);
+    $('aiHealthOut').addEventListener('click', e=>{
+      const b = e.target.closest && e.target.closest('[data-qf-i]'); if(!b) return;
+      const i = +b.dataset.qfI, k = +b.dataset.qfK, cur = resumeData.experience[i] && resumeData.experience[i].bullets[k];
+      if(typeof cur !== 'string') return;
+      const next = localQuickFix(cur); if(next === cur) return;
+      aiSnapshot('Quick fix'); resumeData.experience[i].bullets[k] = next; aiRefresh(); runHealth(); showToast('Quick fix applied ✓');
+    });
+    // live job match
+    const jobMatchUpdate = ()=>{ const pct = aiJobMatch($('aiJob').value || ''); $('aiMatch').textContent = pct == null ? '' : `Keyword match: ${pct}% of the top job words already appear in your resume.`; };
+    $('aiJob').addEventListener('input', jobMatchUpdate);
+    $('aiJobFromMatch').addEventListener('click', ()=> setTimeout(jobMatchUpdate, 0));
+    jobMatchUpdate();
+    // recent changes: restore an earlier copy (the current one is kept as a recent change first)
+    $('aiHistList').addEventListener('click', e=>{
+      const b = e.target.closest && e.target.closest('[data-hist]'); if(!b) return;
+      const x = aiHistLoad()[+b.dataset.hist]; if(!x) return;
+      let copy = null; try{ copy = JSON.parse(x.d); }catch(err){ showToast('Could not restore that copy'); return; }
+      aiSnapshot('Before restoring'); Object.assign(resumeData, copy); aiRefresh();
+      $('aiHistList').innerHTML = aiHistHtml(); showToast('Restored ✓');
     });
   }
 
