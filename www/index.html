@@ -1910,6 +1910,23 @@
   .ai-hub button:focus-visible, .ai-sec button:focus-visible, .ai-sec summary:focus-visible, .ai-pre:focus-visible{ outline:2px solid var(--maroon); outline-offset:2px; }
   @media (max-width: 380px){ .ai-hub{ grid-template-columns:1fr; } }
   @media (prefers-reduced-motion: reduce){ .ai-tile{ transition:none; } }
+  .pf-cta{ width:100%; margin-top:12px; min-height:44px; }
+  .pf-health{ margin-top:6px; min-height:44px; font-size:12.5px; }
+  .pf-usage{ margin-top:14px; }
+  .pf-usage-card{ border:1px solid var(--line); background:var(--paper); border-radius:16px; padding:12px 14px; }
+  .pf-u-row{ display:flex; justify-content:space-between; align-items:center; gap:8px; min-height:44px; }
+  .pf-groups{ display:flex; flex-direction:column; gap:18px; margin-top:16px; }
+  .pf-gt{ margin:0 0 6px 4px; font-size:11.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft); font-weight:700; }
+  .prow-s{ display:block; font-size:11.5px; font-weight:500; color:var(--ink-soft); margin-top:2px; }
+  .muted{ color:var(--ink-soft); font-style:italic; }
+  .prow:focus-visible, .pf-usage button:focus-visible, .ap-opt:focus-visible, .danger-zone button:focus-visible, .pf-cta:focus-visible, .pf-health:focus-visible{ outline:2px solid var(--maroon); outline-offset:2px; }
+  .ap-grid{ display:grid; gap:8px; margin:10px 0; }
+  .ap-opt{ text-align:left; border:1px solid var(--line); background:var(--paper); color:inherit; font:inherit; border-radius:14px; padding:12px 14px; min-height:44px; cursor:pointer; display:flex; flex-direction:column; gap:2px; }
+  .ap-opt[aria-checked="true"]{ border-color:var(--maroon); box-shadow:inset 0 0 0 1px var(--maroon); }
+  .ap-opt small{ color:var(--ink-soft); font-size:11.5px; }
+  .danger-zone{ margin-top:18px; border:1px solid var(--line); border-radius:14px; padding:12px 14px; }
+  .danger-btn{ width:100%; margin-top:8px; border:1px solid #b3261e; color:#b3261e; background:transparent; }
+  .danger-solid{ width:100%; margin-top:8px; background:#b3261e; color:#fff; border:0; }
   .ai-skel{ display:flex; flex-direction:column; gap:8px; padding:14px; } .ai-skel i{ display:block; height:11px; border-radius:6px; background:var(--line-strong); animation:skelPulse 1.2s ease-in-out infinite; } .ai-skel i:nth-child(2){ width:82%; } .ai-skel i:nth-child(3){ width:60%; }
   html.lite .ai-skel i{ animation:none; }
   .ai-err-actions{ display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 2px; } .ai-btn2.sm{ min-height:38px; padding:0 14px; font-size:12.5px; }
@@ -2247,10 +2264,12 @@
                 <div class="hm-prog" role="progressbar" aria-label="Resume strength" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="pfProg"><i></i></div>
                 <small id="pfHint"><svg class="lu" style="width:13px;height:13px" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z"/><circle cx="12" cy="13" r="3"/></svg> Tap your avatar to add a photo</small>
               </div>
+              <button class="btn btn-primary pf-cta" id="pfPrimary" type="button">Continue my resume</button>
+              <button class="tl-link pf-health" id="pfHealth" type="button">See resume health check</button>
             </div>
 
-            <div class="sect-head hm-bf" style="--d:280ms"><h3>Settings &amp; help</h3></div>
-            <div class="plist hm-bf" style="--d:320ms" id="profileList"></div>
+            <div class="pf-usage hm-bf" style="--d:260ms" id="pfUsage" aria-live="polite"></div>
+            <div class="pf-groups hm-bf" style="--d:320ms" id="profileList"></div>
           </div>
         </section>
 
@@ -3703,16 +3722,26 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   }
 
   // ---------- Profile list — real content per row ----------
-  const profileRows = [
-    {icon:'user', t:'Account'},
-    {icon:'layers', t:'My resumes', tool:'resumes'},
-    {icon:'star', t:'Subscription'},
-    {icon:'download', t:'My Downloads'},
-    {icon:'help', t:'Help & Support'},
-    {icon:'help', t:'About ResuMate'},
-    {icon:'ai', t:'AI Assistant'},
-    {icon:'settings', t:'Settings'},
-    {icon:'share', t:'Share ResuMate'},
+  // Profile rows, grouped in the order people use them. A row can show a live one-line subtitle (sub).
+  const profileGroups = [
+    { title:'Account', rows:[
+      {icon:'user', t:'Account', sub:()=> resumeData.name === DEFAULT_NAME ? 'Add your name and email' : resumeData.name} ] },
+    { title:'Your resumes', rows:[
+      {icon:'layers', t:'My resumes', tool:'resumes'},
+      {icon:'download', t:'My Downloads'} ] },
+    { title:'Plan & AI', rows:[
+      {icon:'star', t:'Subscription', sub:()=> (window.__billing && window.__billing.upgraded()) ? 'Premium' : 'Free plan'},
+      {icon:'ai', t:'AI Assistant', sub:()=> aiQuotaLine()} ] },
+    { title:'Data & privacy', rows:[
+      {icon:'download', t:'Data & backup', sub:()=> lastBackupLabel()} ] },
+    { title:'App', rows:[
+      {icon:'settings', t:'Appearance', sub:()=> themeLabel()},
+      {icon:'settings', t:'Settings'},
+      {icon:'help', t:'App updates', sub:()=> 'Version ' + APP_VERSION},
+      {icon:'help', t:'About ResuMate'} ] },
+    { title:'Help', rows:[
+      {icon:'help', t:'Help & Support'},
+      {icon:'share', t:'Share ResuMate'} ] },
   ];
   const icons = {
     layers:'<path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>',
@@ -3792,6 +3821,26 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       <div class="ai-note" style="margin-top:10px">When on, ResuMate reopens on the template and page size you used last (currently ${getTemplateByCode(selectedTemplateCode).name}, ${PAGE_SIZES[pageSize].label}).</div>
       <button class="ai-btn2" id="clearAppDataBtn" style="width:100%;margin-top:14px">Clear data saved on this device</button>
       <div class="ai-note">Removes saved AI results, profile photo and the remembered template/page size from this device. Your resume text is not affected.</div>`,
+    'Appearance': ()=>{ const cur = themeLabel().toLowerCase(); return `
+      <h3>Appearance</h3><p class="lead">Choose how ResuMate looks on this phone.</p>
+      <div class="ap-grid" role="radiogroup" aria-label="Theme">
+        ${[['golden','Golden','Warm paper, classic'],['branchdesk','Branchdesk','Crisp and modern'],['midnight','Midnight','Dark, easy on the eyes']].map(([k,l,d])=>`<button type="button" class="ap-opt" role="radio" aria-checked="${cur === k}" data-ap="${k}"><b>${l}</b><small>${d}</small></button>`).join('')}
+      </div><p class="empty-hint">Applies at once and is remembered on this phone.</p>`; },
+    'App updates': ()=>`
+      <h3>App updates</h3><p class="lead">You are on version ${APP_VERSION}.</p>
+      <div class="perk"><div class="pic"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></div><div><div class="pt">Updates arrive automatically</div><div class="ps">When a new version is ready, you get a message with a sound and a vibration.</div></div></div>
+      <button class="ai-btn2" id="auWhats" type="button" style="width:100%">See what's new</button>`,
+    'Data & backup': ()=>`
+      <h3>Data &amp; backup</h3><p class="lead">Your resumes and settings are kept on this phone.</p>
+      <div class="ai-note" style="margin-top:0">Stored on this phone: about ${Math.max(1, Math.round(storedBytes() / 1024))} KB</div>
+      <p class="empty-hint">${aiEsc(lastBackupLabel())}</p>
+      <button class="btn btn-primary sheet-cta" id="dbExport" type="button">Save backup file (.json)</button>
+      <button class="ai-btn2" id="dbShare" type="button" style="width:100%;margin-top:8px">Back up to Drive / share…</button>
+      <div class="danger-zone"><b>Delete all data</b>
+        <p class="ai-hint">Removes every resume, download, setting and saved AI answer from this phone. This cannot be undone, so back up first.</p>
+        <button class="ai-btn2 danger-btn" id="dbDelete" type="button">Delete all data…</button>
+        <div id="dbConfirm" hidden><button class="btn danger-solid" id="dbDeleteYes" type="button">Yes, delete everything</button></div>
+      </div>`,
     'Share ResuMate': ()=>`
       <h3>Share ResuMate</h3><p class="lead">Send the app to a friend.</p>
       <div class="plist" style="box-shadow:none; border:1px solid var(--line);">
@@ -3800,15 +3849,73 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         <div class="prow" data-share="Email"><div class="prow-t">Share via Email</div></div>
       </div>`,
   };
-  profileRows.forEach(r=>{
+  // ---- Profile helpers ----
+  const lastBackupLabel = ()=>{ try{ const t = +localStorage.getItem('resumate_last_backup'); return t ? 'Last backup ' + bdWhen(t) : 'Not backed up yet'; }catch(e){ return ''; } };
+  const themeLabel = ()=>{ try{ const t = localStorage.getItem('resumate_theme'); return t === 'midnight' ? 'Midnight' : t === 'branchdesk' ? 'Branchdesk' : 'Golden'; }catch(e){ return 'Golden'; } };
+  const storedBytes = ()=>{ let n = 0; try{ for(let i = 0; i < localStorage.length; i++){ const k = localStorage.key(i); if(k && k.startsWith('resumate_')) n += (localStorage.getItem(k) || '').length; } }catch(e){} return n; };
+  const subText = r => { try{ return r.sub ? String(r.sub()) : ''; }catch(e){ return ''; } };
+  const escP = s => String(s).replace(/[&<>"']/g, c=> ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);   // local escape: runs before aiEsc is defined
+  function openProfileRow(title){ const row = [...profileList.querySelectorAll('.prow')].find(x=> x.querySelector('.prow-t').textContent.startsWith(title)); if(row) row.click(); }
+  function pfPrimaryLabel(pct){
+    const b = document.getElementById('pfPrimary'); if(!b) return;
+    b.textContent = resumeData.name === DEFAULT_NAME ? 'Add your name' : pct < 100 ? 'Continue my resume' : 'Preview and download';
+  }
+  function pfUsageHtml(){
+    return `<div class="pf-usage-card"><div class="pf-u-row"><b>AI usage</b><button class="tl-link" type="button" data-pf-open="AI Assistant">Manage</button></div>
+      <p class="ai-hint">${aiEsc(aiQuotaLine())} · ${aiSavedCount()} saved answers on this phone</p>
+      <p class="ai-hint">${ownKey() ? 'Your own key is saved. It is used after the shared runs run out.' : 'Add your own free key once the shared runs run out.'}</p></div>`;
+  }
+  function pfWire(){
+    const pu = document.getElementById('pfUsage');
+    try{ pu.innerHTML = pfUsageHtml(); }catch(e){}
+    pu.addEventListener('click', e=>{ const b = e.target.closest && e.target.closest('[data-pf-open]'); if(b) openProfileRow(b.dataset.pfOpen); });
+    document.getElementById('pfPrimary').addEventListener('click', ()=>{
+      if(resumeData.name === DEFAULT_NAME){ openProfileRow('Account'); return; }
+      const pct = +document.getElementById('pfProg').getAttribute('aria-valuenow') || 0;
+      openEdit();
+      if(pct >= 100) setTimeout(()=>{ const p = document.querySelector('[data-seg=preview]'); if(p) p.click(); }, 80);
+    });
+    document.getElementById('pfHealth').addEventListener('click', ()=>{
+      aiOpen(); setTimeout(()=>{ const b = document.querySelector('[data-ai-go="aiSecCheck"]'); if(b) b.click(); }, 60);
+    });
+  }
+  function wireDataSheet(body){
+    body.querySelector('#dbExport').addEventListener('click', async ()=>{ await exportResumeData(); closeSheet2(); });
+    body.querySelector('#dbShare').addEventListener('click', async ()=>{ await shareBackup(); closeSheet2(); });
+    const del = body.querySelector('#dbDelete'), yes = body.querySelector('#dbDeleteYes'), box = body.querySelector('#dbConfirm');
+    del.addEventListener('click', ()=>{ box.hidden = false; del.hidden = true; yes.focus(); });
+    yes.addEventListener('click', ()=>{
+      try{ const ks = []; for(let i = 0; i < localStorage.length; i++){ const k = localStorage.key(i); if(k && k.startsWith('resumate_')) ks.push(k); } ks.forEach(k=> localStorage.removeItem(k)); }catch(e){}
+      showToast('All data deleted on this phone'); setTimeout(()=> location.reload(), 600);
+    });
+  }
+  function wireAppearance(body){
+    body.querySelectorAll('[data-ap]').forEach(b=> b.addEventListener('click', ()=>{
+      const real = document.querySelector(`.th-opt[data-th="${b.dataset.ap}"]`); if(real) real.click();
+      body.querySelectorAll('[data-ap]').forEach(x=> x.setAttribute('aria-checked', x === b ? 'true' : 'false'));
+    }));
+  }
+  // Groups first (titles and cards), then each row goes into its group
+  const groupLists = {};
+  profileGroups.forEach(g=>{
+    const sec = document.createElement('section'); sec.className = 'pf-group';
+    sec.innerHTML = `<h3 class="pf-gt">${g.title}</h3><div class="plist"></div>`;
+    const list = sec.querySelector('.plist'); profileList.appendChild(sec);
+    g.rows.forEach(r=> groupLists[r.t] = list);
+  });
+  profileGroups.flatMap(g=> g.rows).forEach(r=>{
     const row = document.createElement('div');
     row.className='prow';
-    row.innerHTML = `<div class="prow-ic"><svg class="ic" viewBox="0 0 24 24">${icons[r.icon]}</svg></div><div class="prow-t">${r.t}</div><div class="prow-chev"><svg class="ic" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>`;
+    const s = subText(r);
+    row.innerHTML = `<div class="prow-ic"><svg class="ic" viewBox="0 0 24 24">${icons[r.icon]}</svg></div><div class="prow-t">${escP(r.t)}${s ? `<span class="prow-s">${escP(s)}</span>` : ''}</div><div class="prow-chev"><svg class="ic" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>`;
     row.addEventListener('click', ()=>{
       if(r.tool){ toolOpen(r.tool); return; }
       openSheet2(profileContent[r.t]());
       if(r.t==='AI Assistant') wireAiPanel();
       if(r.t==='My Downloads') wireDownloads();
+      if(r.t==='Data & backup') wireDataSheet(sheet2Body);
+      if(r.t==='Appearance') wireAppearance(sheet2Body);
+      if(r.t==='App updates'){ const w = sheet2Body.querySelector('#auWhats'); if(w) w.addEventListener('click', ()=>{ openSheet2(whatsNewHtml()); const ok = sheet2Body.querySelector('#wnOk'); if(ok) ok.addEventListener('click', closeSheet2); }); }
       const diagBtn = sheet2Body.querySelector('#diagBtn'); if(diagBtn) diagBtn.addEventListener('click', copyDiagnostics);
       const body = sheet2Body;
       const saveBtn = body.querySelector('#acctSave');
@@ -3853,12 +3960,13 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       });
       body.querySelectorAll('[data-share]').forEach(row2=> row2.addEventListener('click', ()=>{ closeSheet2(); showToast(`${row2.dataset.share} ✓`); }));
     });
-    profileList.appendChild(row);
+    groupLists[r.t].appendChild(row);
   });
 
   // Radix-style keyboard access for the generated profile rows
   profileList.querySelectorAll('.prow').forEach(r=>{ r.setAttribute('role','button'); r.tabIndex = 0; });
   profileList.addEventListener('keydown', e=>{ if((e.key==='Enter'||e.key===' ') && e.target.classList.contains('prow')){ e.preventDefault(); e.target.click(); } });
+  pfWire();
   if(typeof hmStrength==='function') hmStrength();
 
   // ---------- Edit screen: segmented control ----------
@@ -4144,6 +4252,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       document.getElementById('pfStrength').textContent = pct + '%';
       const miss = !d.photo ? 'Tap your avatar to add a photo' : (d.name && d.name.trim() === DEFAULT_NAME) ? 'Add your name in Account' : (!(d.certifications||[]).length ? 'Add a certification' : 'Looking strong');
       document.getElementById('pfHint').lastChild.textContent = ' ' + miss;
+      pfPrimaryLabel(pct);
+      try{ const pu = document.getElementById('pfUsage'); if(pu) pu.innerHTML = pfUsageHtml(); }catch(e){}
     }
   }
   // one shared, frame-throttled pointer tracker for every spotlight (avoids a repaint per raw pointer event)
@@ -4371,7 +4481,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     const homeRName = document.getElementById('homeRName');
     if(homeRName) homeRName.textContent = resumeData.name;
     const profName = document.getElementById('profName');
-    if(profName) profName.textContent = resumeData.name;
+    if(profName){ const dn = resumeData.name === DEFAULT_NAME; profName.textContent = dn ? 'Add your name' : resumeData.name; profName.classList.toggle('muted', dn); }
     const profAvatar = document.getElementById('profAvatar');
     if(profAvatar){
       if(resumeData.photo){
@@ -4379,7 +4489,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         profAvatar.style.backgroundImage = `url('${resumeData.photo}')`;
         profAvatar.style.backgroundSize = 'cover'; profAvatar.style.backgroundPosition = 'center';
       } else {
-        profAvatar.textContent = initials(resumeData.name);
+        profAvatar.textContent = resumeData.name === DEFAULT_NAME ? '+' : initials(resumeData.name);
         profAvatar.style.backgroundImage = '';
       }
     }
