@@ -2265,11 +2265,9 @@
                 <small id="pfHint"><svg class="lu" style="width:13px;height:13px" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z"/><circle cx="12" cy="13" r="3"/></svg> Tap your avatar to add a photo</small>
               </div>
               <button class="btn btn-primary pf-cta" id="pfPrimary" type="button">Continue my resume</button>
-              <button class="tl-link pf-health" id="pfHealth" type="button">See resume health check</button>
-            </div>
+                          </div>
 
-            <div class="pf-usage hm-bf" style="--d:260ms" id="pfUsage" aria-live="polite"></div>
-            <div class="pf-groups hm-bf" style="--d:320ms" id="profileList"></div>
+                        <div class="pf-groups hm-bf" style="--d:320ms" id="profileList"></div>
           </div>
         </section>
 
@@ -3696,10 +3694,13 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       'First release: templates, editor, PDF / Word export, resume score, job match, cover letter and free AI help.'
     ] }
   ];
+  // About describes the app. Version and update history live only in Profile > App updates.
   function aboutHtml(){
-    return `<h3>About ResuMate</h3><p class="lead">Version ${APP_VERSION}</p>
-      <div class="perk"><div><div class="pt">What's new in ${APP_VERSION}</div><ul>${(WHATS_NEW[0] || { notes:[] }).notes.map(n=> `<li>${n}</li>`).join('')}</ul></div></div>
-      <p class="empty-hint">Updates arrive automatically in the app.</p>`;
+    return `<h3>About ResuMate</h3><p class="lead">Build a clear, professional resume on your phone.</p>
+      <div class="perk"><div><div class="pt">What ResuMate does</div><div class="ps">Pick a template, fill in your details, preview, then export as PDF, Word or ATS-friendly text. Keep several resumes, back them up, and tailor one to a job ad.</div></div></div>
+      <div class="perk"><div><div class="pt">Your data stays on your phone</div><div class="ps">Resumes, downloads and settings are saved on this device. They leave the phone only when you back up or share them yourself.</div></div></div>
+      <div class="perk"><div><div class="pt">AI is optional</div><div class="ps">Quick fixes, keyword matching and the health check run on your phone. AI actions send resume text to the AI service, with contact details masked, and only when you tap them. Free AI runs reset each day; you can add your own free key.</div></div></div>
+      <p class="empty-hint">Version and what's new: Profile › App updates.</p>`;
   }
   function whatsNewHtml(){
     const top = WHATS_NEW[0] || { notes:[] };
@@ -3729,9 +3730,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     { title:'Your resumes', rows:[
       {icon:'layers', t:'My resumes', tool:'resumes'},
       {icon:'download', t:'My Downloads'} ] },
-    { title:'Plan & AI', rows:[
-      {icon:'star', t:'Subscription', sub:()=> (window.__billing && window.__billing.upgraded()) ? 'Premium' : 'Free plan'},
-      {icon:'ai', t:'AI Assistant', sub:()=> aiQuotaLine()} ] },
+    { title:'Plan', rows:[
+      {icon:'star', t:'Subscription', sub:()=> (window.__billing && window.__billing.upgraded()) ? 'Premium' : 'Free plan'} ] },
     { title:'Data & privacy', rows:[
       {icon:'download', t:'Data & backup', sub:()=> lastBackupLabel()} ] },
     { title:'App', rows:[
@@ -3809,6 +3809,12 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       <h3>Help & Support</h3><p class="lead">Quick answers before you reach out.</p>
       <div class="perk"><div class="pic"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 015 .3c0 1.7-2.5 1.7-2.5 3.7"/><path d="M12 17h.01"/></svg></div><div><div class="pt">Is my resume saved automatically?</div><div class="ps">Yes — your edits are saved on this phone as you type.</div></div></div>
       <div class="perk"><div class="pic"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 015 .3c0 1.7-2.5 1.7-2.5 3.7"/><path d="M12 17h.01"/></svg></div><div><div class="pt">Can I switch templates later?</div><div class="ps">Yes — your content carries over to any template.</div></div></div>
+      <div class="perk"><div class="pic"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 015 .3c0 1.7-2.5 1.7-2.5 3.7"/><path d="M12 17h.01"/></svg></div><div><div class="pt">Does ResuMate need internet?</div><div class="ps">Editing, templates, the health check, quick fixes, keyword matching and PDF or Word export work offline. Only AI actions need internet.</div></div></div>
+      <div class="perk"><div class="pic"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 015 .3c0 1.7-2.5 1.7-2.5 3.7"/><path d="M12 17h.01"/></svg></div><div><div class="pt">What does the AI see?</div><div class="ps">Only resume text, with email, phone and links masked. Open AI Assistant › See exactly what is sent to check it yourself.</div></div></div>
+      <div class="perk"><div class="pic"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 015 .3c0 1.7-2.5 1.7-2.5 3.7"/><path d="M12 17h.01"/></svg></div><div><div class="pt">The AI said my summary did not change. Why?</div><div class="ps">Sometimes the AI returns almost the same wording. Tap Improve again, or use Ask for a change with a specific request.</div></div></div>
+      <div class="perk"><div class="pic"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 015 .3c0 1.7-2.5 1.7-2.5 3.7"/><path d="M12 17h.01"/></svg></div><div><div class="pt">My free AI runs are used up. What now?</div><div class="ps">They reset each day. To keep going now, add your own free Gemini key in AI Assistant. It stays on this phone.</div></div></div>
+      <div class="perk"><div class="pic"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 015 .3c0 1.7-2.5 1.7-2.5 3.7"/><path d="M12 17h.01"/></svg></div><div><div class="pt">How do I back up or move my resumes?</div><div class="ps">Profile › Data &amp; backup saves a .json file, or shares it to Google Drive or email. Restore it with Import on the Home screen.</div></div></div>
+      <div class="perk"><div class="pic"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 015 .3c0 1.7-2.5 1.7-2.5 3.7"/><path d="M12 17h.01"/></svg></div><div><div class="pt">How do app updates arrive?</div><div class="ps">Automatically. A message with a sound and vibration appears when a new version is ready. Version and what's new: Profile › App updates.</div></div></div>
       <p class="empty-hint" style="margin:14px 0 8px;">Something not working on your phone? Copy a short technical summary and send it to us — it has no resume text in it.</p>
       <button class="ai-btn2" id="diagBtn" style="width:100%">Copy diagnostics</button>`,
     'Settings': ()=>`
@@ -3860,23 +3866,13 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     const b = document.getElementById('pfPrimary'); if(!b) return;
     b.textContent = resumeData.name === DEFAULT_NAME ? 'Add your name' : pct < 100 ? 'Continue my resume' : 'Preview and download';
   }
-  function pfUsageHtml(){
-    return `<div class="pf-usage-card"><div class="pf-u-row"><b>AI usage</b><button class="tl-link" type="button" data-pf-open="AI Assistant">Manage</button></div>
-      <p class="ai-hint">${aiEsc(aiQuotaLine())} · ${aiSavedCount()} saved answers on this phone</p>
-      <p class="ai-hint">${ownKey() ? 'Your own key is saved. It is used after the shared runs run out.' : 'Add your own free key once the shared runs run out.'}</p></div>`;
-  }
+  // AI tools live only under the AI Assistant tab; Profile does not repeat them
   function pfWire(){
-    const pu = document.getElementById('pfUsage');
-    try{ pu.innerHTML = pfUsageHtml(); }catch(e){}
-    pu.addEventListener('click', e=>{ const b = e.target.closest && e.target.closest('[data-pf-open]'); if(b) openProfileRow(b.dataset.pfOpen); });
     document.getElementById('pfPrimary').addEventListener('click', ()=>{
       if(resumeData.name === DEFAULT_NAME){ openProfileRow('Account'); return; }
       const pct = +document.getElementById('pfProg').getAttribute('aria-valuenow') || 0;
       openEdit();
       if(pct >= 100) setTimeout(()=>{ const p = document.querySelector('[data-seg=preview]'); if(p) p.click(); }, 80);
-    });
-    document.getElementById('pfHealth').addEventListener('click', ()=>{
-      aiOpen(); setTimeout(()=>{ const b = document.querySelector('[data-ai-go="aiSecCheck"]'); if(b) b.click(); }, 60);
     });
   }
   function wireDataSheet(body){
@@ -4253,7 +4249,6 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       const miss = !d.photo ? 'Tap your avatar to add a photo' : (d.name && d.name.trim() === DEFAULT_NAME) ? 'Add your name in Account' : (!(d.certifications||[]).length ? 'Add a certification' : 'Looking strong');
       document.getElementById('pfHint').lastChild.textContent = ' ' + miss;
       pfPrimaryLabel(pct);
-      try{ const pu = document.getElementById('pfUsage'); if(pu) pu.innerHTML = pfUsageHtml(); }catch(e){}
     }
   }
   // one shared, frame-throttled pointer tracker for every spotlight (avoids a repaint per raw pointer event)
