@@ -25,7 +25,9 @@ const num = (v, d) => { const n = parseInt(v, 10); return Number.isFinite(n) && 
 const today = () => new Date().toISOString().slice(0, 10);
 
 function cors(env, req) {
-  const allowed = (env.ALLOWED_ORIGINS || '*').split(',').map(s => s.trim()).filter(Boolean);
+  // Default: only the app's own origins (Android/iOS Capacitor shells, local dev, and the web app). Set ALLOWED_ORIGINS to change it.
+  const DEFAULT_ORIGINS = 'https://localhost,capacitor://localhost,http://localhost,https://resumate-claude.vercel.app';
+  const allowed = (env.ALLOWED_ORIGINS || DEFAULT_ORIGINS).split(',').map(s => s.trim()).filter(Boolean);
   const origin = req.headers.get('Origin') || '';
   const ok = allowed.includes('*') || allowed.includes(origin);
   return {

@@ -3947,7 +3947,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       }));
       const clearBtn = body.querySelector('#clearAppDataBtn');
       if(clearBtn) clearBtn.addEventListener('click', ()=>{
-        try{ localStorage.removeItem(REMEMBER_KEY); localStorage.removeItem(AI_KEY); localStorage.removeItem(AI_CACHE_KEY); localStorage.removeItem(AI_QUOTA_KEY); localStorage.removeItem(PHOTO_KEY); localStorage.removeItem(NAME_KEY); }catch(e){}
+        try{ localStorage.removeItem(REMEMBER_KEY); localStorage.removeItem(AI_KEY); localStorage.removeItem(AI_CACHE_KEY); localStorage.removeItem(AI_QUOTA_KEY); localStorage.removeItem(PHOTO_KEY); localStorage.removeItem(NAME_KEY); localStorage.removeItem(OWN_KEY); localStorage.removeItem(AI_HIST_KEY); }catch(e){}
         applyName(DEFAULT_NAME); renderContentTab(); syncAll();
         remember = { on:true }; aiCfg = { key:'', model:'auto', proxy:'', verified:false };
         if(resumeData.photo){ resumeData.photo = null; renderContentTab(); syncAll(); }
@@ -4778,7 +4778,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   const AI_HIST_KEY = 'resumate_ai_history';
   function aiHistLoad(){ try{ const h = JSON.parse(localStorage.getItem(AI_HIST_KEY) || '[]'); return Array.isArray(h) ? h : []; }catch(e){ return []; } }
   function aiHistPush(label){
-    try{ const h = aiHistLoad(); h.unshift({ t:Date.now(), label, d:JSON.stringify(resumeData) }); localStorage.setItem(AI_HIST_KEY, JSON.stringify(h.slice(0, 5))); }catch(e){}
+    // the photo is left out: it is large, and it is kept as it is when a copy is restored
+    try{ const h = aiHistLoad(); h.unshift({ t:Date.now(), label, d:JSON.stringify({ ...resumeData, photo:null }) }); localStorage.setItem(AI_HIST_KEY, JSON.stringify(h.slice(0, 5))); }catch(e){}
   }
   function aiHistHtml(){
     const h = aiHistLoad();
@@ -4789,7 +4790,6 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   function aiMarkVerified(workingModel){
     aiCfg = { ...aiCfg, model:workingModel, verified:true };
     try{ localStorage.setItem(AI_KEY, JSON.stringify(aiCfg)); }catch(e){}
-    const sel = document.getElementById('aiModel'); if(sel) sel.value = workingModel;
   }
   const AI_FALLBACK_MODELS = ['gemini-3.5-flash-lite','gemini-3.8-flash'];   // 2.0 and 2.5 models are retired or closed to new projects
   const aiProxyOk = u => /^https:\/\/[^\s"'<>]+$/i.test(u) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/i.test(u);
@@ -5563,6 +5563,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
       const b = e.target.closest && e.target.closest('[data-hist]'); if(!b) return;
       const x = aiHistLoad()[+b.dataset.hist]; if(!x) return;
       let copy = null; try{ copy = JSON.parse(x.d); }catch(err){ showToast('Could not restore that copy'); return; }
+      copy.photo = resumeData.photo || null;
       aiSnapshot('Before restoring'); Object.assign(resumeData, copy); aiRefresh();
       $('aiHistList').innerHTML = aiHistHtml(); showToast('Restored ✓');
     });

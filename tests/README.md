@@ -14,6 +14,7 @@ Everything runs against `../www/index.html` (override with env `RESUMATE_URL=fil
     python tests/smoke5_content_ai.py        # 18 checks: Content editor AI: write/improve summary, rewrite a bullet, suggest skills
     python tests/smoke6_theme_and_text.py    # 10 checks: job text readable in every theme; newest theme choice wins
     python tests/smoke7_update_alerts.py     # 11 checks: update toast/vibration/sound (open app) and system notification (background), once per version
+    python tests/smoke8_repo_fixes.py        # 4 checks: clear data also removes the own key and history; no page errors; worker origins
     python tests/ai_mock_test.py             # 27 checks: AI against a simulated free-AI server: privacy masking, number warnings, per-bullet apply, limit/busy/key/network errors
     python tests/native_app_test.py          # native app checks
     node   tests/worker_test.mjs             # the Cloudflare Worker (free-ai-proxy) with mocked providers and quota store
