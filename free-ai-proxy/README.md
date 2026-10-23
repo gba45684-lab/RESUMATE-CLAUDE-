@@ -16,7 +16,7 @@ In the Worker → *Settings*:
 - **Variables and Secrets** → add secrets: `GEMINI_API_KEY` (and `GROQ_API_KEY` if you have it).
 - **Bindings** → *KV namespace* → create one called `resumate-quota` → bind it as **`QUOTA`**.
 - **Bindings** → *Workers AI* → bind it as **`AI`** (optional backup).
-- Optional variables: `PER_DEVICE_DAILY` (default 5), `GLOBAL_DAILY` (default 800), `ALLOWED_ORIGINS` (default `*`).
+- Optional variables: `PER_DEVICE_DAILY` (default 5), `GLOBAL_DAILY` (default 800), `ALLOWED_ORIGINS` (default: `https://localhost,capacitor://localhost,http://localhost,https://resumate-claude.vercel.app` — only the app's own origins; set `*` only for testing).
 
 ## 4. Point the app at it
 Your Worker address looks like `https://resumate-ai.<your-name>.workers.dev`.

@@ -1,0 +1,18 @@
+# dependencies and generated native projects (CI creates the Android project)
+node_modules/
+android/
+ios/
+# build outputs
+*.apk
+*.aab
+*.zip
+# test output and local tools
+test-results/
+__pycache__/
+.pytest_cache/
+.playwright/
+# OS and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
