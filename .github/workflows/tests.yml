@@ -40,3 +40,4 @@ jobs:
           python tests/smoke4_rewrite_followups.py
           python tests/ai_mock_test.py
           python tests/smoke5_content_ai.py
+          python tests/smoke7_update_alerts.py
