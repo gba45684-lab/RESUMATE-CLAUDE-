@@ -43,3 +43,4 @@ jobs:
           python tests/smoke7_update_alerts.py
           python tests/smoke8_repo_fixes.py
           python tests/smoke9_check_fixes.py
+          python tests/smoke10_fit_offline.py
