@@ -186,6 +186,11 @@
   .scr-inner{ padding: 54px 20px 118px; }
 
   /* ---------- Shared bits ---------- */
+  .brand-row{ display:flex; align-items:center; gap:10px; min-width:0; }
+  .th-quick{ width:40px; height:40px; flex:none; border-radius:50%; display:grid; place-items:center; border:1px solid var(--line); background:var(--paper); color:var(--maroon); cursor:pointer; box-shadow:var(--shadow-soft); -webkit-tap-highlight-color:transparent; transition:transform .2s; }
+  .th-quick:active{ transform:scale(.92); }
+  .th-quick .lu{ width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .th-quick:focus-visible{ outline:2px solid var(--maroon); outline-offset:2px; }
   .topline{ display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
   .logo{
     font-family:var(--font-serif); font-style:italic; font-weight:560; font-size:22px;
@@ -2096,7 +2101,7 @@
 
             <div class="brand-hl" aria-hidden="true"><div class="hl-track"></div><div class="hl-dots"></div></div>
             <div class="topline hm-bf" style="--d:0ms">
-              <div class="logo"><svg class="ic seal" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7l1.4 3.6L17 12l-3.6 1.4L12 17l-1.4-3.6L7 12l3.6-1.4L12 7z"/></svg>ResuMate</div>
+              <div class="brand-row"><button type="button" class="th-quick" data-th-cycle aria-label="Change app theme" title="Change theme"><svg class="lu" viewBox="0 0 24 24" aria-hidden="true"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg></button><div class="logo"><svg class="ic seal" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7l1.4 3.6L17 12l-3.6 1.4L12 17l-1.4-3.6L7 12l3.6-1.4L12 7z"/></svg>ResuMate</div></div>
               <button class="badge-premium hm-shimmer" data-open-sheet aria-label="Upgrade"><svg class="lu" style="width:13px;height:13px" viewBox="0 0 24 24" aria-hidden="true"><path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/><path d="M5 21h14"/></svg>Upgrade</button>
             </div>
 
@@ -2274,7 +2279,7 @@
             <div class="hm-fx" aria-hidden="true"><span class="grid"></span><i class="a1"></i><i class="a2" style="background:radial-gradient(circle, color-mix(in srgb,#8B6CE8 40%,transparent), transparent 68%)"></i></div>
             <div class="brand-hl" aria-hidden="true"><div class="hl-track"></div><div class="hl-dots"></div></div>
             <div class="topline hm-bf" style="--d:0ms">
-              <div class="logo"><svg class="ic seal" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7l1.4 3.6L17 12l-3.6 1.4L12 17l-1.4-3.6L7 12l3.6-1.4L12 7z"/></svg>ResuMate</div>
+              <div class="brand-row"><button type="button" class="th-quick" data-th-cycle aria-label="Change app theme" title="Change theme"><svg class="lu" viewBox="0 0 24 24" aria-hidden="true"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg></button><div class="logo"><svg class="ic seal" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7l1.4 3.6L17 12l-3.6 1.4L12 17l-1.4-3.6L7 12l3.6-1.4L12 7z"/></svg>ResuMate</div></div>
               <button class="badge-premium hm-shimmer" data-open-sheet aria-label="Upgrade"><svg class="lu" style="width:13px;height:13px" viewBox="0 0 24 24" aria-hidden="true"><path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/><path d="M5 21h14"/></svg>Upgrade</button>
             </div>
             <span class="hm-badge hm-bf" style="--d:60ms"><svg class="lu" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></svg>Smart writing</span>
@@ -2311,7 +2316,7 @@
             <div class="hm-fx" aria-hidden="true"><span class="grid"></span><i class="a1"></i><i class="a2"></i></div>
             <div class="brand-hl" aria-hidden="true"><div class="hl-track"></div><div class="hl-dots"></div></div>
             <div class="topline hm-bf" style="--d:0ms">
-              <div class="logo"><svg class="ic seal" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7l1.4 3.6L17 12l-3.6 1.4L12 17l-1.4-3.6L7 12l3.6-1.4L12 7z"/></svg>ResuMate</div>
+              <div class="brand-row"><button type="button" class="th-quick" data-th-cycle aria-label="Change app theme" title="Change theme"><svg class="lu" viewBox="0 0 24 24" aria-hidden="true"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg></button><div class="logo"><svg class="ic seal" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7l1.4 3.6L17 12l-3.6 1.4L12 17l-1.4-3.6L7 12l3.6-1.4L12 7z"/></svg>ResuMate</div></div>
               <button class="badge-premium hm-shimmer" data-open-sheet aria-label="Upgrade"><svg class="lu" style="width:13px;height:13px" viewBox="0 0 24 24" aria-hidden="true"><path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/><path d="M5 21h14"/></svg>Upgrade</button>
             </div>
             <span class="hm-badge hm-bf" style="--d:60ms">Account</span>
@@ -4058,6 +4063,13 @@
         showToast(name === 'midnight' ? 'Midnight theme applied ✓' : name === 'branchdesk' ? 'Branchdesk theme applied ✓' : 'Golden theme applied ✓');
       }
     }
+    // the small palette button in front of the ResuMate name on every main screen: Golden → Branchdesk → Midnight
+    document.addEventListener('click', ev=>{
+      const c = ev.target.closest && ev.target.closest('[data-th-cycle]'); if(!c) return;
+      const order = ['golden', 'branchdesk', 'midnight'], now = (seg.querySelector('.th-opt[aria-checked="true"]') || {}).dataset;
+      const next = order[(order.indexOf(now && now.th) + 1) % order.length], target = seg.querySelector(`.th-opt[data-th="${next}"]`);
+      if(target) apply(next, true, { currentTarget: c });
+    });
     let cur = 'golden'; try{ const t = localStorage.getItem('resumate_theme'); cur = (t === 'branchdesk' || t === 'midnight') ? t : 'golden'; }catch(e){}
     apply(cur, false);
     seg.querySelectorAll('.th-opt').forEach(b=> b.addEventListener('click', ev=>{ if(b.getAttribute('aria-checked') === 'true') return; apply(b.dataset.th, true, ev); }));
