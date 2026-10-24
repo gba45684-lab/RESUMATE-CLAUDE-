@@ -58,6 +58,13 @@ with sync_playwright() as p:
         for _ in range(3):
             btn.click(timeout=3000); pg.wait_for_timeout(1300); got.append(pg.evaluate(STATE)['saved'])
         check(f'{tab}: button cycles branchdesk → midnight → golden', got == ['branchdesk', 'midnight', 'golden'])
+    # 4. only the quick button changes the theme: no Theme row on Home, no Appearance row in Profile, no search bar on Templates
+    pg.evaluate("document.querySelector('[data-tab=home]').click()"); pg.wait_for_timeout(500)
+    check('Home has no visible theme chooser', not pg.evaluate("(()=>{const r=document.querySelector('.th-row');return r && r.offsetParent!==null})()"))
+    pg.evaluate("document.querySelector('[data-tab=profile]').click()"); pg.wait_for_timeout(600)
+    check('Profile has no Appearance row', 'Appearance' not in pg.evaluate("document.querySelector('.panel.active').textContent"))
+    pg.evaluate("document.querySelector('[data-tab=templates]').click()"); pg.wait_for_timeout(600)
+    check('Templates has no search bar', not pg.evaluate("(()=>{const r=document.getElementById('tplSearch');return r && r.offsetParent!==null})()"))
     check('no page errors', not errs)
     b.close()
 print(f"{sum(results)}/{len(results)} passed")
