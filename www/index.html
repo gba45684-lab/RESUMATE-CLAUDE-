@@ -513,6 +513,7 @@
   .tpl-h1{ font-family:var(--font-serif); font-weight:600; font-size:19px; color:var(--ink); margin:0; }
   
   .tpl-search-row{ margin-bottom:6px !important; }
+  .search-row[hidden], .th-row[hidden]{ display:none !important; }
   .tpl-search-row .search{ padding:8px 12px !important; }
   .tpl-filter-chips{ margin-bottom:2px !important; }
   .tpl-filter-chips .fchip2{ padding:5px 11px !important; font-size:11px !important; }
@@ -2117,7 +2118,7 @@
               <button type="button" class="bk-go" id="bkGo">Back up</button>
               <button type="button" class="bk-x" id="bkX" aria-label="Remind me later"><i class="bd-i tl-ico" data-ic="x"></i></button>
             </div>
-            <div class="th-row hm-bf" style="--d:210ms">
+            <div class="th-row hm-bf" style="--d:210ms" hidden>
               <span class="th-lab"><svg class="lu" viewBox="0 0 24 24" aria-hidden="true"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>Theme</span>
               <div class="th-seg" id="themeSeg" role="radiogroup" aria-label="App theme">
                 <button class="th-opt" type="button" role="radio" aria-checked="true" data-th="golden"><span class="dot"></span>Golden</button>
@@ -2246,7 +2247,7 @@
               <span class="tp-head-r"><span class="hm-badge" id="tplCount">58 templates</span><button class="tp-prem hm-shimmer" data-open-sheet aria-label="Upgrade"><svg class="lu" viewBox="0 0 24 24" aria-hidden="true"><path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/><path d="M5 21h14"/></svg>Upgrade</button></span>
             </div>
 
-            <div class="search-row tpl-search-row hm-bf" style="--d:110ms">
+            <div class="search-row tpl-search-row hm-bf" style="--d:110ms" hidden>
               <div class="search"><svg class="lu" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input id="tplSearch" type="search" placeholder="Search templates…" aria-label="Search templates" autocomplete="off" /><button class="tp-clear" id="tplClear" type="button" aria-label="Clear search" hidden><svg class="lu" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
             </div>
             <div class="filter-chips tpl-filter-chips hm-bf" style="--d:160ms" id="filterChips" role="toolbar" aria-label="Filter templates"></div>
@@ -3393,7 +3394,6 @@
     { title:'Data & privacy', rows:[
       {icon:'download', t:'Data & backup', sub:()=> lastBackupLabel()} ] },
     { title:'App', rows:[
-      {icon:'settings', t:'Appearance', sub:()=> themeLabel()},
       {icon:'settings', t:'Settings'},
       {icon:'help', t:'App updates', sub:()=> 'Version ' + APP_VERSION},
       {icon:'help', t:'About ResuMate'} ] },
@@ -3485,11 +3485,6 @@
       <div class="ai-note" style="margin-top:10px">When on, ResuMate reopens on the template and page size you used last (currently ${getTemplateByCode(selectedTemplateCode).name}, ${PAGE_SIZES[pageSize].label}).</div>
       <button class="ai-btn2" id="clearAppDataBtn" style="width:100%;margin-top:14px">Clear data saved on this device</button>
       <div class="ai-note">Removes saved AI results, profile photo and the remembered template/page size from this device. Your resume text is not affected.</div>`,
-    'Appearance': ()=>{ const cur = themeLabel().toLowerCase(); return `
-      <h3>Appearance</h3><p class="lead">Choose how ResuMate looks on this phone.</p>
-      <div class="ap-grid" role="radiogroup" aria-label="Theme">
-        ${[['golden','Golden','Warm paper, classic'],['branchdesk','Branchdesk','Crisp and modern'],['midnight','Midnight','Dark, easy on the eyes']].map(([k,l,d])=>`<button type="button" class="ap-opt" role="radio" aria-checked="${cur === k}" data-ap="${k}"><b>${l}</b><small>${d}</small></button>`).join('')}
-      </div><p class="empty-hint">Applies at once and is remembered on this phone.</p>`; },
     'App updates': ()=>`
       <h3>App updates</h3><p class="lead">You are on version ${APP_VERSION}.</p>
       <div class="perk"><div class="pic"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></div><div><div class="pt">Updates arrive automatically</div><div class="ps">When a new version is ready, you get a message with a sound and a vibration.</div></div></div>
@@ -3515,7 +3510,6 @@
   };
   // ---- Profile helpers ----
   const lastBackupLabel = ()=>{ try{ const t = +localStorage.getItem('resumate_last_backup'); return t ? 'Last backup ' + bdWhen(t) : 'Not backed up yet'; }catch(e){ return ''; } };
-  const themeLabel = ()=>{ try{ const t = localStorage.getItem('resumate_theme'); return t === 'midnight' ? 'Midnight' : t === 'branchdesk' ? 'Branchdesk' : 'Golden'; }catch(e){ return 'Golden'; } };
   const storedBytes = ()=>{ let n = 0; try{ for(let i = 0; i < localStorage.length; i++){ const k = localStorage.key(i); if(k && k.startsWith('resumate_')) n += (localStorage.getItem(k) || '').length; } }catch(e){} return n; };
   const subText = r => { try{ return r.sub ? String(r.sub()) : ''; }catch(e){ return ''; } };
   const escP = s => String(s).replace(/[&<>"']/g, c=> ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);   // local escape: runs before aiEsc is defined
@@ -3543,12 +3537,6 @@
       showToast('All data deleted on this phone'); setTimeout(()=> location.reload(), 600);
     });
   }
-  function wireAppearance(body){
-    body.querySelectorAll('[data-ap]').forEach(b=> b.addEventListener('click', ()=>{
-      const real = document.querySelector(`.th-opt[data-th="${b.dataset.ap}"]`); if(real) real.click();
-      body.querySelectorAll('[data-ap]').forEach(x=> x.setAttribute('aria-checked', x === b ? 'true' : 'false'));
-    }));
-  }
   // Groups first (titles and cards), then each row goes into its group
   const groupLists = {};
   profileGroups.forEach(g=>{
@@ -3567,7 +3555,6 @@
       openSheet2(profileContent[r.t]());
       if(r.t==='My Downloads') wireDownloads();
       if(r.t==='Data & backup') wireDataSheet(sheet2Body);
-      if(r.t==='Appearance') wireAppearance(sheet2Body);
       if(r.t==='App updates'){ const w = sheet2Body.querySelector('#auWhats'); if(w) w.addEventListener('click', ()=>{ openSheet2(whatsNewHtml()); const ok = sheet2Body.querySelector('#wnOk'); if(ok) ok.addEventListener('click', closeSheet2); }); }
       const diagBtn = sheet2Body.querySelector('#diagBtn'); if(diagBtn) diagBtn.addEventListener('click', copyDiagnostics);
       const body = sheet2Body;
