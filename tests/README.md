@@ -17,6 +17,7 @@ Everything runs against `../www/index.html` (override with env `RESUMATE_URL=fil
     python tests/smoke8_repo_fixes.py        # 4 checks: clear data also removes the own key and history; no page errors; worker origins
     python tests/smoke9_check_fixes.py       # 12 checks: Check my resume "Fix this" buttons, AI auto-fills empty bullets, limit options
     python tests/smoke10_fit_offline.py      # 8 checks: upgrade-sheet copy, AI says so when offline, one-page help sheet
+    python tests/smoke11_import_clean.py     # 5 checks: a damaged backup file imports safely
     python tests/ai_mock_test.py             # 27 checks: AI against a simulated free-AI server: privacy masking, number warnings, per-bullet apply, limit/busy/key/network errors
     python tests/native_app_test.py          # native app checks
     node   tests/worker_test.mjs             # the Cloudflare Worker (free-ai-proxy) with mocked providers and quota store
