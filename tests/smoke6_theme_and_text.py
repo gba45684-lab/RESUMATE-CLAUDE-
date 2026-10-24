@@ -48,6 +48,16 @@ with sync_playwright() as p:
             s = pg.evaluate(STATE)
             check(f'{"→".join(seq)} (gap {gap}): ends on {seq[-1]}, saved and shown match',
                   s['saved'] == seq[-1] and s['seg'] == seq[-1] and ((seq[-1] == 'golden') == (s['attr'] is None)))
+    # 3. the small theme button in front of the ResuMate name (Home, AI, Profile) cycles Golden → Branchdesk → Midnight → Golden
+    pg.evaluate("document.querySelector('.th-opt[data-th=golden]').click()"); pg.wait_for_timeout(1000)
+    for tab in ['home', 'ai', 'profile']:
+        pg.evaluate(f"document.querySelector('[data-tab={tab}]').click()"); pg.wait_for_timeout(600)
+        btn = pg.locator('.panel.active .th-quick')
+        check(f'{tab}: theme button is shown before the name', btn.is_visible())
+        got = []
+        for _ in range(3):
+            btn.click(timeout=3000); pg.wait_for_timeout(1300); got.append(pg.evaluate(STATE)['saved'])
+        check(f'{tab}: button cycles branchdesk → midnight → golden', got == ['branchdesk', 'midnight', 'golden'])
     check('no page errors', not errs)
     b.close()
 print(f"{sum(results)}/{len(results)} passed")
