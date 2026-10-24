@@ -30,7 +30,7 @@ with sync_playwright() as p:
     for th in ['golden', 'branchdesk', 'midnight']:
         pg.evaluate(f"document.querySelector('.th-opt[data-th={th}]').click()"); pg.wait_for_timeout(1000)
         pg.evaluate("document.querySelector('[data-tab=ai]').click()"); pg.wait_for_timeout(600)
-        pg.evaluate("document.getElementById('genBtn').click()"); pg.wait_for_timeout(800)
+        pg.evaluate("document.querySelector('[data-ai-open=tailor]').click()"); pg.wait_for_timeout(800)
         pg.evaluate("document.getElementById('aiJob').focus()"); pg.wait_for_timeout(300)
         pg.keyboard.type('We need a PM'); pg.wait_for_timeout(200)
         c = pg.evaluate("(()=>{const t=document.getElementById('aiJob'); const s=getComputedStyle(t); return {color:s.color,bg:s.backgroundColor,focused:document.activeElement===t}})()")

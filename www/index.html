@@ -1927,6 +1927,65 @@
   .danger-zone{ margin-top:18px; border:1px solid var(--line); border-radius:14px; padding:12px 14px; }
   .danger-btn{ width:100%; margin-top:8px; border:1px solid #b3261e; color:#b3261e; background:transparent; }
   .danger-solid{ width:100%; margin-top:8px; background:#b3261e; color:#fff; border:0; }
+  /* AI Assistant front page and task screens */
+  .ai-page{ display:flex; flex-direction:column; gap:14px; margin-top:6px; }
+  .ai-usage{ background:var(--paper); border:1px solid var(--line); border-radius:18px; padding:14px 14px 10px; box-shadow:var(--shadow-soft); }
+  .ai-usage-top{ display:flex; align-items:center; gap:9px; font-size:13.5px; font-weight:600; }
+  .ai-usage-dot{ width:9px; height:9px; border-radius:50%; background:var(--maroon); box-shadow:0 0 0 4px color-mix(in srgb, var(--maroon) 18%, transparent); flex:none; }
+  .ai-usage-acts{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
+  .ai-usage-acts button{ min-height:44px; }
+  .ai-btn-up{ border-color:var(--maroon) !important; color:var(--maroon) !important; }
+  .ai-privacy-link{ margin-top:8px; min-height:36px; font-size:12.5px; }
+  .ai-cards{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .ai-card{ position:relative; text-align:left; font:inherit; color:inherit; background:var(--paper); border:1px solid var(--line); border-radius:18px; padding:14px 13px 12px; min-height:132px; display:flex; flex-direction:column; gap:4px; cursor:pointer; box-shadow:var(--shadow-soft); }
+  .ai-card:hover{ border-color:var(--maroon); }
+  .ai-card-n{ width:26px; height:26px; border-radius:9px; display:grid; place-items:center; font-size:12px; font-weight:800; background:color-mix(in srgb, var(--maroon) 12%, transparent); color:var(--maroon); margin-bottom:6px; }
+  .ai-card b{ font-size:14px; line-height:1.2; }
+  .ai-card > span{ font-size:11.8px; color:var(--ink-soft); line-height:1.35; }
+  .ai-card em{ margin-top:auto; align-self:flex-start; font-style:normal; font-size:10.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:3px 8px; border-radius:999px; border:1px solid var(--line); color:var(--ink-soft); }
+  .ai-row-link{ display:flex; justify-content:space-between; align-items:center; width:100%; min-height:48px; padding:0 14px; border-radius:16px; border:1px solid var(--line); background:var(--paper); color:inherit; font:inherit; font-weight:600; cursor:pointer; }
+  .ai-screen-head{ display:flex; align-items:center; gap:12px; margin-bottom:4px; }
+  .ai-screen-head h3{ margin:0; font-size:20px; }
+  .ai-step{ display:block; font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--maroon); }
+  .ai-back{ width:44px; height:44px; border-radius:14px; border:1px solid var(--line); background:var(--paper); color:inherit; display:grid; place-items:center; cursor:pointer; flex:none; }
+  .ai-lead{ margin:8px 0 14px; font-size:13px; color:var(--ink-soft); line-height:1.45; }
+  .ai-chips{ display:flex; flex-wrap:wrap; gap:7px; margin:10px 0 2px; }
+  .ai-chip-btn{ min-height:36px; padding:6px 11px; border-radius:999px; border:1px solid var(--line); background:var(--paper); color:inherit; font:inherit; font-size:12px; cursor:pointer; }
+  .ai-match{ margin:10px 0 0; font-size:13px; font-weight:600; }
+  .ai-or{ margin-top:14px; }
+  .ai-input{ width:100%; min-height:44px; padding:10px 12px; border-radius:12px; border:1px solid var(--line); background:var(--paper); color:inherit; font:inherit; margin:8px 0; box-sizing:border-box; }
+  .ai-keybox{ margin-top:6px; }
+  .ai-limit{ border:1px solid var(--maroon); border-radius:16px; padding:12px 13px; background:color-mix(in srgb, var(--maroon) 6%, var(--paper)); margin-bottom:12px; }
+  .ai-limit-t{ display:flex; flex-direction:column; gap:3px; font-size:13px; }
+  .ai-limit-t span{ color:var(--ink-soft); font-size:12px; }
+  .ai-limit-acts{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; }
+  .ai-limit-acts button{ min-height:44px; }
+  /* each AI task opens as its own full screen */
+  #sheet2.ai-full{ top:0; max-height:none; height:100%; border-radius:0; padding-top:calc(env(safe-area-inset-top, 0px) + 14px) !important; }
+  #sheet2.ai-full .grip, #sheet2.ai-full .sheet-close{ display:none; }
+  .ai-sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+  .ai-score{ background:var(--paper); border:1px solid var(--line); border-radius:18px; padding:16px 16px 14px; box-shadow:var(--shadow-soft); }
+  .ai-score-top{ display:flex; align-items:center; gap:14px; }
+  .ai-score-n{ font-family:var(--font-serif); font-size:44px; font-weight:700; line-height:1; color:var(--maroon); }
+  .ai-score-n small{ font-size:15px; font-weight:600; color:var(--ink-soft); margin-left:2px; }
+  .ai-score-t{ display:flex; flex-direction:column; gap:2px; } .ai-score-t b{ font-size:15px; } .ai-score-t span{ font-size:12px; color:var(--ink-soft); }
+  .ai-score-bar{ height:8px; border-radius:99px; background:var(--line); margin-top:14px; overflow:hidden; }
+  .ai-score-bar i{ display:block; height:100%; border-radius:99px; background:var(--maroon); }
+  .ai-checks{ list-style:none; margin:14px 0 0; padding:0; display:flex; flex-direction:column; gap:8px; }
+  .ai-checks li{ display:flex; gap:11px; align-items:flex-start; padding:10px 12px; border:1px solid var(--line); border-radius:14px; background:var(--paper); }
+  .ai-checks li.no{ border-color:var(--maroon); background:color-mix(in srgb, var(--maroon) 5%, var(--paper)); }
+  .ai-ck{ width:22px; height:22px; border-radius:50%; display:grid; place-items:center; font-size:12px; font-weight:800; flex:none; background:color-mix(in srgb, var(--maroon) 14%, transparent); color:var(--maroon); }
+  .ai-checks li.no .ai-ck{ background:var(--maroon); color:var(--on-brand); }
+  .ai-checks b{ display:block; font-size:13.5px; } .ai-checks small{ display:block; margin-top:2px; font-size:12px; color:var(--ink-soft); line-height:1.35; }
+  .ai-sub-t{ margin:18px 0 8px; font-size:14px; }
+  .ai-fixes{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
+  .ai-fixes li{ display:flex; align-items:center; gap:10px; justify-content:space-between; padding:10px 12px; border:1px solid var(--line); border-radius:14px; background:var(--paper); font-size:12.5px; }
+  .ai-fixes button{ min-height:44px; min-width:56px; flex:none; }
+  @media (max-width: 340px){ .ai-cards, .ai-usage-acts, .ai-limit-acts{ grid-template-columns:1fr; } }
+  .ai-screen-head + .ai-lead + *{ margin-top:0; }
+  .ai-screen-head:focus-within{ outline:none; }
+  .ai-back:focus-visible, .ai-card:focus-visible, .ai-row-link:focus-visible, .ai-chip-btn:focus-visible, .ai-usage button:focus-visible, .ai-limit button:focus-visible{ outline:2px solid var(--maroon); outline-offset:2px; }
+  @media (prefers-reduced-motion: reduce){ .ai-card{ transition:none; } }
   .ai-skel{ display:flex; flex-direction:column; gap:8px; padding:14px; } .ai-skel i{ display:block; height:11px; border-radius:6px; background:var(--line-strong); animation:skelPulse 1.2s ease-in-out infinite; } .ai-skel i:nth-child(2){ width:82%; } .ai-skel i:nth-child(3){ width:60%; }
   html.lite .ai-skel i{ animation:none; }
   .ai-err-actions{ display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 2px; } .ai-btn2.sm{ min-height:38px; padding:0 14px; font-size:12.5px; }
@@ -2219,17 +2278,24 @@
             </div>
             <span class="hm-badge hm-bf" style="--d:60ms"><svg class="lu" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></svg>Smart writing</span>
             <h1 class="hd hm-bf" style="--d:110ms;margin-top:10px">AI <span class="hm-grad hm-grad-v">Assistant</span></h1>
-            <p class="sub hm-bf" style="--d:160ms">Real AI that rewrites your own resume, plus sample tips for stronger wording.</p>
+            <p class="sub hm-bf" style="--d:160ms">Check, tailor and improve your resume. Nothing changes until you apply it.</p>
 
-            <div class="ai-hero ai-hero2 hm-spot hm-beam hm-bf" style="--d:220ms">
-              <svg class="hm-paths" viewBox="0 0 400 140" preserveAspectRatio="none" aria-hidden="true"><path d="M-20 20 C 60 -10, 140 90, 240 30 S 360 70, 420 20" style="animation-delay:0.0s;opacity:0.22"/><path d="M-20 34 C 60 12, 140 82, 240 42 S 360 64, 420 34" style="animation-delay:-1.3s;opacity:0.28"/><path d="M-20 48 C 60 34, 140 74, 240 54 S 360 58, 420 48" style="animation-delay:-2.6s;opacity:0.34"/><path d="M-20 62 C 60 56, 140 66, 240 66 S 360 52, 420 62" style="animation-delay:-3.9000000000000004s;opacity:0.40"/><path d="M-20 76 C 60 78, 140 58, 240 78 S 360 46, 420 76" style="animation-delay:-5.2s;opacity:0.46"/><path d="M-20 90 C 60 100, 140 50, 240 90 S 360 40, 420 90" style="animation-delay:-6.5s;opacity:0.52"/></svg>
-              <div class="orb-lg"><svg class="lu" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></svg></div>
-              <h3>Improve my resume</h3>
-              <p>Uses Gemini AI on the resume you have open. You review and apply every change yourself.</p>
-              <button class="gen-btn hm-shimmer" id="genBtn">
-                <span class="lbl-txt"><span class="spin"></span><span id="genLabel">Open AI Assistant</span></span>
-              </button>
-              <p class="ai-hero-q" id="aiHeroQ"></p>
+            <div class="ai-page hm-bf" style="--d:220ms">
+              <div class="ai-usage">
+                <div class="ai-usage-top"><span class="ai-usage-dot" aria-hidden="true"></span><span id="aiUsageLine">A few free AI runs every day</span></div>
+                <div class="ai-usage-acts">
+                  <button class="ai-btn2" type="button" data-ai-open="key">Add my own key</button>
+                  <button class="ai-btn2 ai-btn-up" type="button" data-open-upgrade>Upgrade</button>
+                </div>
+                <button type="button" class="tl-link ai-privacy-link" data-ai-open="privacy">What is sent to the AI?</button>
+              </div>
+              <div class="ai-cards">
+                <button type="button" class="ai-card" data-ai-open="check"><span class="ai-card-n" aria-hidden="true">1</span><b>Check my resume</b><span>Score and weak bullets</span><em>No AI</em></button>
+                <button type="button" class="ai-card" data-ai-open="tailor"><span class="ai-card-n" aria-hidden="true">2</span><b>Tailor to a job</b><span>Words missing from a job ad</span><em>No AI</em></button>
+                <button type="button" class="ai-card" data-ai-open="change"><span class="ai-card-n" aria-hidden="true">3</span><b>Ask for a change</b><span>Describe it in plain words</span><em>AI</em></button>
+                <button type="button" class="ai-card" data-ai-open="improve"><span class="ai-card-n" aria-hidden="true">4</span><b>Improve with AI</b><span>Suggestions you review</span><em>AI</em></button>
+              </div>
+              <button type="button" class="ai-row-link" data-ai-open="history"><span>Recent changes</span><span aria-hidden="true">›</span></button>
             </div>
 
 
@@ -3249,13 +3315,12 @@
     });
   }
   function aiHeroQuota(){
-    const el = document.getElementById('aiHeroQ'); if(!el) return;
+    const el = document.getElementById('aiUsageLine'); if(!el) return;
     let t = '';
     try{ t = aiQuotaLine(); }catch(e){}
     el.textContent = t;
   }
   // The big button opens the real Gemini panel (the four cards below are fixed example tips, labelled as such)
-  document.getElementById('genBtn').addEventListener('click', ()=>{ aiOpen(); });
 
   // ---------- Version, What's new and About ----------
   // The release workflow replaces APP_VERSION with the build number (e.g. 1.1.16) in the published copy.
@@ -3357,7 +3422,7 @@
     sheet2Body.querySelectorAll('.prow').forEach(r=>{ r.setAttribute('role','button'); r.tabIndex = 0; });
     const h = sheet2Body.querySelector('h3'); if(h) sheet2.setAttribute('aria-label', h.textContent);
   }
-  function openSheet2(html){ sheet2Return = document.activeElement; sheet2Body.innerHTML = html; decorateSheet2(); sheet2.classList.add('show'); sheet2Backdrop.classList.add('show'); sheetA11y(sheet2, true); setTimeout(()=> document.getElementById('sheet2Close').focus({preventScroll:true}), 60); }
+  function openSheet2(html){ sheet2Return = document.activeElement; sheet2Body.innerHTML = html; decorateSheet2(); sheet2.classList.toggle('ai-full', !!window.__aiFull); window.__aiFull = false; sheet2.classList.add('show'); sheet2Backdrop.classList.add('show'); sheetA11y(sheet2, true); setTimeout(()=> document.getElementById('sheet2Close').focus({preventScroll:true}), 60); }
   function closeSheet2(){ if(typeof dlRevoke === 'function') dlRevoke(); sheet2.classList.remove('show'); sheet2Backdrop.classList.remove('show'); sheetA11y(sheet2, false); if(sheet2Return && sheet2Return.focus) try{ sheet2Return.focus({preventScroll:true}); }catch(e){} }
   makeDismissable(sheet2, closeSheet2);
   sheet2Body.addEventListener('click', ()=> setTimeout(()=> sheet2Body.querySelectorAll('.settoggle').forEach(t=> t.setAttribute('aria-checked', t.classList.contains('on'))), 0));
@@ -3366,7 +3431,6 @@
   sheet2Backdrop.addEventListener('click', closeSheet2);
 
   const profileContent = {
-    'AI Assistant': ()=> aiPanelHtml(),
     'Account': ()=>`
       <h3>Account</h3><p class="lead">This is what shows on your resumes and profile.</p>
       <label class="flab" style="display:block">Full name</label><input class="finput" id="acctName" value="${resumeData.name}">
@@ -3488,7 +3552,6 @@
     row.addEventListener('click', ()=>{
       if(r.tool){ toolOpen(r.tool); return; }
       openSheet2(profileContent[r.t]());
-      if(r.t==='AI Assistant') wireAiPanel();
       if(r.t==='My Downloads') wireDownloads();
       if(r.t==='Data & backup') wireDataSheet(sheet2Body);
       if(r.t==='Appearance') wireAppearance(sheet2Body);
@@ -4301,59 +4364,84 @@
   const aiEsc = t => String(t==null?'':t).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   // The AI Assistant is one hub. Sections follow the order people use them:
   // 0 usage and privacy, 1 check (no AI), 2 tailor to a job (no AI for keywords), 3 ask for a change, 4 improve with AI, then recent changes.
+  // ---------- AI Assistant: the AI tab is the front page; each task is its own screen ----------
   const AI_EXAMPLES = ['Make the summary shorter','Stronger action verbs in every bullet','Add a leadership point to my latest job','Make the skills list more specific'];
-  function aiPanelHtml(){
-    return `<h3>AI Assistant</h3><p class="lead">Check, tailor and improve your resume. Nothing changes until you tap Apply.</p>
-      <nav class="ai-hub" aria-label="AI Assistant sections">
-        <button type="button" class="ai-tile" data-ai-go="aiSecCheck"><b>1 · Check my resume</b><span>Score and weak bullets · no AI</span></button>
-        <button type="button" class="ai-tile" data-ai-go="aiSecJob"><b>2 · Tailor to a job</b><span>Keyword match · no AI</span></button>
-        <button type="button" class="ai-tile" data-ai-go="aiSecChange"><b>3 · Ask for a change</b><span>Describe it in plain words</span></button>
-        <button type="button" class="ai-tile" data-ai-go="aiSecImprove"><b>4 · Improve with AI</b><span>Suggestions you review</span></button>
-      </nav>
-      <section class="ai-sec" id="aiSecUsage" aria-labelledby="aiUsageTitle">
-        <h4 id="aiUsageTitle">Free AI and privacy</h4>
-        <div class="ai-note" style="margin-top:0"><b>Free AI is included</b> · ${aiEsc(aiQuotaLine())}. ${aiSavedCount()} saved answers on this phone.</div>
-        <div class="ai-note">Saved on this device only. <b>What is sent</b> when you run an AI action: your job titles, companies, summary, bullets, skills and education — <b>not</b> your name, email, phone, links or photo (those are masked). Review every suggestion before you use it.</div>
-        <p class="ai-hint">${ownKey() ? 'Your own key is saved. It is used only when today\'s shared runs run out.' : 'Your own free key can be added once today\'s shared runs run out.'}</p>
-        <div class="ai-row"><button class="ai-btn2" id="aiOwnBtn">${ownKey() ? 'Change my own key' : 'Add my own key'}</button></div>
-        <div id="aiOwnSlot"></div>
-        <details class="ai-details"><summary>See exactly what is sent</summary>
-          <p class="ai-hint">Contact details are masked. This text leaves the phone only when you tap an AI button. Local checks never send anything.</p>
-          <pre class="ai-pre" tabindex="0">${aiEsc(JSON.stringify(aiResumeSnapshot(), null, 2))}</pre>
-        </details>
-      </section>
-      <section class="ai-sec" id="aiSecCheck" aria-labelledby="aiCheckTitle">
-        <h4 id="aiCheckTitle">1 · Check my resume <span class="ai-tag">no AI</span></h4>
-        <div class="ai-row"><button class="ai-btn2" id="aiHealthBtn">Run health check</button></div>
-        <div id="aiHealthOut" aria-live="polite"></div>
-      </section>
-      <section class="ai-sec" id="aiSecJob" aria-labelledby="aiJobTitle">
-        <h4 id="aiJobTitle">2 · Tailor to a job</h4>
-        <label class="flab" style="display:block" for="aiJob">Target job (optional)</label>
-        <textarea class="ftextarea" id="aiJob" rows="3" placeholder="Paste the job description to tailor wording and skills"></textarea>
-        <button type="button" class="tl-link" id="aiJobFromMatch" hidden style="text-align:left;padding-left:0">Use the job ad from Job match</button>
-        <div class="ai-row"><button class="ai-btn2" id="aiKeywords">Find missing keywords</button></div>
-        <p class="ai-hint" id="aiMatch" aria-live="polite"></p>
-      </section>
-      <section class="ai-sec" id="aiSecChange" aria-labelledby="aiChangeTitle">
-        <h4 id="aiChangeTitle">3 · Ask for a change</h4>
-        <label class="flab" style="display:block" for="aiRequest">Tell the AI what to change</label>
-        <textarea class="ftextarea" id="aiRequest" rows="2" maxlength="300" placeholder="e.g. make the summary shorter and more senior"></textarea>
-        <div class="rw-tones" id="aiExamples">${AI_EXAMPLES.map(x=>`<button type="button" class="ai-btn2 sm" data-ai-ex="${aiEsc(x)}">${aiEsc(x)}</button>`).join('')}</div>
-        <div class="ai-row"><button class="btn btn-primary" id="aiAsk">Make this change</button></div>
-      </section>
-      <section class="ai-sec" id="aiSecImprove" aria-labelledby="aiImproveTitle">
-        <h4 id="aiImproveTitle">4 · Improve with AI</h4>
-        <div class="ai-row"><button class="btn btn-primary" id="aiSuggest">${aiLast ? 'Regenerate suggestions' : 'Get suggestions'}</button><button class="ai-btn2" id="aiAuto">Auto-improve</button></div>
-      </section>
-      <div class="ai-status" id="aiStatus" aria-live="polite"></div>
-      <div id="aiOut"></div>
-      <section class="ai-sec" id="aiSecHistory" aria-labelledby="aiHistTitle">
-        <h4 id="aiHistTitle">Recent changes</h4>
-        <div id="aiHistList">${aiHistHtml()}</div>
-        <div class="ai-row"><button class="ai-btn2" id="aiUndo" ${aiUndoSnap?'':'disabled'}>Undo last AI change</button></div>
-      </section>`;
+  // a stand-in for missing elements, so one wiring function can serve every screen
+  const AI_NULL = document.createElement('div');
+  let aiJobText = '';   // the job ad pasted on the Tailor screen; Improve and Ask for a change use it too
+  const aiHead = (step, title, lead) => `<div class="ai-screen-head"><button type="button" class="ai-back" data-ai-back aria-label="Back to AI Assistant"><svg class="lu" viewBox="0 0 24 24" aria-hidden="true" width="18" height="18"><path d="m15 18-6-6 6-6"/></svg></button><div><span class="ai-step">${step}</span><h3>${title}</h3></div></div><p class="ai-lead">${lead}</p>`;
+  const AI_NOTE = `<div class="ai-note">Saved on this device only. <b>What is sent</b> with an AI action: job titles, companies, summary, bullets, skills and education — <b>not</b> your name, email, phone, links or photo (masked).</div>`;
+  const AI_SCREENS = {
+    check: ()=> `${aiHead('No AI', 'Check my resume', 'A score and the weak bullets, checked on your phone.')}
+      <div id="aiHealthOut" aria-live="polite"></div>
+      <div class="ai-row"><button class="ai-btn2" id="aiHealthBtn" type="button">Run again</button></div>`,
+    tailor: ()=> `${aiHead('No AI', 'Tailor to a job', 'Paste a job ad to see which of its words your resume is missing.')}
+      <label class="flab" style="display:block" for="aiJob">Job ad</label>
+      <textarea class="ftextarea" id="aiJob" rows="4" placeholder="Paste the job description"></textarea>
+      <button type="button" class="tl-link" id="aiJobFromMatch" hidden>Use the job ad from Job match</button>
+      <p class="ai-match" id="aiMatch" aria-live="polite"></p>
+      <div class="ai-row"><button class="btn btn-primary" id="aiKeywords" type="button">Find missing keywords</button></div>
+      <div class="ai-status" id="aiStatus" aria-live="polite"></div><div id="aiOut"></div>`,
+    change: ()=> `${aiHead('AI', 'Ask for a change', 'Describe the change in plain words. Nothing changes until you tap Apply.')}
+      <label class="flab" style="display:block" for="aiRequest">What should change?</label>
+      <textarea class="ftextarea" id="aiRequest" rows="2" maxlength="300" placeholder="e.g. make the summary shorter and more senior"></textarea>
+      <div class="ai-chips" id="aiExamples">${AI_EXAMPLES.map(x=>`<button type="button" class="ai-chip-btn" data-ai-ex="${aiEsc(x)}">${aiEsc(x)}</button>`).join('')}</div>
+      <div class="ai-row"><button class="btn btn-primary" id="aiAsk" type="button">Make this change</button></div>
+      <div class="ai-status" id="aiStatus" aria-live="polite"></div><div id="aiOut"></div>
+      ${AI_NOTE}`,
+    improve: ()=> `${aiHead('AI', 'Improve with AI', 'Suggestions for your summary and bullets. You review each one.')}
+      <div class="ai-row"><button class="btn btn-primary" id="aiSuggest" type="button">${aiLast ? 'Regenerate suggestions' : 'Get suggestions'}</button><button class="ai-btn2" id="aiAuto" type="button">Auto-improve</button></div>
+      <div class="ai-status" id="aiStatus" aria-live="polite"></div><div id="aiOut"></div>
+      <div class="ai-row"><button class="ai-btn2" id="aiUndo" type="button" ${aiUndoSnap?'':'disabled'}>Undo last AI change</button></div>
+      ${AI_NOTE}`,
+    history: ()=> `${aiHead('Undo', 'Recent changes', 'Go back to an earlier version of your resume.')}
+      <div id="aiHistList">${aiHistHtml()}</div>`,
+    key: ()=> `${aiHead('Key', 'Use your own key', 'Keep using AI after today\'s shared runs run out. Free, and stored only on this phone.')}
+      ${aiOwnKeyHtml()}
+      <p class="ai-hint ai-or">No key? You can also upgrade for more runs each day.</p>
+      <div class="ai-row"><button class="ai-btn2" type="button" data-open-upgrade>Upgrade for more runs</button></div>`,
+    privacy: ()=> `${aiHead('Privacy', 'What is sent', 'Only the text below leaves your phone, and only when you tap an AI button.')}
+      <p class="ai-hint">Contact details are masked. Quick fixes, the health check and keyword matching never send anything.</p>
+      <pre class="ai-pre" tabindex="0">${aiEsc(JSON.stringify(aiResumeSnapshot(), null, 2))}</pre>`,
+  };
+  function aiOpenScreen(name){
+    window.__aiFull = true;                       // each task opens as its own full screen, with one Back button
+    openSheet2((AI_SCREENS[name] || AI_SCREENS.check)());
+    wireAiPanel();
+    if(name === 'check'){ const out = document.getElementById('aiHealthOut'); if(out) out.innerHTML = aiHealthHtml(); }
+    const first = sheet2Body.querySelector('textarea, input') || sheet2Body.querySelector('.ai-back');
+    if(first) setTimeout(()=> first.focus({ preventScroll:true }), 80);
   }
+  // The shared free runs are used up: offer both ways forward at once
+  function aiLimitHtml(){
+    return `<div class="ai-limit" role="status"><div class="ai-limit-t"><b>Today's free AI runs are used up.</b><span>They reset tomorrow. Choose one to keep going:</span></div>
+      <div class="ai-limit-acts"><button class="btn btn-primary" type="button" data-ai-open="key">Add my own key</button><button class="ai-btn2" type="button" data-open-upgrade>Upgrade for more runs</button></div></div>`;
+  }
+  // Offline answer when the AI is not available: the same quick fixes as the local tools, never sent anywhere
+  function aiLocalSuggestions(){
+    const sum = resumeData.summary || '', sumNew = localQuickFix(sum);
+    const experience = resumeData.experience.map((e, i)=> ({ index:i, bullets: e.bullets.map(b=> localQuickFix(b)) }))
+      .filter(x=> x.bullets.some((b, k)=> b !== resumeData.experience[x.index].bullets[k]));
+    const tips = [];
+    if(aiWordCount(sum) < 20) tips.push('Write a two or three sentence summary.');
+    if(!resumeData.experience.every(e=> e.bullets.some(b=> /\d/.test(String(b))))) tips.push('Add a number to at least one bullet in each job.');
+    return { summary: sumNew !== sum ? sumNew : '', experience, skills_add: [], tips: tips.slice(0, 4) };
+  }
+  function aiLocalFallback(request){
+    const g = aiLocalSuggestions(), out = document.getElementById('aiOut'), status = document.getElementById('aiStatus');
+    aiLast = g;
+    if(status){ status.className = 'ai-status'; status.textContent = request ? 'Custom changes need AI. These are offline quick fixes instead.' : "Today's free AI runs are used up. These are offline quick fixes instead."; }
+    if(g.summary || g.experience.length || g.tips.length) aiRender(g);
+    else if(out) out.innerHTML = '<div class="ai-sug"><p>Nothing to fix offline right now.</p></div>';
+    if(out) out.insertAdjacentHTML('afterbegin', aiLimitHtml());
+  }
+  // One listener for the AI screens: open a screen, go back, or go to the upgrade screen
+  document.addEventListener('click', e=>{
+    const o = e.target.closest && e.target.closest('[data-ai-open]');
+    if(o){ e.preventDefault(); aiOpenScreen(o.dataset.aiOpen); return; }
+    if(e.target.closest && e.target.closest('[data-ai-back]')){ e.preventDefault(); closeSheet2(); return; }
+    if(e.target.closest && e.target.closest('[data-open-upgrade]')){ e.preventDefault(); closeSheet2(); openUpgrade(); }
+  });
   function aiSavedCount(){ try{ return Object.keys(aiCacheLoad().items || {}).length; }catch(e){ return 0; } }
   // ---- Recent changes: each applied change keeps a copy of the resume (last 5 kept on this phone) ----
   const AI_HIST_KEY = 'resumate_ai_history';
@@ -4472,9 +4560,8 @@
   // Shown when the shared free runs are used up: the person can add their own free key
   function aiOwnKeyHtml(){
     const has = !!ownKey();
-    return `<div class="ai-sug" id="ownKeyBox"><h5><span>Keep going with your own free key</span></h5>
-      <p>Today's shared free AI runs are used up. You can add your own free Gemini API key from Google AI Studio (aistudio.google.com/app/apikey). It is stored only on this phone and used only when the shared runs run out.</p>
-      <input type="password" id="ownKeyIn" autocomplete="off" placeholder="Paste your key" aria-label="Your Gemini API key" style="width:100%;padding:10px;border-radius:10px;margin:6px 0">
+    return `<div class="ai-keybox" id="ownKeyBox"><p class="ai-hint">Get a free key from Google AI Studio (aistudio.google.com/app/apikey). It stays on this phone and is used only after today's shared runs run out.</p>
+      <input type="password" id="ownKeyIn" class="ai-input" autocomplete="off" placeholder="Paste your key" aria-label="Your Gemini API key">
       <div class="ai-row"><button class="btn btn-primary" id="ownKeySave">Save key</button>${has ? '<button class="ai-btn2" id="ownKeyClear">Remove key</button>' : ''}</div></div>`;
   }
   document.addEventListener('click', e=>{
@@ -4625,11 +4712,13 @@ ${JSON.stringify(r)}`;
       ['No weak verbs or filler words', weak.length === 0, weak.length ? `${weak.length} bullet(s) can be stronger. Use Quick fix below.` : 'Direct and strong.'],
       ['Bullets under 30 words', long.length === 0, long.length ? `${long.length} bullet(s) are long. Shorten them.` : 'Easy to scan.']
     ];
-    const score = Math.round(checks.filter(c=> c[1]).length / checks.length * 100);
+    const passed = checks.filter(c=> c[1]).length, score = Math.round(passed / checks.length * 100);
+    const verdict = score >= 85 ? 'Strong resume' : score >= 60 ? 'Good start' : 'Needs work';
     const fixable = weak.filter(x=> localQuickFix(x.b) !== x.b);
-    return `<div class="ai-sug"><h5><span>Score ${score}/100</span></h5>
-      <ul class="ai-bl">${checks.map(([t, ok, hint])=> `<li><span class="${ok ? 'ai-ok' : 'ai-no'}" aria-hidden="true">${ok ? '✓' : '⚠'}</span> <b>${aiEsc(t)}</b><div class="ai-hint">${aiEsc(hint)}</div></li>`).join('')}</ul>
-      ${fixable.length ? `<p class="ai-hint">Weak bullets, with a one-tap Quick fix (no AI):</p><ul class="ai-bl">${fixable.map(x=> `<li>${aiEsc(x.b.length > 90 ? x.b.slice(0, 90) + '…' : x.b)} <button class="ai-btn2 sm" data-qf-i="${x.i}" data-qf-k="${x.k}">Quick fix</button></li>`).join('')}</ul>` : ''}</div>`;
+    return `<div class="ai-score"><div class="ai-score-top"><div class="ai-score-n">${score}<small>/100</small></div><div class="ai-score-t"><b>${verdict}</b><span>${passed} of ${checks.length} checks passed</span></div></div>
+        <div class="ai-score-bar" role="progressbar" aria-label="Resume score" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${score}"><i style="width:${score}%"></i></div></div>
+      <ul class="ai-checks">${checks.map(([t, ok, hint])=> `<li class="${ok ? 'ok' : 'no'}"><span class="ai-ck" aria-hidden="true">${ok ? '✓' : '!'}</span><div><b><span class="ai-sr">${ok ? 'Passed: ' : 'To fix: '}</span>${aiEsc(t)}</b>${ok ? '' : `<small>${aiEsc(hint)}</small>`}</div></li>`).join('')}</ul>
+      ${fixable.length ? `<h4 class="ai-sub-t">Weak bullets <span class="ai-tag">quick fix, no AI</span></h4><ul class="ai-fixes">${fixable.map(x=> `<li><span>${aiEsc(x.b.length > 90 ? x.b.slice(0, 90) + '…' : x.b)}</span><button class="ai-btn2 sm" type="button" data-qf-i="${x.i}" data-qf-k="${x.k}">Fix</button></li>`).join('')}</ul>` : ''}`;
   }
   // ---- Live keyword match against the job ad (no AI) ----
   function aiJobMatch(job){
@@ -4682,7 +4771,7 @@ ${JSON.stringify(r)}`;
       out.prepend(all);
     }
   }
-  function aiOpen(){ openSheet2(aiPanelHtml()); wireAiPanel(); }
+  function aiOpen(){ aiOpenScreen('improve'); }
 
   // ---------- Rewrite a selected part of the resume with AI (applied live, undoable) ----------
   // Select words in the resume preview -> "Rewrite with AI" -> pick a style -> the change shows in the resume at once.
@@ -4841,7 +4930,7 @@ TARGET (rewrite this): ${JSON.stringify(aiScrub(target))}`;
         : (err && err.message) || 'Something went wrong.';
       status.className = 'ai-status err'; status.textContent = msg;
       if(S.next) rwCompare(S); else out.innerHTML = '';   // keep the last before/after so the person can apply it
-      if(err && err.kind === 'limit') out.insertAdjacentHTML('beforeend', aiOwnKeyHtml());
+      if(err && err.kind === 'limit') out.insertAdjacentHTML('beforeend', aiLimitHtml());
     }finally{
       rwBusy = false; if(sheet2Body.isConnected) setChips(false);
     }
@@ -4957,7 +5046,7 @@ TARGET (rewrite this): ${JSON.stringify(aiScrub(target))}`;
     }catch(err){
       if(!status.isConnected) return;
       status.className = 'ai-status err'; status.textContent = rwErrMsg(err); out.innerHTML = '';
-      if(err && err.kind === 'limit') out.innerHTML = aiOwnKeyHtml();
+      if(err && err.kind === 'limit') out.innerHTML = aiLimitHtml();
     }finally{
       rwBusy = false; if(btn && btn.isConnected) btn.disabled = false;
     }
@@ -5019,8 +5108,8 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
     else rwOpenBullet(+t.dataset.idx, +t.dataset.bidx);
   });
   function wireAiPanel(){
-    const $ = id => document.getElementById(id), status = $('aiStatus');
-    const jm = $('aiJobFromMatch'); if(jm){ let jd = ''; try{ jd = localStorage.getItem('resumate_jd') || ''; }catch(e){} if(jd.trim()){ jm.hidden = false; jm.addEventListener('click', ()=>{ $('aiJob').value = jd.slice(0, 4000); showToast('Job ad added ✓'); }); } }
+    const $ = id => document.getElementById(id) || AI_NULL, status = $('aiStatus');
+    const jm = $('aiJobFromMatch'); if(jm){ let jd = ''; try{ jd = localStorage.getItem('resumate_jd') || ''; }catch(e){} if(jd.trim()){ jm.hidden = false; jm.addEventListener('click', ()=>{ $('aiJob').value = jd.slice(0, 4000); aiJobText = $('aiJob').value; showToast('Job ad added ✓'); }); } }
     const busy = (on, msg)=>{ ['aiSuggest','aiAuto','aiAsk'].forEach(i=>$(i).disabled = on); status.textContent = msg||''; status.className = 'ai-status'; clearErr(); };
     const clearErr = ()=>{ const e = document.getElementById('aiErr'); if(e) e.remove(); };
     let lastAuto = false, progT = 0;
@@ -5049,7 +5138,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
     let aiRunSeq = 0;
     async function run(auto, request){
       lastAuto = !!auto; aiSaveCfg();
-      const job = ($('aiJob').value||'').trim();
+      const job = (($('aiJob').value || '') || aiJobText).trim();
       request = String(request || '').trim().slice(0, 300);
       if(request) auto = false;            // a requested change is never applied without a look first
       const seq = ++aiRunSeq, regenerating = !!aiLast && !request;
@@ -5077,8 +5166,8 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
         $('aiSuggest').textContent = 'Regenerate suggestions';
       }catch(err){
         if(seq !== aiRunSeq) return;
+        if(err && err.kind === 'limit'){ aiLocalFallback(request); return; }   // answer offline and offer both options
         $('aiOut').innerHTML = ''; showErr(err);
-        if(err && err.kind === 'limit') $('aiOut').insertAdjacentHTML('beforeend', aiOwnKeyHtml());
       }finally{ stopProgress(); if(seq===aiRunSeq){ ['aiSuggest','aiAuto','aiAsk'].forEach(i=>{ const el = $(i); if(el) el.disabled = false; }); } }
     }
     $('aiSuggest').addEventListener('click', ()=>run(false));
@@ -5123,7 +5212,6 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
       s.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block:'start' });
       const first = s.querySelector('textarea,input,button'); if(first) first.focus({ preventScroll:true });
     }));
-    $('aiOwnBtn').addEventListener('click', ()=>{ $('aiOwnSlot').innerHTML = aiOwnKeyHtml(); });
     // health check and one-tap quick fixes
     const runHealth = ()=>{ $('aiHealthOut').innerHTML = aiHealthHtml(); };
     $('aiHealthBtn').addEventListener('click', runHealth);
@@ -5136,7 +5224,9 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
     });
     // live job match
     const jobMatchUpdate = ()=>{ const pct = aiJobMatch($('aiJob').value || ''); $('aiMatch').textContent = pct == null ? '' : `Keyword match: ${pct}% of the top job words already appear in your resume.`; };
-    $('aiJob').addEventListener('input', jobMatchUpdate);
+    const jobEl = $('aiJob');
+    if(jobEl !== AI_NULL && aiJobText && !jobEl.value) jobEl.value = aiJobText;     // come back to the Tailor screen: the ad is still there
+    jobEl.addEventListener('input', ()=>{ aiJobText = jobEl.value || ''; jobMatchUpdate(); });
     $('aiJobFromMatch').addEventListener('click', ()=> setTimeout(jobMatchUpdate, 0));
     jobMatchUpdate();
     // recent changes: restore an earlier copy (the current one is kept as a recent change first)
