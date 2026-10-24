@@ -43,7 +43,7 @@ with sync_playwright() as p:
     chk('photo upload works', pg.evaluate("/url/.test(getComputedStyle(document.getElementById('profAvatar')).backgroundImage)"))
     pg.evaluate("document.querySelector('[data-tab=ai]').click()"); pg.wait_for_timeout(600)
     chk('AI tab shows personal tips', pg.evaluate("document.querySelectorAll('#suggList .sugg-row').length")>=1)
-    pg.evaluate("document.getElementById('genBtn').click()"); pg.wait_for_timeout(800)
+    pg.evaluate("document.querySelector('[data-ai-open=improve]').click()"); pg.wait_for_timeout(800)
     chk('AI panel opens with privacy note', pg.evaluate("document.querySelector('#sheet2 .ai-note')&&/not<\\/b> your name|not\\s+your name/i.test(document.querySelector('#sheet2 .ai-note').innerHTML)") or pg.evaluate("/What is sent/.test(document.querySelector('#sheet2').textContent)"))
     pg.evaluate("document.getElementById('aiSuggest').click()"); pg.wait_for_timeout(1500)
     chk('AI without key/proxy gives a friendly message with buttons', pg.evaluate("document.querySelectorAll('#aiErr button, .ai-status').length")>=1, pg.inner_text('#aiStatus'))

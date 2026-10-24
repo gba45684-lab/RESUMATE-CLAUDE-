@@ -22,8 +22,8 @@ def handler(route):
     elif m=='busy': route.fulfill(status=429, headers={**cors,'Content-Type':'application/json','X-Free-Reason':'busy','X-Free-Remaining':'2','X-Free-Limit':'5'}, body=json.dumps({"error":{"message":"busy"}}))
     elif m=='key': route.fulfill(status=403, headers={**cors,'Content-Type':'application/json'}, body=json.dumps({"error":{"message":"bad key"}}))
     elif m=='net': route.abort()
-EXPECT={'limit':"today's free AI runs",'busy':'busy right now','key':'not available right now','net':"Can't reach the AI"}
-EXPECT_BTNS={'limit':['See offline tips'],'busy':['Try again','See offline tips'],'key':['Try again','See offline tips'],'net':['Try again','See offline tips']}
+EXPECT={'limit':"Today's free AI runs are used up",'busy':'busy right now','key':'not available right now','net':"Can't reach the AI"}
+EXPECT_BTNS={'limit':['Add my own key','Upgrade for more runs'],'busy':['Try again','See offline tips'],'key':['Try again','See offline tips'],'net':['Try again','See offline tips']}
 with sync_playwright() as p:
     b=p.chromium.launch()
     ctx=b.new_context(viewport={'width':393,'height':852}, has_touch=True, is_mobile=True, device_scale_factor=2)
@@ -34,12 +34,14 @@ with sync_playwright() as p:
     pg.add_init_script("if(!sessionStorage.getItem('s')){sessionStorage.setItem('s','1');localStorage.setItem('resumate_lite','1');localStorage.setItem('resumate_seen_welcome','1');localStorage.setItem('resumate_goal_answered','skipped');localStorage.setItem('resumate_user_name','Krapal Singh');localStorage.setItem('resumate_ai_cfg',%s);localStorage.setItem('resumate_jd','We need a Product Manager with Tableau, SQL and Agile experience to own the roadmap.')}"%json.dumps(cfg))
     pg.goto(URL); pg.wait_for_timeout(4800); pg.evaluate("document.getElementById('pwClose').click()"); pg.wait_for_timeout(500)
     pg.evaluate("document.querySelector('[data-tab=ai]').click()"); pg.wait_for_timeout(700)
-    check('AI tab shows the free quota line', 'free AI' in pg.inner_text('#aiHeroQ').lower() or 'free' in pg.inner_text('#aiHeroQ').lower())
-    pg.evaluate("document.getElementById('genBtn').click()"); pg.wait_for_timeout(900)
+    check('AI tab shows the free quota line', 'free AI' in pg.inner_text('#aiUsageLine').lower() or 'free' in pg.inner_text('#aiUsageLine').lower())
+    pg.evaluate("document.querySelector('[data-ai-open=tailor]').click()"); pg.wait_for_timeout(900)
     check('AI panel opens', pg.evaluate("document.querySelector('#sheet2 h3').textContent").strip() != '')
     check('job-ad link is shown when a job ad is saved', not pg.evaluate("document.getElementById('aiJobFromMatch').hidden"))
     pg.evaluate("document.getElementById('aiJobFromMatch').click()")
     check('job ad fills the job field', 'Tableau, SQL' in pg.input_value('#aiJob'))
+    pg.evaluate("document.getElementById('sheet2Close').click()"); pg.wait_for_timeout(450)
+    pg.evaluate("document.querySelector('[data-ai-open=improve]').click()"); pg.wait_for_timeout(700)
     pg.evaluate("document.getElementById('aiSuggest').click()"); pg.wait_for_timeout(250)
     pg.wait_for_timeout(2400)
     body=state['bodies'][-1]
@@ -67,11 +69,12 @@ with sync_playwright() as p:
     pg.evaluate("document.getElementById('sheet2Close').click()"); pg.wait_for_timeout(450)
     for mode in ['limit','busy','key','net']:
         state['mode']=mode; pg.evaluate("localStorage.removeItem('resumate_ai_cache_v1')")
-        pg.evaluate("document.querySelector('[data-tab=ai]').click()"); pg.wait_for_timeout(400); pg.evaluate("document.getElementById('genBtn').click()"); pg.wait_for_timeout(700)
+        pg.evaluate("document.querySelector('[data-tab=ai]').click()"); pg.wait_for_timeout(400); pg.evaluate("document.querySelector('[data-ai-open=improve]').click()"); pg.wait_for_timeout(700)
         pg.evaluate("document.getElementById('aiSuggest').click()"); pg.wait_for_timeout(1800)
-        msg=pg.inner_text('#aiStatus'); btns=pg.evaluate("[...document.querySelectorAll('#aiErr button')].map(b=>b.textContent)")
+        msg=pg.inner_text('#aiStatus'); btns=pg.evaluate("[...document.querySelectorAll('" + ('#aiOut .ai-limit-acts button' if mode=='limit' else '#aiErr button') + "')].map(b=>b.textContent)")
         check(f'[{mode}] shows its error message', EXPECT[mode] in msg)
         check(f'[{mode}] offers the right buttons', btns == EXPECT_BTNS[mode])
+        if mode == 'limit': check('[limit] still gives an answer offline (quick fixes) at the same time', pg.evaluate("document.querySelectorAll('#aiOut .ai-sug').length") >= 1)
         if mode=='limit': pg.screenshot(path=OUT+'ai_err.png')
         pg.evaluate("document.getElementById('sheet2Close').click()"); pg.wait_for_timeout(450)
     check('no page errors', not errs)
