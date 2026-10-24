@@ -186,6 +186,8 @@
   .scr-inner{ padding: 54px 20px 118px; }
 
   /* ---------- Shared bits ---------- */
+  .pv-fit{ border:1px solid var(--maroon); color:var(--maroon); background:var(--paper); cursor:pointer; min-height:32px; margin-left:6px; }
+  .pv-fit[hidden]{ display:none; }
   .brand-row{ display:flex; align-items:center; gap:10px; min-width:0; }
   .th-quick{ width:40px; height:40px; flex:none; border-radius:50%; display:grid; place-items:center; border:1px solid var(--line); background:var(--paper); color:var(--maroon); cursor:pointer; box-shadow:var(--shadow-soft); -webkit-tap-highlight-color:transparent; transition:transform .2s; }
   .th-quick:active{ transform:scale(.92); }
@@ -2402,7 +2404,7 @@
             <div id="segPreview" style="display:none;" role="tabpanel">
               <div class="pv-head">
                 <div><b id="pvName">Template</b><small>Tap the resume to see it full screen</small></div>
-                <span class="hm-badge" id="pvPages">1 page</span>
+                <span class="hm-badge" id="pvPages">1 page</span><button type="button" class="hm-badge pv-fit" id="pvFit" hidden>Slightly over 1 page: tighten</button>
               </div>
               <div class="tpl-switch-strip" id="tplSwitchStrip" role="toolbar" aria-label="Switch template"></div>
               <div class="preview-stage">
@@ -2497,11 +2499,11 @@
     <div class="pw-body">
       <span class="hm-badge pw-a" style="--d:520ms"><svg class="lu" viewBox="0 0 24 24" aria-hidden="true"><path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/><path d="M5 21h14"/></svg>Upgrade your plan</span>
       <h1 id="pwTitle" class="pw-title"><span class="pw-w" style="--i:0">Make</span> <span class="pw-w" style="--i:1">every</span> <span class="pw-w" style="--i:2">resume</span> <span class="pw-w" style="--i:3">your</span> <span class="pw-w pw-grad" style="--i:4">best&nbsp;one</span></h1>
-      <p class="pw-sub pw-a" style="--d:900ms">Every layout, unlimited AI help and exports — all in one plan.</p>
+      <p class="pw-sub pw-a" style="--d:900ms">Every layout, more AI help and unlimited exports — all in one plan.</p>
 
       <ul class="pw-list">
         <li class="pw-a" style="--d:1000ms"><span class="pi"><svg class="lu" viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="7" x="3" y="3" rx="1"/><rect width="9" height="7" x="3" y="14" rx="1"/><rect width="5" height="7" x="16" y="14" rx="1"/></svg></span><div><b>All <span id="pwTplCount">58</span> templates</b><small>Every layout, colour and font option</small></div><svg class="lu ck" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></li>
-        <li class="pw-a" style="--d:1100ms"><span class="pi"><svg class="lu" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></svg></span><div><b>More AI help every day</b><small>Summary, bullets and keywords</small></div><svg class="lu ck" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></li>
+        <li class="pw-a" style="--d:1100ms"><span class="pi"><svg class="lu" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></svg></span><div><b>More AI help every day</b><small>Free: 5 AI runs a day. Premium: more.</small></div><svg class="lu ck" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></li>
         <li class="pw-a" style="--d:1200ms"><span class="pi"><svg class="lu" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m9 15 2 2 4-4"/></svg></span><div><b>ATS-safe layouts</b><small>Clean structure recruiters&apos; systems can read</small></div><svg class="lu ck" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></li>
         <li class="pw-a" style="--d:1300ms"><span class="pi"><svg class="lu" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg></span><div><b>Unlimited exports</b><small>PDF files and data backup</small></div><svg class="lu ck" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></li>
       </ul>
@@ -3338,7 +3340,12 @@
       'Rewrite any part of your resume with AI: select text, see Before and After, then Apply or Undo.',
       'Rewrite styles: stronger, shorter, clearer, or matched to a job ad.',
       'Content editor AI: write or improve your summary, rewrite a bullet, and suggest skills.',
-      'Updates arrive right away, with a sound and a vibration when one is ready.'
+      'Updates arrive right away, with a sound and a vibration when one is ready.',
+      'AI Assistant has its own screen for each task: check, tailor, ask for a change, improve.',
+      'Check my resume: tap Fix this and AI fills empty bullets for you.',
+      'When free AI runs end, you still get an offline answer, plus options to add your own key or upgrade.',
+      'A quick theme button now sits before the ResuMate name.',
+      'Too long for one page? Preview shows what to shorten.'
     ] },
     { version:'1.0', date:'2026-10-17', notes:[
       'First release: templates, editor, PDF / Word export, resume score, job match, cover letter and free AI help.'
@@ -4332,6 +4339,7 @@
 
     const pvN = document.getElementById('pvName'); if(pvN) pvN.textContent = t.name;
     const pvP = document.getElementById('pvPages'); if(pvP) pvP.textContent = pagesN + (pagesN === 1 ? ' page' : ' pages');
+    const pvF = document.getElementById('pvFit'); if(pvF){ const over = naturalH / pageH; pvF.hidden = !(pagesN === 2 && over <= 1.4); pvF.dataset.over = over.toFixed(2); }
     buildSwitchStrip();
     renderDesignMini();
     try{ if(rs.items.length) rsSyncActive(); }catch(e){}
@@ -4497,6 +4505,7 @@
   }
   const aiWait = ms => new Promise(r=> setTimeout(r, ms));
   async function aiCall(prompt, temperature){
+    if(typeof navigator !== 'undefined' && navigator.onLine === false) throw Object.assign(new Error("You're offline. Saved answers and the offline tools still work."), { kind:'network' });
     const viaProxy = !!aiProxyUrl();
     if(ownKey() && aiQuotaLeft() === 0) return aiCallDirect(prompt, temperature);   // shared runs used up today: use the person's own key
     let tryList = aiCfg.model && aiCfg.model!=='auto' ? [aiCfg.model, ...AI_FALLBACK_MODELS.filter(m=>m!==aiCfg.model)] : AI_FALLBACK_MODELS;
@@ -4712,6 +4721,18 @@ ${JSON.stringify(r)}`;
   // ---- Health check (no AI): simple, visible rules and a score. Only the bullet fixes change text, and only after a tap. ----
   const aiWordCount = s => String(s || '').trim().split(/\s+/).filter(Boolean).length;
   const aiWeak = b => QF_VERBS.some(([re])=> new RegExp(re.source, 'i').test(b)) || new RegExp(QF_FILLER.source, 'i').test(b);
+  // Preview: a resume that is only a little over one page gets help to fit on one
+  document.addEventListener('click', e=>{
+    const f = e.target.closest && e.target.closest('#pvFit'); if(!f) return;
+    const long = resumeData.experience.flatMap((x, i)=> x.bullets.map((b, k)=> ({ i, k, b:String(b || '').trim() }))).filter(x=> x.b).sort((a, b)=> b.b.length - a.b.length).slice(0, 4);
+    const over = Math.max(0, Math.round((+f.dataset.over - 1) * 100));
+    openSheet2(`<div class="ai-screen-head"><div><span class="ai-step">Fit to one page</span><h3>About ${over}% too long</h3></div></div>
+      <p class="ai-lead">Recruiters like one page. Shorten or remove these longest bullets, or pick a more compact template.</p>
+      <ul class="ai-fixes">${long.map(x=> `<li><span>${aiEsc(x.b.length > 110 ? x.b.slice(0, 110) + '…' : x.b)}</span><button class="ai-btn2 sm" type="button" data-fit-edit="${x.i}">Edit</button></li>`).join('') || '<li><span>Your summary or skills may be the long part.</span></li>'}</ul>
+      <div class="ai-row"><button class="ai-btn2" type="button" data-fit-tpl>Try a compact template</button></div>`);
+    sheet2Body.querySelectorAll('[data-fit-edit]').forEach(b=> b.addEventListener('click', ()=> aiGoStep('Experience', +b.dataset.fitEdit)));
+    const t = sheet2Body.querySelector('[data-fit-tpl]'); if(t) t.addEventListener('click', ()=>{ closeSheet2(); closeEdit(); switchTab('templates'); });
+  });
   // Check screen: "Fix this" takes the person to the right place
   function aiGoStep(title, roleIdx){
     const step = contentSteps.findIndex(x=> x.title === title); if(step < 0) return;
