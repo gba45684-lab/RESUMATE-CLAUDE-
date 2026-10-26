@@ -6468,7 +6468,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
     const B = nativePlugin('Browser');
     if(isNative() && B && B.open){ try{ B.open({ url }); return; }catch(e){} }
     if(isNative()){      // this installed app has no browser part: copy the link instead of doing nothing
-      try{ navigator.clipboard.writeText(url); }catch(e){}
+      try{ Promise.resolve(navigator.clipboard.writeText(url)).catch(()=>{}); }catch(e){}
       showToast('Link copied. Paste it in your browser. Install the latest app to open links directly.'); return;
     }
     try{ const w = window.open(url, '_blank', 'noopener'); if(w) return; }catch(e){}
