@@ -26,4 +26,7 @@ with sync_playwright() as p:
     b.close()
 src = (HERE.parent / 'free-ai-proxy' / 'worker.js').read_text(encoding='utf-8')
 chk('worker default origins are not "*"', "DEFAULT_ORIGINS = 'https://localhost" in src and "|| '*'" not in src)
+root_pp = (HERE.parent / 'privacy.html').read_text(encoding='utf-8'); www_pp = HERE.parent / 'www' / 'privacy.html'
+chk('privacy page is also in www (the folder the website serves)', www_pp.exists() and www_pp.read_text(encoding='utf-8') == root_pp)
+chk('privacy page covers ads and has no leftover placeholder text about advertising', 'Advertising' in root_pp and 'AdMob' in root_pp)
 print(f"{sum(results)}/{len(results)} passed")
