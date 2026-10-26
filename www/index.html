@@ -1794,6 +1794,8 @@
   .tl-tiles-h{ margin:0 0 9px; font-size:13px; font-weight:700; color:var(--ink); }
   .tl-golden .tl-tiles-h{ font-family:var(--font-serif); font-size:17px; font-weight:600; margin-bottom:11px; }
   .tl-tilegrid{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; }
+  .tl-group{ margin:0 0 14px; } .tl-group:last-child{ margin-bottom:0; }
+  .tl-subh{ margin:0 0 8px; font-size:12px; font-weight:500; color:var(--ink-soft); }
   .tl-tile{ display:flex; flex-direction:column; align-items:flex-start; gap:2px; padding:13px; border-radius:16px; text-align:left; cursor:pointer; background:var(--paper); border:1px solid var(--line); box-shadow:var(--shadow-soft); font-family:var(--font-sans); color:var(--ink); transition:transform .18s cubic-bezier(.34,1.56,.64,1); }
   .tl-tile:active{ transform:scale(.97); }
   .tl-tile .tl-ico{ width:22px; height:22px; color:var(--maroon); margin-bottom:6px; }
@@ -2159,17 +2161,21 @@
 
               <div class="tl-tiles tl-bd" role="group" aria-label="Smart tools">
               <p class="tl-tiles-h">Smart tools</p>
-              <div class="tl-tilegrid">
+              <div class="tl-group"><p class="tl-subh">Resume</p><div class="tl-tilegrid">
                 <button type="button" class="tl-tile" data-tool="resumes"><i class="bd-i tl-ico" data-ic="layers"></i><b>My resumes</b><small data-tile-count>1 saved</small></button>
                 <button type="button" class="tl-tile" data-tool="score"><i class="bd-i tl-ico" data-ic="gauge"></i><b>Resume score</b><small data-tile-score>—</small></button>
                 <button type="button" class="tl-tile" data-tool="job"><i class="bd-i tl-ico" data-ic="target"></i><b>Job match</b><small>Check a job ad</small></button>
                 <button type="button" class="tl-tile" data-tool="letter"><i class="bd-i tl-ico" data-ic="mail"></i><b>Cover letter</b><small>Write in seconds</small></button>
-                <button type="button" class="tl-tile" data-tool="idphoto"><i class="bd-i tl-ico" data-ic="image"></i><b>Passport photo</b><small>Exact size, file limit</small></button>
-                <button type="button" class="tl-tile" data-tool="imgpdf"><i class="bd-i tl-ico" data-ic="file"></i><b>Images to PDF</b><small>Photos in one file</small></button>
-                <button type="button" class="tl-tile" data-tool="compress"><i class="bd-i tl-ico" data-ic="shrink"></i><b>Compress image</b><small>Smaller file size</small></button>
-                <button type="button" class="tl-tile" data-tool="mergepdf"><i class="bd-i tl-ico" data-ic="merge"></i><b>Merge PDFs</b><small>Join in order</small></button>
+</div></div>
+<div class="tl-group"><p class="tl-subh">Documents</p><div class="tl-tilegrid">
                 <button type="button" class="tl-tile" data-tool="importpdf"><i class="bd-i tl-ico" data-ic="file"></i><b>Import PDF resume</b><small>Fill from an old CV</small></button>
-              </div>
+                <button type="button" class="tl-tile" data-tool="imgpdf"><i class="bd-i tl-ico" data-ic="file"></i><b>Images to PDF</b><small>Photos in one file</small></button>
+                <button type="button" class="tl-tile" data-tool="mergepdf"><i class="bd-i tl-ico" data-ic="merge"></i><b>Merge PDFs</b><small>Join in order</small></button>
+</div></div>
+<div class="tl-group"><p class="tl-subh">Photos</p><div class="tl-tilegrid">
+                <button type="button" class="tl-tile" data-tool="idphoto"><i class="bd-i tl-ico" data-ic="image"></i><b>Passport photo</b><small>Exact size, file limit</small></button>
+                <button type="button" class="tl-tile" data-tool="compress"><i class="bd-i tl-ico" data-ic="shrink"></i><b>Compress image</b><small>Smaller file size</small></button>
+</div></div>
             </div>
 
               <div class="bd-resume" data-open-edit role="button" tabindex="0">
@@ -2220,17 +2226,21 @@
 
             <div class="tl-tiles tl-golden" role="group" aria-label="Smart tools">
               <p class="tl-tiles-h">Smart tools</p>
-              <div class="tl-tilegrid">
+              <div class="tl-group"><p class="tl-subh">Resume</p><div class="tl-tilegrid">
                 <button type="button" class="tl-tile" data-tool="resumes"><i class="bd-i tl-ico" data-ic="layers"></i><b>My resumes</b><small data-tile-count>1 saved</small></button>
                 <button type="button" class="tl-tile" data-tool="score"><i class="bd-i tl-ico" data-ic="gauge"></i><b>Resume score</b><small data-tile-score>—</small></button>
                 <button type="button" class="tl-tile" data-tool="job"><i class="bd-i tl-ico" data-ic="target"></i><b>Job match</b><small>Check a job ad</small></button>
                 <button type="button" class="tl-tile" data-tool="letter"><i class="bd-i tl-ico" data-ic="mail"></i><b>Cover letter</b><small>Write in seconds</small></button>
-                <button type="button" class="tl-tile" data-tool="idphoto"><i class="bd-i tl-ico" data-ic="image"></i><b>Passport photo</b><small>Exact size, file limit</small></button>
-                <button type="button" class="tl-tile" data-tool="imgpdf"><i class="bd-i tl-ico" data-ic="file"></i><b>Images to PDF</b><small>Photos in one file</small></button>
-                <button type="button" class="tl-tile" data-tool="compress"><i class="bd-i tl-ico" data-ic="shrink"></i><b>Compress image</b><small>Smaller file size</small></button>
-                <button type="button" class="tl-tile" data-tool="mergepdf"><i class="bd-i tl-ico" data-ic="merge"></i><b>Merge PDFs</b><small>Join in order</small></button>
+</div></div>
+<div class="tl-group"><p class="tl-subh">Documents</p><div class="tl-tilegrid">
                 <button type="button" class="tl-tile" data-tool="importpdf"><i class="bd-i tl-ico" data-ic="file"></i><b>Import PDF resume</b><small>Fill from an old CV</small></button>
-              </div>
+                <button type="button" class="tl-tile" data-tool="imgpdf"><i class="bd-i tl-ico" data-ic="file"></i><b>Images to PDF</b><small>Photos in one file</small></button>
+                <button type="button" class="tl-tile" data-tool="mergepdf"><i class="bd-i tl-ico" data-ic="merge"></i><b>Merge PDFs</b><small>Join in order</small></button>
+</div></div>
+<div class="tl-group"><p class="tl-subh">Photos</p><div class="tl-tilegrid">
+                <button type="button" class="tl-tile" data-tool="idphoto"><i class="bd-i tl-ico" data-ic="image"></i><b>Passport photo</b><small>Exact size, file limit</small></button>
+                <button type="button" class="tl-tile" data-tool="compress"><i class="bd-i tl-ico" data-ic="shrink"></i><b>Compress image</b><small>Smaller file size</small></button>
+</div></div>
             </div>
 
             <div class="sect-head hm-bf" style="--d:520ms"><h3>My Resumes</h3><a data-nav="templates" role="button" tabindex="0">View all <svg class="lu" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></div>
