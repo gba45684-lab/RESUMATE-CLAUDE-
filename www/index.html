@@ -6502,6 +6502,11 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
   // writes only the fields the person kept, then refreshes the resume and its saved copy
   function applyImportedDetails(f){
     let n = 0;
+    // still the demo resume: clear its sample sections so only the imported details remain (photo and template are kept)
+    if(resumeData.name === DEFAULT_NAME){
+      const blank = blankData('');
+      Object.keys(blank).forEach(k=>{ if(k !== 'name' && k !== 'photo') resumeData[k] = blank[k]; });
+    }
     ['name', 'role', 'email', 'phone', 'location', 'linkedin', 'summary', 'skills'].forEach(k=>{
       const v = (f[k] || '').trim(); if(v){ resumeData[k] = v; n++; }
     });
@@ -6898,7 +6903,12 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
           if(!Object.values(out).some(Boolean)){ msg('Nothing to add. Fill in at least one field.'); return; }
           const n = applyImportedDetails(out);
           st.stage = 'pick'; st.fields = null;
-          toolClose(); showToast(`${n} detail${n === 1 ? '' : 's'} added to your resume ✓`);
+          toolClose();
+          switchTab('templates');
+          openEdit();
+          const prevBtn = document.querySelector('button[data-seg="preview"]'); if(prevBtn) prevBtn.click();
+          renderPreviewTemplate();
+          showToast(`${n} detail${n === 1 ? '' : 's'} added. Here is your resume.`);
         });
       };
       draw();

@@ -70,7 +70,11 @@ with sync_playwright() as p:
     chk('applied: skills saved', 'Figma' in saved.get('skills', ''))
     exp = (saved.get('experience') or [{}])[0]
     chk('applied: experience title, company and bullets saved', exp.get('title') == 'Senior Product Manager' and exp.get('org') == 'Acme Corp' and len(exp.get('bullets', [])) == 2, saved.get('experience'))
+    chk('applied: demo sample entries are removed', 'Google Project Management' not in pg.evaluate("localStorage.getItem('resumate_resume_v1') || ''") and 'PayLite' not in pg.evaluate("localStorage.getItem('resumate_resume_v1') || ''"))
     chk('applied: education saved', (saved.get('education') or [{}])[0].get('org') == 'IIT Delhi', saved.get('education'))
+    chk('after import: Templates tab is active', pg.evaluate("document.querySelector('.panel.active').dataset.panel") == 'templates')
+    chk('after import: the editor is open', pg.evaluate("document.querySelector('.panel.push[data-panel=\"edit\"]').classList.contains('open')"))
+    chk('after import: Preview is showing the resume', pg.evaluate("document.querySelector('#segwrap .on').dataset.seg") == 'preview')
     chk('tool closed after use', pg.evaluate("document.getElementById('toolPage').hidden") is True or pg.evaluate("!document.getElementById('toolPage').classList.contains('go')"))
 
     chk('no script errors', not errs, errs)
