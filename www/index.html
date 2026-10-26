@@ -1837,6 +1837,8 @@
   .ip-stage{ display:flex; justify-content:center; align-items:center; margin:14px 0 4px; padding:14px; min-height:220px; border-radius:16px; background:var(--cream-deep); border:1px solid var(--line); }
   .ip-stage canvas{ touch-action:none; cursor:grab; border-radius:8px; box-shadow:var(--shadow-soft); max-width:100%; height:auto; }
   .ip-empty{ flex-direction:column; gap:10px; text-align:center; }
+  .ip-frame{ position:relative; max-width:100%; }
+  .ip-guide{ position:absolute; inset:8%; border:1.5px dashed rgba(255,255,255,.9); border-radius:50%; pointer-events:none; }
   .ip-range{ display:block; width:100%; margin:6px 0 2px; accent-color:var(--maroon); }
   .tl-row:focus-visible, .tl-tile:focus-visible, .tl-btn:focus-visible, .tl-chip:focus-visible{ outline:2px solid var(--maroon); outline-offset:2px; }
   .tl-sw{ width:38px; height:38px; flex:none; border-radius:11px; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:15px; }
@@ -6557,7 +6559,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
         toolBody.innerHTML = `<p class="tl-lead">Pick a size, add a photo, then drag and zoom so the face sits in the middle. The cropped file is made on this phone.</p>
           <div class="tl-seg" role="radiogroup" aria-label="Photo size">${IP_PRESETS.map(p=> `<button type="button" role="radio" aria-checked="${p.id === st.preset}" data-p="${p.id}">${H(p.label)}</button>`).join('')}</div>
           <p class="tl-note">${P.mm} · ${P.w} × ${P.h} px, 300 dpi</p>
-          ${st.src ? `<div class="ip-stage"><canvas id="ipPrev" role="img" aria-label="Crop preview. Drag to move the photo"></canvas></div>
+          ${st.src ? `<div class="ip-stage"><div class="ip-frame"><canvas id="ipPrev" role="img" aria-label="Crop preview. Drag to move the photo"></canvas><div class="ip-guide" aria-hidden="true"></div></div></div>
             <label class="tl-lab" for="ipZoom">Zoom</label>
             <input type="range" class="ip-range" id="ipZoom" min="1" max="4" step="0.01" value="${st.zoom}">
             <label class="tl-lab" for="ipMax">Largest file size</label>
