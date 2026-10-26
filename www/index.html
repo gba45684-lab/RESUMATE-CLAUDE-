@@ -2168,6 +2168,7 @@
                 <button type="button" class="tl-tile" data-tool="imgpdf"><i class="bd-i tl-ico" data-ic="file"></i><b>Images to PDF</b><small>Photos in one file</small></button>
                 <button type="button" class="tl-tile" data-tool="compress"><i class="bd-i tl-ico" data-ic="shrink"></i><b>Compress image</b><small>Smaller file size</small></button>
                 <button type="button" class="tl-tile" data-tool="mergepdf"><i class="bd-i tl-ico" data-ic="merge"></i><b>Merge PDFs</b><small>Join in order</small></button>
+                <button type="button" class="tl-tile" data-tool="importpdf"><i class="bd-i tl-ico" data-ic="file"></i><b>Import PDF resume</b><small>Fill from an old CV</small></button>
               </div>
             </div>
 
@@ -2228,6 +2229,7 @@
                 <button type="button" class="tl-tile" data-tool="imgpdf"><i class="bd-i tl-ico" data-ic="file"></i><b>Images to PDF</b><small>Photos in one file</small></button>
                 <button type="button" class="tl-tile" data-tool="compress"><i class="bd-i tl-ico" data-ic="shrink"></i><b>Compress image</b><small>Smaller file size</small></button>
                 <button type="button" class="tl-tile" data-tool="mergepdf"><i class="bd-i tl-ico" data-ic="merge"></i><b>Merge PDFs</b><small>Join in order</small></button>
+                <button type="button" class="tl-tile" data-tool="importpdf"><i class="bd-i tl-ico" data-ic="file"></i><b>Import PDF resume</b><small>Fill from an old CV</small></button>
               </div>
             </div>
 
@@ -3948,6 +3950,8 @@
     shield:'<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>',
     plus:'<path d="M5 12h14"/><path d="M12 5v14"/>',
     image:'<rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>',
+    trash:'<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>',
+    check:'<path d="M20 6 9 17l-5-5"/>',
     merge:'<path d="m8 6 4-4 4 4"/><path d="M12 2v10.3a4 4 0 0 1-1.172 2.872L4 22"/><path d="m20 22-5-5"/>',
     shrink:'<path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/>',
     upload:'<path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>',
@@ -6370,6 +6374,93 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
     return new Blob([await out.save()], { type:'application/pdf' });
   }
 
+  // ---------- PDF resume import: read text on the phone, suggest details, the person checks them before anything changes ----------
+  let pdfjsReady = null;
+  function pdfjsLib(){
+    if(!pdfjsReady) pdfjsReady = import('./vendor/pdf.min.mjs').then(m=>{ m.GlobalWorkerOptions.workerSrc = './vendor/pdf.worker.min.mjs'; return m; });
+    return pdfjsReady;
+  }
+  // text lines from the first pages, top to bottom; words close together are joined, far apart get a space
+  async function extractPdfLines(file, maxPages){
+    const lib = await pdfjsLib();
+    const doc = await lib.getDocument({ data:new Uint8Array(await file.arrayBuffer()), isEvalSupported:false, useSystemFonts:false }).promise;
+    const out = [];
+    try{
+      for(let p = 1; p <= Math.min(doc.numPages, maxPages); p++){
+        const tc = await (await doc.getPage(p)).getTextContent();
+        const rows = [];
+        tc.items.forEach(it=>{
+          if(!it.str || !it.str.trim()) return;
+          const y = it.transform[5], x = it.transform[4];
+          let row = rows.find(r=> Math.abs(r.y - y) < 3);
+          if(!row){ row = { y, items:[] }; rows.push(row); }
+          row.items.push({ x, w:it.width || 0, s:it.str });
+        });
+        rows.sort((a, b)=> b.y - a.y);
+        rows.forEach(r=>{
+          r.items.sort((a, b)=> a.x - b.x);
+          let line = '', prev = null;
+          r.items.forEach(i=>{
+            if(prev && i.x - (prev.x + prev.w) > 2) line += ' ';
+            line += i.s; prev = i;
+          });
+          line = line.replace(/\s+/g, ' ').trim();
+          if(line) out.push(line);
+        });
+      }
+    } finally { doc.destroy(); }
+    return out;
+  }
+  const RESUME_HEADS = /^(summary|professional summary|profile|about( me)?|objective|career objective|experience|work experience|employment( history)?|professional experience|education|academic background|skills|technical skills|core skills|key skills|core competencies|projects|certifications?|languages|achievements|awards|references|interests|hobbies)\s*:?$/i;
+  // suggests resume fields from text lines; every value is a guess the person reviews
+  function parseResumeText(lines){
+    const r = { name:'', role:'', email:'', phone:'', location:'', linkedin:'', summary:'', skills:'' };
+    const all = lines.join('\n');
+    const em = all.match(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/); if(em) r.email = em[0];
+    const li = all.match(/(?:https?:\/\/)?(?:www\.)?linkedin\.com\/in\/[\w%-]+/i);
+    if(li) r.linkedin = li[0].replace(/^https?:\/\//i, '').replace(/^www\./i, '');
+    const phone = (all.match(/\+?\d[\d\s().-]{8,}\d/g) || []).map(s=> s.trim()).find(s=> { const d = s.replace(/\D/g, '').length; return d >= 10 && d <= 15; });
+    if(phone) r.phone = phone;
+    const top = lines.slice(0, 8);
+    const NAME = /^\p{Lu}[\p{L}.'-]*(?:\s+\p{Lu}[\p{L}.'-]*){1,3}$/u;
+    const plain = s => s.length <= 40 && !/[@\d|:/]/.test(s) && !RESUME_HEADS.test(s);
+    let ni = top.findIndex(s=> plain(s) && NAME.test(s));
+    if(ni < 0) ni = top.findIndex(s=> plain(s) && /^[\p{Lu}\s.'-]+$/u.test(s) && s.split(/\s+/).length >= 2 && s.split(/\s+/).length <= 4);
+    if(ni >= 0){
+      const n = top[ni];
+      r.name = n === n.toUpperCase() ? n.toLowerCase().replace(/(^|[\s-])(\p{L})/gu, (m, a, b)=> a + b.toUpperCase()) : n;
+      const after = top[ni + 1];
+      if(after && after.length <= 60 && !/[@\d|]/.test(after) && !RESUME_HEADS.test(after)) r.role = after;
+    }
+    const loc = top.find(s=> /^\p{L}[\p{L} .'-]{1,40},\s*\p{L}[\p{L} .'-]{1,40}$/u.test(s) && !/[@\d]/.test(s) && s !== r.role);
+    if(loc) r.location = loc;
+    const sections = {}; let cur = null;
+    lines.forEach(l=>{
+      const t = l.trim();
+      if(RESUME_HEADS.test(t)){ cur = t.toLowerCase().replace(/:$/, ''); sections[cur] = sections[cur] || []; return; }
+      if(cur) sections[cur].push(t);
+    });
+    const pick = re => Object.keys(sections).filter(k=> re.test(k)).map(k=> sections[k]).reduce((a, b)=> a.concat(b), []);
+    const sum = pick(/^(summary|professional summary|profile|about( me)?|objective|career objective)$/);
+    if(sum.length) r.summary = sum.join(' ').replace(/\s+/g, ' ').slice(0, 600);
+    const sk = pick(/^(skills|technical skills|core skills|key skills|core competencies)$/);
+    if(sk.length){
+      const items = sk.join(', ').split(/[,•|;·•]+/).map(s=> s.trim()).filter(s=> s && s.length <= 40);
+      r.skills = [...new Set(items)].slice(0, 15).join(', ');
+    }
+    return r;
+  }
+  // writes only the fields the person kept, then refreshes the resume and its saved copy
+  function applyImportedDetails(f){
+    let n = 0;
+    ['name', 'role', 'email', 'phone', 'location', 'linkedin', 'summary', 'skills'].forEach(k=>{
+      const v = (f[k] || '').trim(); if(v){ resumeData[k] = v; n++; }
+    });
+    if(f.name) try{ localStorage.setItem(NAME_KEY, f.name); }catch(e){}
+    saveResume(); renderContentTab(); syncAll();
+    return n;
+  }
+
   // ---------- tool page ----------
   const toolPage = document.getElementById('toolPage'), toolBody = document.getElementById('toolBody'), toolTitle = document.getElementById('toolTitle'), toolSub = document.getElementById('toolSub');
   let toolState = { open:false, name:'', ret:null };
@@ -6717,7 +6808,49 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
         bind();
       };
       draw();
+    } }    ,importpdf:{ render(){
+      setHead('Import from PDF', 'Fill details from an old resume');
+      const st = toolState.importpdf || (toolState.importpdf = { stage:'pick', fields:null, fileName:'' });
+      const LABELS = [['name', 'Full name'], ['role', 'Job title'], ['email', 'Email'], ['phone', 'Phone'], ['location', 'Location'], ['linkedin', 'LinkedIn or portfolio'], ['summary', 'Summary'], ['skills', 'Skills']];
+      const msg = t=> { const m = toolBody.querySelector('#impMsg'); if(m) m.textContent = t || ''; };
+      const draw = ()=>{
+        if(st.stage === 'pick'){
+          toolBody.innerHTML = `<p class="tl-lead">Choose a PDF resume. We read the text on this phone and suggest your details. You check them before anything changes.</p>
+            <div class="tl-add wrap">${filePick('Choose a PDF', 'application/pdf,.pdf', false, 'impFile')}</div>
+            <p class="tl-note">Experience and education aren't imported yet, so add those in the Content tab. Scanned PDFs without text can't be read.</p>
+            <p class="tl-note" id="impMsg" aria-live="polite"></p>`;
+          toolBody.querySelector('#impFile').addEventListener('change', async e=>{
+            const f = e.target.files[0]; e.target.value = ''; if(!f) return;
+            if(!isPdfFile(f)){ msg('Please choose a PDF file'); return; }
+            if(f.size > 15 * 1024 * 1024){ msg('That PDF is over 15 MB — try a smaller file'); return; }
+            msg('Reading the PDF…');
+            try{
+              const lines = await extractPdfLines(f, 5);
+              if(!lines.length){ msg("This PDF has no text we can read. It may be a scan, so type the details in instead."); return; }
+              st.fields = parseResumeText(lines); st.fileName = f.name; st.stage = 'review'; draw();
+            }catch(err){ msg("Couldn't read this PDF. It may be damaged or password-protected."); }
+          });
+          return;
+        }
+        toolBody.innerHTML = `<p class="tl-lead">We found these in ${H(st.fileName)}. Check and fix anything. Fields you fill here replace the same fields in your resume. Empty fields are left as they are.</p>
+          ${LABELS.map(([k, l])=> k === 'summary' || k === 'skills'
+            ? `<label class="tl-lab" for="imp-${k}">${l}</label><textarea class="tl-ta" id="imp-${k}" rows="3">${H(st.fields[k])}</textarea>`
+            : `<label class="tl-lab" for="imp-${k}">${l}</label><input class="tl-input" id="imp-${k}" value="${H(st.fields[k])}" autocomplete="off">`).join('')}
+          <div class="tl-add wrap"><button class="tl-btn" id="impBack">Choose another</button><button class="tl-btn primary" id="impUse">${ico('check')}Use these details</button></div>
+          <p class="tl-note" id="impMsg" aria-live="polite"></p>`;
+        toolBody.querySelector('#impBack').addEventListener('click', ()=>{ st.stage = 'pick'; st.fields = null; draw(); });
+        toolBody.querySelector('#impUse').addEventListener('click', ()=>{
+          const out = {};
+          LABELS.forEach(([k])=> out[k] = toolBody.querySelector('#imp-' + k).value.trim());
+          if(!Object.values(out).some(Boolean)){ msg('Nothing to add. Fill in at least one field.'); return; }
+          const n = applyImportedDetails(out);
+          st.stage = 'pick'; st.fields = null;
+          toolClose(); showToast(`${n} detail${n === 1 ? '' : 's'} added to your resume ✓`);
+        });
+      };
+      draw();
     } }
+
 
   };
 
