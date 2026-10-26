@@ -39,6 +39,13 @@ jobs:
       - name: Add Android platform
         run: npx cap add android
 
+      - name: Add the AdMob application id (Google's public TEST id until you set ADMOB_APP_ID)
+        env:
+          ADMOB_APP_ID: ${{ vars.ADMOB_APP_ID || 'ca-app-pub-3940256099942544~3347511713' }}
+        run: |
+          sed -i "s#</application>#    <meta-data android:name=\"com.google.android.gms.ads.APPLICATION_ID\" android:value=\"${ADMOB_APP_ID}\"/>\n    </application>#" android/app/src/main/AndroidManifest.xml
+          grep -n "APPLICATION_ID" android/app/src/main/AndroidManifest.xml
+
       - name: Sync Capacitor
         run: npx cap sync android
 

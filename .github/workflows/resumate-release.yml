@@ -33,6 +33,15 @@ jobs:
 
       - run: npm install
       - run: npx cap add android
+      - name: Block test ads in a store release
+        run: |
+          if grep -q "testing:true" www/index.html; then echo "ADS.testing is still true in www/index.html. Put your real AdMob banner id there and set testing:false before a store release."; exit 1; fi
+          if [ -z "${{ vars.ADMOB_APP_ID }}" ]; then echo "Set the repository variable ADMOB_APP_ID (your real AdMob app id)."; exit 1; fi
+      - name: Add the AdMob application id
+        env:
+          ADMOB_APP_ID: ${{ vars.ADMOB_APP_ID }}
+        run: |
+          sed -i "s#</application>#    <meta-data android:name=\"com.google.android.gms.ads.APPLICATION_ID\" android:value=\"${ADMOB_APP_ID}\"/>\n    </application>#" android/app/src/main/AndroidManifest.xml
       - run: npx cap sync android
 
       - name: Decode keystore
