@@ -53,6 +53,16 @@ jobs:
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
 
+      - name: Check the APK contains the ads and browser parts
+        run: |
+          APK=android/app/build/outputs/apk/debug/app-debug.apk
+          mkdir -p /tmp/apk && unzip -oq "$APK" -d /tmp/apk
+          cat /tmp/apk/classes*.dex | strings | grep -q "com/getcapacitor/community/admob" || { echo "AdMob plugin is missing from the APK"; exit 1; }
+          cat /tmp/apk/classes*.dex | strings | grep -q "com/capacitorjs/plugins/browser" || { echo "Browser plugin is missing from the APK"; exit 1; }
+          AAPT=$(ls $ANDROID_HOME/build-tools/*/aapt | tail -1)
+          $AAPT dump xmltree "$APK" AndroidManifest.xml | grep -q "com.google.android.gms.ads.APPLICATION_ID" || { echo "AdMob application id is missing from the manifest"; exit 1; }
+          echo "APK has AdMob, Browser and the application id"
+
       - name: Upload APK
         uses: actions/upload-artifact@v5
         with:
