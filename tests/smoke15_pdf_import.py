@@ -16,7 +16,8 @@ c = canvas.Canvas(resume)
 lines = ['Krapal Singh', 'Senior Product Manager', 'Noida, India',
          'krapal.test@example.com | +91 98100 12345 | linkedin.com/in/krapal-singh-demo',
          'Summary', 'Product manager with eight years of experience building mobile apps.',
-         'Skills', 'Python, SQL, Figma, Power BI', 'Experience', 'Acme Corp, 2019 - 2024']
+         'Skills', 'Python, SQL, Figma, Power BI', 'Experience', 'Senior Product Manager | Acme Corp | 2019 - 2024',
+         '- Grew active users by 40%', '- Led a team of 6', 'Education', 'B.Tech Computer Science | IIT Delhi | 2014 - 2018']
 y = 800
 for ln in lines:
     c.drawString(60, y, ln); y -= 22
@@ -57,6 +58,8 @@ with sync_playwright() as p:
     chk('review shows the LinkedIn link', val('linkedin') == 'linkedin.com/in/krapal-singh-demo', val('linkedin'))
     chk('review shows the summary', 'eight years' in val('summary'), val('summary'))
     chk('review shows the skills', 'Python' in val('skills') and 'Figma' in val('skills'), val('skills'))
+    chk('review shows the experience entry', 'Acme Corp' in val('experience') and 'Grew active users' in val('experience'), val('experience'))
+    chk('review shows the education entry', 'IIT Delhi' in val('education'), val('education'))
 
     pg.fill('#imp-role', 'Head of Product')   # the person edits one field before using the rest
     pg.evaluate("document.getElementById('impUse').click()"); pg.wait_for_timeout(900)
@@ -65,6 +68,9 @@ with sync_playwright() as p:
     chk('applied: the edited job title is saved', saved.get('role') == 'Head of Product', saved.get('role'))
     chk('applied: email and phone saved', saved.get('email') == 'krapal.test@example.com' and '98100' in saved.get('phone', ''))
     chk('applied: skills saved', 'Figma' in saved.get('skills', ''))
+    exp = (saved.get('experience') or [{}])[0]
+    chk('applied: experience title, company and bullets saved', exp.get('title') == 'Senior Product Manager' and exp.get('org') == 'Acme Corp' and len(exp.get('bullets', [])) == 2, saved.get('experience'))
+    chk('applied: education saved', (saved.get('education') or [{}])[0].get('org') == 'IIT Delhi', saved.get('education'))
     chk('tool closed after use', pg.evaluate("document.getElementById('toolPage').hidden") is True or pg.evaluate("!document.getElementById('toolPage').classList.contains('go')"))
 
     chk('no script errors', not errs, errs)
