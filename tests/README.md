@@ -14,7 +14,7 @@ Everything runs against `../www/index.html` (override with env `RESUMATE_URL=fil
     python tests/smoke5_content_ai.py        # 18 checks: Content editor AI: write/improve summary, rewrite a bullet, suggest skills
     python tests/smoke6_theme_and_text.py    # 19 checks: job text readable in every theme; newest theme choice wins
     python tests/smoke7_update_alerts.py     # 11 checks: update toast/vibration/sound (open app) and system notification (background), once per version
-    python tests/smoke8_repo_fixes.py        # 4 checks: clear data also removes the own key and history; no page errors; worker origins
+    python tests/smoke8_repo_fixes.py        # 6 checks: privacy page in www, clear data also removes the own key and history; no page errors; worker origins
     python tests/smoke9_check_fixes.py       # 12 checks: Check my resume "Fix this" buttons, AI auto-fills empty bullets, limit options
     python tests/smoke10_fit_offline.py      # 8 checks: upgrade-sheet copy, AI says so when offline, one-page help sheet
     python tests/smoke11_import_clean.py     # 5 checks: a damaged backup file imports safely
