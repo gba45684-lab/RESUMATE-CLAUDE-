@@ -5790,6 +5790,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
       'ResuMate diagnostics', 'Version: ' + APP_VERSION, 'Time: ' + new Date().toString(),
       'Screen: ' + innerWidth + 'x' + innerHeight + ' @' + (devicePixelRatio || 1) + 'x', 'Theme: ' + (document.documentElement.getAttribute('data-theme') || 'golden') + (document.documentElement.classList.contains('lite') ? ' + smooth mode' : ''),
       'Cores/Memory: ' + (navigator.hardwareConcurrency || '?') + ' / ' + (navigator.deviceMemory || '?') + ' GB', 'Online: ' + navigator.onLine, 'Saved items: ' + keys + ' keys, ' + saved + ' downloads',
+      'Native parts: AdMob ' + (nativePlugin('AdMob') ? 'yes' : 'MISSING') + ', Browser ' + (nativePlugin('Browser') ? 'yes' : 'MISSING') + ', native app ' + isNative() + (window.__ads ? ', ads ' + window.__ads.state + (window.__ads.error ? ' (' + window.__ads.error + ')' : '') : ''),
       'PDF libs: ' + (typeof html2canvas) + ', ' + (window.jspdf ? 'jspdf' : 'no jspdf'), 'UA: ' + navigator.userAgent,
       'Recent errors: ' + (errs.length ? '\n' + errs.map(e=> ' - ' + new Date(e.t).toLocaleString() + ': ' + e.m).join('\n') : 'none')
     ].join('\n');
@@ -6466,6 +6467,10 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
   function openExternal(url){
     const B = nativePlugin('Browser');
     if(isNative() && B && B.open){ try{ B.open({ url }); return; }catch(e){} }
+    if(isNative()){      // this installed app has no browser part: copy the link instead of doing nothing
+      try{ Promise.resolve(navigator.clipboard.writeText(url)).catch(()=>{}); }catch(e){}
+      showToast('Link copied. Paste it in your browser. Install the latest app to open links directly.'); return;
+    }
     try{ const w = window.open(url, '_blank', 'noopener'); if(w) return; }catch(e){}
     try{ location.href = url; }catch(e){}
   }
@@ -6492,7 +6497,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
   const ADS = { testing:true, banner:'ca-app-pub-3940256099942544/6300978111', minSeconds:10, tabs:['home', 'profile'] };
   window.__ads = (function(){
     const A = ()=> nativePlugin('AdMob');
-    const born = Date.now(); let state = 'off', ready = false, busy = false, consentDone = false;
+    const born = Date.now(); let state = 'off', ready = false, busy = false, consentDone = false, error = '', retryAt = 0;
     const upgraded = ()=> { try{ return !!(window.__billing && window.__billing.upgraded && window.__billing.upgraded()); }catch(e){ return false; } };
     const vis = id => { const el = document.getElementById(id); return !!el && !el.hidden && getComputedStyle(el).display !== 'none'; };   // first-run screens are removed from the page when done
     // Never on: splash/welcome, the upgrade screen, any sheet or viewer, the editor, template picking, exports, AI work, or while the keyboard is open.
@@ -6508,23 +6513,23 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
       return true;
     }
     async function init(){
-      if(ready || busy) return ready; busy = true;
+      if(ready || busy || Date.now() < retryAt) return ready; busy = true;
       try{
         const P = A();
         try{ const c = await P.requestConsentInfo({ tagForUnderAgeOfConsent:false }); if(c && c.isConsentFormAvailable && c.status === 'REQUIRED') await P.showConsentForm(); consentDone = true; }catch(e){ consentDone = true; }
         await P.initialize({ initializeForTesting:ADS.testing, tagForChildDirectedTreatment:false, tagForUnderAgeOfConsent:false, maxAdContentRating:'General' });
         ready = true;
-      }catch(e){ ready = false; }
+      }catch(e){ ready = false; error = 'init: ' + String((e && e.message) || e).slice(0, 80); retryAt = Date.now() + 60000; }
       busy = false; return ready;
     }
     function margin(){ const t = document.getElementById('tabbar'); if(!t) return 80; const r = t.getBoundingClientRect(); return Math.max(0, Math.round(window.innerHeight - r.top + 16)); }   // sits above the tab bar with a clear gap
     async function show(){
-      if(state === 'shown' || !(await init())) return;
+      if(state === 'shown' || Date.now() < retryAt || !(await init())) return;
       try{
         if(state === 'hidden') await A().resumeBanner();
         else await A().showBanner({ adId:ADS.banner, adSize:'ADAPTIVE_BANNER', position:'BOTTOM_CENTER', margin:margin(), isTesting:ADS.testing });
         state = 'shown'; document.body.classList.add('has-ad');
-      }catch(e){ state = 'off'; }
+      }catch(e){ state = 'off'; error = 'banner: ' + String((e && e.message) || e).slice(0, 80); retryAt = Date.now() + 60000; }
     }
     async function hide(){
       if(state !== 'shown') return;
@@ -6533,7 +6538,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
     }
     function tick(){ if(allowed()) show(); else hide(); }
     setInterval(tick, 1200); document.addEventListener('visibilitychange', tick);
-    return { tick, allowed, get state(){ return state; } };
+    return { tick, allowed, get state(){ return state; }, get error(){ return error; } };
   })();
 
   // Tell the Android update plugin this version started, otherwise it rolls the update back.
