@@ -1828,6 +1828,16 @@
   .tl-list{ display:flex; flex-direction:column; gap:8px; }
   .tl-row, .tl-item{ display:flex; align-items:center; gap:10px; padding:10px; border-radius:14px; background:var(--paper); border:1px solid var(--line); }
   .tl-row{ cursor:pointer; } .tl-row.on{ border-color:var(--maroon); box-shadow:0 0 0 1px var(--maroon); }
+  .tl-filepick{ position:relative; overflow:hidden; }
+  .tl-filepick input{ position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; font-size:0; }
+  .tl-filepick:focus-within{ outline:2px solid var(--maroon); outline-offset:2px; }
+  .tl-file .tl-ic[disabled]{ opacity:.35; pointer-events:none; }
+  .tl-btn:disabled{ opacity:.45; pointer-events:none; }
+  .tl-list{ margin-top:4px; }
+  .ip-stage{ display:flex; justify-content:center; align-items:center; margin:14px 0 4px; padding:14px; min-height:220px; border-radius:16px; background:var(--cream-deep); border:1px solid var(--line); }
+  .ip-stage canvas{ touch-action:none; cursor:grab; border-radius:8px; box-shadow:var(--shadow-soft); max-width:100%; height:auto; }
+  .ip-empty{ flex-direction:column; gap:10px; text-align:center; }
+  .ip-range{ display:block; width:100%; margin:6px 0 2px; accent-color:var(--maroon); }
   .tl-row:focus-visible, .tl-tile:focus-visible, .tl-btn:focus-visible, .tl-chip:focus-visible{ outline:2px solid var(--maroon); outline-offset:2px; }
   .tl-sw{ width:38px; height:38px; flex:none; border-radius:11px; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:15px; }
   .tl-meta{ flex:1; min-width:0; } .tl-meta b{ display:block; font-size:13.5px; font-weight:650; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .tl-meta small{ display:block; font-size:11.5px; color:var(--ink-soft); margin-top:1px; line-height:1.4; }
@@ -2152,6 +2162,10 @@
                 <button type="button" class="tl-tile" data-tool="score"><i class="bd-i tl-ico" data-ic="gauge"></i><b>Resume score</b><small data-tile-score>—</small></button>
                 <button type="button" class="tl-tile" data-tool="job"><i class="bd-i tl-ico" data-ic="target"></i><b>Job match</b><small>Check a job ad</small></button>
                 <button type="button" class="tl-tile" data-tool="letter"><i class="bd-i tl-ico" data-ic="mail"></i><b>Cover letter</b><small>Write in seconds</small></button>
+                <button type="button" class="tl-tile" data-tool="idphoto"><i class="bd-i tl-ico" data-ic="image"></i><b>Passport photo</b><small>Exact size, file limit</small></button>
+                <button type="button" class="tl-tile" data-tool="imgpdf"><i class="bd-i tl-ico" data-ic="file"></i><b>Images to PDF</b><small>Photos in one file</small></button>
+                <button type="button" class="tl-tile" data-tool="compress"><i class="bd-i tl-ico" data-ic="shrink"></i><b>Compress image</b><small>Smaller file size</small></button>
+                <button type="button" class="tl-tile" data-tool="mergepdf"><i class="bd-i tl-ico" data-ic="merge"></i><b>Merge PDFs</b><small>Join in order</small></button>
               </div>
             </div>
 
@@ -2208,6 +2222,10 @@
                 <button type="button" class="tl-tile" data-tool="score"><i class="bd-i tl-ico" data-ic="gauge"></i><b>Resume score</b><small data-tile-score>—</small></button>
                 <button type="button" class="tl-tile" data-tool="job"><i class="bd-i tl-ico" data-ic="target"></i><b>Job match</b><small>Check a job ad</small></button>
                 <button type="button" class="tl-tile" data-tool="letter"><i class="bd-i tl-ico" data-ic="mail"></i><b>Cover letter</b><small>Write in seconds</small></button>
+                <button type="button" class="tl-tile" data-tool="idphoto"><i class="bd-i tl-ico" data-ic="image"></i><b>Passport photo</b><small>Exact size, file limit</small></button>
+                <button type="button" class="tl-tile" data-tool="imgpdf"><i class="bd-i tl-ico" data-ic="file"></i><b>Images to PDF</b><small>Photos in one file</small></button>
+                <button type="button" class="tl-tile" data-tool="compress"><i class="bd-i tl-ico" data-ic="shrink"></i><b>Compress image</b><small>Smaller file size</small></button>
+                <button type="button" class="tl-tile" data-tool="mergepdf"><i class="bd-i tl-ico" data-ic="merge"></i><b>Merge PDFs</b><small>Join in order</small></button>
               </div>
             </div>
 
@@ -3927,6 +3945,9 @@
   const BD_ICONS = {
     shield:'<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>',
     plus:'<path d="M5 12h14"/><path d="M12 5v14"/>',
+    image:'<rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>',
+    merge:'<path d="m8 6 4-4 4 4"/><path d="M12 2v10.3a4 4 0 0 1-1.172 2.872L4 22"/><path d="m20 22-5-5"/>',
+    shrink:'<path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/>',
     upload:'<path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>',
     file:'<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
     chev:'<path d="m9 18 6-6-6-6"/>',
@@ -6218,6 +6239,135 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
     return [`Dear ${who},`, '', intro, '', proof, '', fit, '', close, '', tone === 'friendly' ? 'Warm regards,' : 'Sincerely,', d.name || '', contact].filter((l, i, a)=> !(l === '' && (a[i - 1] === '' || i === 0))).join('\n').replace(/\n{3,}/g, '\n\n');
   }
 
+  // ---------- PDF & photo tools: everything runs on the phone, nothing is uploaded ----------
+  const IP_PRESETS = [
+    { id:'passport', label:'Passport / visa', mm:'35 × 45 mm', w:413, h:531 },
+    { id:'us', label:'US 2×2 in', mm:'51 × 51 mm', w:602, h:602 },
+    { id:'stamp', label:'Stamp / form', mm:'25 × 35 mm', w:295, h:413 },
+    { id:'square', label:'Square', mm:'600 × 600 px', w:600, h:600 }
+  ];
+  const ipPreset = id => IP_PRESETS.find(p=> p.id === id) || IP_PRESETS[0];
+  const PDF_PAGES = { a4:[595.28, 841.89], letter:[612, 792] };
+  const libLoaded = {};
+  function loadScriptOnce(src){
+    if(!libLoaded[src]) libLoaded[src] = new Promise((res, rej)=>{
+      const s = document.createElement('script'); s.src = src; s.onload = res;
+      s.onerror = ()=>{ delete libLoaded[src]; rej(new Error('load')); };
+      document.head.appendChild(s);
+    });
+    return libLoaded[src];
+  }
+  const fmtKB = n => n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
+  let toolFileSeq = 0;
+  const nextFileId = ()=> ++toolFileSeq;
+  const toBlobAsync = (c, type, q)=> new Promise(res=> c.toBlob(res, type, q));
+  // lowers the quality step by step until the file fits the size limit (0 = no limit)
+  async function encodeUnder(c, type, maxBytes){
+    let blob = null;
+    for(const q of [.92, .85, .78, .7, .6, .5, .4]){
+      blob = await toBlobAsync(c, type, q);
+      if(!blob || !maxBytes || blob.size <= maxBytes) break;
+    }
+    return blob;
+  }
+  const blobToDataUrl = b=> new Promise((res, rej)=>{ const r = new FileReader(); r.onload = ()=> res(r.result); r.onerror = rej; r.readAsDataURL(b); });
+  const imgSize = file => new Promise((res, rej)=>{
+    const u = URL.createObjectURL(file), im = new Image();
+    im.onload = ()=>{ URL.revokeObjectURL(u); res({ w: im.naturalWidth, h: im.naturalHeight }); };
+    im.onerror = ()=>{ URL.revokeObjectURL(u); rej(new Error('decode')); };
+    im.src = u;
+  });
+  const toolBase = ()=> (resumeData.name || 'ResuMate').trim().replace(/\s+/g, '_').replace(/[^\w-]/g, '') || 'ResuMate';
+  const isImageFile = f => (f.type && f.type.indexOf('image/') === 0) || /\.(jpe?g|png|webp|gif|bmp|heic|heif)$/i.test(f.name || '');
+  const isPdfFile = f => f.type === 'application/pdf' || /\.pdf$/i.test(f.name || '');
+  const isHeic = f => /heic|heif/i.test((f.type || '') + ' ' + (f.name || ''));
+  const readErr = f => isHeic(f) ? "HEIC photos aren't supported yet — choose a JPG or PNG" : "Couldn't read that image — try a JPG or PNG";
+  // a visible button that opens the phone's picker (the real input sits transparently on top)
+  const filePick = (label, accept, multiple, id)=> `<label class="tl-btn tl-filepick">${ico('plus')}${H(label)}<input type="file" id="${id}" accept="${accept}"${multiple ? ' multiple' : ''} aria-label="${H(label)}"></label>`;
+  // the list of picked files: move up/down or remove before the tool runs
+  function fileRows(items, label){
+    if(!items.length) return `<p class="tl-note">No ${label} added yet.</p>`;
+    return items.map((it, i)=> `<div class="tl-row tl-file" data-fid="${it.id}">
+        <div class="tl-meta"><b>${H(it.name)}</b><small>${fmtKB(it.file.size)}</small></div>
+        <button class="tl-ic" data-act="up" aria-label="Move ${H(it.name)} up"${i === 0 ? ' disabled' : ''}>↑</button>
+        <button class="tl-ic" data-act="down" aria-label="Move ${H(it.name)} down"${i === items.length - 1 ? ' disabled' : ''}>↓</button>
+        <button class="tl-ic danger" data-act="rm" aria-label="Remove ${H(it.name)}">${ico('trash')}</button></div>`).join('');
+  }
+  function bindFileRows(root, items, onChange){
+    root.querySelectorAll('.tl-file').forEach(row=>{
+      const id = +row.dataset.fid;
+      row.querySelectorAll('[data-act]').forEach(b=> b.addEventListener('click', ()=>{
+        const i = items.findIndex(x=> x.id === id); if(i < 0) return;
+        if(b.dataset.act === 'rm') items.splice(i, 1);
+        else {
+          const j = b.dataset.act === 'up' ? i - 1 : i + 1;
+          if(j < 0 || j >= items.length) return;
+          [items[i], items[j]] = [items[j], items[i]];
+        }
+        onChange();
+      }));
+    });
+  }
+  // the part of the photo that ends up in the file: the largest window with the preset's shape, zoomed, kept inside the photo
+  function ipWindow(st){
+    const P = ipPreset(st.preset), a = P.w / P.h;
+    const base = Math.min(st.srcW, st.srcH * a), w = base / st.zoom, h = w / a;
+    st.cx = Math.min(Math.max(st.cx, w / 2), st.srcW - w / 2);
+    st.cy = Math.min(Math.max(st.cy, h / 2), st.srcH - h / 2);
+    return { x: st.cx - w / 2, y: st.cy - h / 2, w, h };
+  }
+  function ipDraw(canvas, st, outW, outH){
+    const win = ipWindow(st);
+    canvas.width = outW; canvas.height = outH;
+    const cx = canvas.getContext('2d');
+    cx.fillStyle = '#fff'; cx.fillRect(0, 0, outW, outH);
+    cx.imageSmoothingQuality = 'high';
+    cx.drawImage(st.src, win.x, win.y, win.w, win.h, 0, 0, outW, outH);
+  }
+  async function imagesToPdf(items, opt, onStep){
+    const { jsPDF } = window.jspdf;
+    let pdf = null; const skipped = [];
+    for(let i = 0; i < items.length; i++){
+      onStep(i + 1, items.length);
+      let c;
+      try{ c = await photoToCanvas(items[i].file, 2400); }catch(e){ skipped.push(items[i].name); continue; }
+      const m = opt.margin;
+      let pw, ph;
+      if(opt.size === 'fit'){ const k = Math.min(1, 14000 / Math.max(c.width, c.height)); pw = c.width * .5 * k; ph = c.height * .5 * k; }
+      else [pw, ph] = PDF_PAGES[opt.size];
+      const orient = pw > ph ? 'l' : 'p';
+      if(!pdf) pdf = new jsPDF({ unit:'pt', format:[pw, ph], orientation:orient });
+      else pdf.addPage([pw, ph], orient);
+      const s = Math.min((pw - 2 * m) / c.width, (ph - 2 * m) / c.height), w = c.width * s, h = c.height * s;
+      pdf.addImage(c.toDataURL('image/jpeg', .9), 'JPEG', (pw - w) / 2, (ph - h) / 2, w, h);
+    }
+    return { blob: pdf ? pdf.output('blob') : null, skipped };
+  }
+  async function cmpSource(st){
+    const side = st.side === 'orig' ? 99999 : +st.side;
+    if(!st.cache || st.cache.side !== side) st.cache = { side, c: await photoToCanvas(st.file, side) };
+    return st.cache.c;
+  }
+  async function cmpEncode(st, c){
+    const q = st.q / 100;
+    let b = await toBlobAsync(c, st.fmt, q);
+    if(b && b.type !== st.fmt){ st.fmtNote = true; b = await toBlobAsync(c, 'image/jpeg', q); }
+    return b;
+  }
+  async function mergePdfs(items, onStep){
+    await loadScriptOnce('vendor/pdf-lib.min.js');
+    const { PDFDocument } = PDFLib, out = await PDFDocument.create();
+    for(let i = 0; i < items.length; i++){
+      onStep(i + 1, items.length);
+      let src;
+      try{ src = await PDFDocument.load(await items[i].file.arrayBuffer()); }
+      catch(e){ throw Object.assign(new Error('pdf'), { file: items[i].name }); }
+      const pages = await out.copyPages(src, src.getPageIndices());
+      pages.forEach(p=> out.addPage(p));
+    }
+    return new Blob([await out.save()], { type:'application/pdf' });
+  }
+
   // ---------- tool page ----------
   const toolPage = document.getElementById('toolPage'), toolBody = document.getElementById('toolBody'), toolTitle = document.getElementById('toolTitle'), toolSub = document.getElementById('toolSub');
   let toolState = { open:false, name:'', ret:null };
@@ -6349,7 +6499,224 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
       g('clPdf').addEventListener('click', async ()=>{ if(await deliverBlob(letterPdf(ta.value), fname('pdf'))) showToast('Cover letter PDF saved ✓'); });
       g('clDocx').addEventListener('click', async ()=>{ if(await deliverBlob(docxFromParagraphs(ta.value.split('\n')), fname('docx'))) showToast('Cover letter (Word) saved ✓'); });
       g('clShare').addEventListener('click', async ()=>{ if(isNative() && nativePlugin('Share')){ try{ await nativePlugin('Share').share({ title:'Cover letter', text:ta.value, dialogTitle:'Share cover letter' }); }catch(e){} return; } if(navigator.share){ try{ await navigator.share({ title:'Cover letter', text:ta.value }); }catch(e){} } else { try{ await navigator.clipboard.writeText(ta.value); showToast('Copied — paste it anywhere'); }catch(e){} } });
+    } }    ,idphoto:{ render(){
+      setHead('Passport & ID photo', 'Crop to an exact size');
+      const st = toolState.idphoto || (toolState.idphoto = { preset:'passport', zoom:1, cx:0, cy:0, src:null, srcW:0, srcH:0, max:'' });
+      let drag = null;
+      const msg = t=> { const m = toolBody.querySelector('#ipMsg'); if(m) m.textContent = t || ''; };
+      const paint = ()=>{
+        const cv = toolBody.querySelector('#ipPrev'); if(!cv || !st.src) return;
+        const P = ipPreset(st.preset), k = 300 / Math.max(P.w, P.h);
+        ipDraw(cv, st, Math.round(P.w * k), Math.round(P.h * k));
+      };
+      const outCanvas = ()=>{ const P = ipPreset(st.preset), c = document.createElement('canvas'); ipDraw(c, st, P.w, P.h); return c; };
+      const load = async f=>{
+        if(!isImageFile(f)){ showToast('Please choose an image file'); return; }
+        msg('Opening photo…');
+        try{
+          const c = await photoToCanvas(f, 2000);
+          Object.assign(st, { src:c, srcW:c.width, srcH:c.height, cx:c.width / 2, cy:c.height / 2, zoom:1 });
+          draw();
+        }catch(e){ showToast(readErr(f)); msg(''); }
+      };
+      const bind = ()=>{
+        toolBody.querySelectorAll('[data-p]').forEach(b=> b.addEventListener('click', ()=>{ st.preset = b.dataset.p; draw(); }));
+        const file = toolBody.querySelector('#ipFile');
+        if(file) file.addEventListener('change', e=>{ const f = e.target.files[0]; e.target.value = ''; if(f) load(f); });
+        if(!st.src) return;
+        paint();
+        const zoom = toolBody.querySelector('#ipZoom'), cv = toolBody.querySelector('#ipPrev');
+        zoom.addEventListener('input', ()=>{ st.zoom = +zoom.value; paint(); });
+        toolBody.querySelector('#ipMax').addEventListener('change', e=>{ st.max = e.target.value; });
+        cv.addEventListener('pointerdown', e=>{ drag = { x:e.clientX, y:e.clientY, cx:st.cx, cy:st.cy }; cv.setPointerCapture(e.pointerId); });
+        cv.addEventListener('pointermove', e=>{
+          if(!drag) return;
+          const k = ipWindow(st).w / cv.getBoundingClientRect().width;
+          st.cx = drag.cx - (e.clientX - drag.x) * k; st.cy = drag.cy - (e.clientY - drag.y) * k; paint();
+        });
+        const end = ()=>{ drag = null; };
+        cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
+        toolBody.querySelector('#ipSave').addEventListener('click', async ()=>{
+          const P = ipPreset(st.preset), limit = st.max ? +st.max * 1024 : 0;
+          msg('Preparing…');
+          const blob = await encodeUnder(outCanvas(), 'image/jpeg', limit);
+          if(!blob){ msg("Couldn't make the file — try again"); return; }
+          if(await deliverBlob(blob, `${toolBase()}_${P.id}.jpg`))
+            msg(limit && blob.size > limit ? `Saved at ${fmtKB(blob.size)} — couldn't go lower at this size.` : 'Photo saved ✓');
+        });
+        toolBody.querySelector('#ipProfile').addEventListener('click', async ()=>{
+          const limit = st.max ? +st.max * 1024 : 0;
+          const blob = await encodeUnder(outCanvas(), 'image/jpeg', limit);
+          if(!blob){ showToast("Couldn't make the photo — try again"); return; }
+          const saved = setPhoto(await blobToDataUrl(blob));
+          showToast(saved ? 'Profile photo updated ✓' : 'Photo added — but it could not be saved on this device');
+        });
+      };
+      const draw = ()=>{
+        const P = ipPreset(st.preset);
+        toolBody.innerHTML = `<p class="tl-lead">Pick a size, add a photo, then drag and zoom so the face sits in the middle. The cropped file is made on this phone.</p>
+          <div class="tl-seg" role="radiogroup" aria-label="Photo size">${IP_PRESETS.map(p=> `<button type="button" role="radio" aria-checked="${p.id === st.preset}" data-p="${p.id}">${H(p.label)}</button>`).join('')}</div>
+          <p class="tl-note">${P.mm} · ${P.w} × ${P.h} px, 300 dpi</p>
+          ${st.src ? `<div class="ip-stage"><canvas id="ipPrev" role="img" aria-label="Crop preview. Drag to move the photo"></canvas></div>
+            <label class="tl-lab" for="ipZoom">Zoom</label>
+            <input type="range" class="ip-range" id="ipZoom" min="1" max="4" step="0.01" value="${st.zoom}">
+            <label class="tl-lab" for="ipMax">Largest file size</label>
+            <select class="tl-input" id="ipMax">${[['','No limit'], ['50','50 KB'], ['100','100 KB'], ['200','200 KB'], ['300','300 KB']].map(([v, l])=> `<option value="${v}"${st.max === v ? ' selected' : ''}>${l}</option>`).join('')}</select>
+            <div class="tl-add wrap"><button class="tl-btn primary" id="ipSave">${ico('download')}Save JPEG</button><button class="tl-btn" id="ipProfile">${ico('image')}Use as profile photo</button></div>
+            <div class="tl-add"><label class="tl-btn tl-filepick">${ico('image')}Choose another photo<input type="file" accept="image/*" id="ipFile" aria-label="Choose another photo"></label></div>`
+          : `<div class="ip-stage ip-empty"><label class="tl-btn primary tl-filepick">${ico('plus')}Choose a photo<input type="file" accept="image/*" id="ipFile" aria-label="Choose a photo"></label><p class="tl-note">JPG or PNG. Convert iPhone HEIC photos first.</p></div>`}
+          <p class="tl-note" id="ipMsg" aria-live="polite"></p>`;
+        bind();
+      };
+      draw();
+    } },
+
+    imgpdf:{ render(){
+      setHead('Images to PDF', 'Photos or scans in one file');
+      const st = toolState.imgpdf || (toolState.imgpdf = { items:[], size:'a4', margin:'small' });
+      const IP_MAX = 30;
+      const msg = t=> { const m = toolBody.querySelector('#imgMsg'); if(m) m.textContent = t || ''; };
+      const bind = ()=>{
+        bindFileRows(toolBody, st.items, draw);
+        toolBody.querySelectorAll('[data-size]').forEach(b=> b.addEventListener('click', ()=>{ st.size = b.dataset.size; draw(); }));
+        toolBody.querySelectorAll('[data-margin]').forEach(b=> b.addEventListener('click', ()=>{ st.margin = b.dataset.margin; draw(); }));
+        toolBody.querySelector('#imgFile').addEventListener('change', e=>{
+          const picked = [...e.target.files].filter(isImageFile); e.target.value = '';
+          if(!picked.length) return;
+          const room = IP_MAX - st.items.length;
+          if(room <= 0){ showToast(`Up to ${IP_MAX} images at a time`); return; }
+          if(picked.length > room) showToast(`Only ${room} more fit — up to ${IP_MAX} at a time`);
+          picked.slice(0, room).forEach(f=> st.items.push({ id:nextFileId(), file:f, name:f.name || 'Image' }));
+          draw();
+        });
+        const go = toolBody.querySelector('#imgGo');
+        if(!go) return;
+        go.addEventListener('click', async ()=>{
+          go.disabled = true; msg('Making your PDF…');
+          try{
+            const { blob, skipped } = await imagesToPdf(st.items, { size:st.size, margin:st.margin === 'small' ? 20 : 0 }, (i, total)=> msg(`Page ${i} of ${total}…`));
+            if(!blob){ msg('None of these images could be read — try JPG or PNG'); return; }
+            if(await deliverBlob(blob, `${toolBase()}_Photos.pdf`)) msg(skipped.length ? `Saved. Skipped: ${skipped.join(', ')}` : 'PDF saved ✓');
+          }catch(e){ msg("Couldn't make the PDF — try fewer or smaller images"); }
+          finally{ go.disabled = false; }
+        });
+      };
+      const draw = ()=>{
+        const n = st.items.length;
+        toolBody.innerHTML = `<p class="tl-lead">Add photos or scans, put them in order, then make one PDF. Everything is done on this phone.</p>
+          <div class="tl-add wrap">${filePick('Add images', 'image/*', true, 'imgFile')}</div>
+          <div class="tl-list">${fileRows(st.items, 'images')}</div>
+          <label class="tl-lab">Page size</label>
+          <div class="tl-seg" role="radiogroup" aria-label="Page size">${[['a4','A4'], ['letter','Letter'], ['fit','Fit to photo']].map(([v, l])=> `<button type="button" role="radio" aria-checked="${st.size === v}" data-size="${v}">${l}</button>`).join('')}</div>
+          <label class="tl-lab">Margin</label>
+          <div class="tl-seg" role="radiogroup" aria-label="Margin">${[['small','Small'], ['none','None']].map(([v, l])=> `<button type="button" role="radio" aria-checked="${st.margin === v}" data-margin="${v}">${l}</button>`).join('')}</div>
+          <div class="tl-add"><button class="tl-btn primary" id="imgGo"${n ? '' : ' disabled'}>${ico('download')}Make PDF</button></div>
+          <p class="tl-note" id="imgMsg" aria-live="polite">Up to ${IP_MAX} images at a time.</p>`;
+        bind();
+      };
+      draw();
+    } },
+
+    compress:{ render(){
+      setHead('Compress image', 'Smaller file, same photo');
+      const st = toolState.compress || (toolState.compress = { file:null, orig:null, cache:null, est:null, fmt:'image/jpeg', fmtNote:false, side:'2048', q:80, token:0 });
+      const SIDES = [['2048','2048 px'], ['1280','1280 px'], ['800','800 px']];
+      const msg = t=> { const m = toolBody.querySelector('#cmpMsg'); if(m) m.textContent = t || ''; };
+      const estText = ()=>{
+        if(!st.est) return 'Working out the new size…';
+        const pct = Math.round((1 - st.est.size / st.file.size) * 100);
+        return `About ${fmtKB(st.est.size)} · ${pct > 0 ? pct + '% smaller than the original' : 'not smaller at these settings — try a lower quality or size'}${st.fmtNote ? " · WebP isn't supported on this phone, so JPEG is used" : ''}`;
+      };
+      const estimate = async ()=>{
+        const token = ++st.token;
+        try{ const blob = await cmpEncode(st, await cmpSource(st)); if(token === st.token) st.est = blob; }
+        catch(e){ if(token === st.token) st.est = null; }
+        const el = toolBody.querySelector('#cmpEst'); if(el) el.textContent = estText();
+      };
+      const save = async ()=>{
+        msg('Preparing…');
+        try{
+          const blob = await cmpEncode(st, await cmpSource(st));
+          if(!blob){ msg("Couldn't make the file — try again"); return; }
+          const ext = blob.type === 'image/webp' ? 'webp' : 'jpg';
+          if(await deliverBlob(blob, `${toolBase()}_compressed.${ext}`)) msg(`Saved ✓ · ${fmtKB(blob.size)}`);
+        }catch(e){ msg("Couldn't compress this image — try a JPG or PNG"); }
+      };
+      const bind = ()=>{
+        const f = toolBody.querySelector('#cmpFile');
+        if(f) f.addEventListener('change', async e=>{
+          const file = e.target.files[0]; e.target.value = ''; if(!file) return;
+          if(!isImageFile(file)){ showToast('Please choose an image file'); return; }
+          try{ st.orig = await imgSize(file); }catch(err){ showToast(readErr(file)); return; }
+          Object.assign(st, { file, cache:null, est:null, fmtNote:false });
+          draw();
+        });
+        if(!st.file) return;
+        toolBody.querySelectorAll('[data-fmt]').forEach(b=> b.addEventListener('click', ()=>{ st.fmt = b.dataset.fmt; st.fmtNote = false; draw(); }));
+        toolBody.querySelectorAll('[data-side]').forEach(b=> b.addEventListener('click', ()=>{ st.side = b.dataset.side; st.est = null; draw(); }));
+        const q = toolBody.querySelector('#cmpQ');
+        q.addEventListener('input', ()=>{ st.q = +q.value; toolBody.querySelector('#cmpQv').textContent = st.q; });
+        q.addEventListener('change', ()=>{ st.q = +q.value; st.est = null; estimate(); });
+        toolBody.querySelector('#cmpSave').addEventListener('click', save);
+      };
+      const draw = ()=>{
+        toolBody.innerHTML = `<p class="tl-lead">Shrink a photo for an upload limit or to save space. Choose a size and quality, then check the new file size.</p>
+          <div class="tl-add wrap"><label class="tl-btn tl-filepick">${ico('plus')}${st.file ? 'Choose another image' : 'Choose an image'}<input type="file" accept="image/*" id="cmpFile" aria-label="Choose an image to compress"></label></div>
+          ${st.file ? `<p class="tl-note">Original: ${H(st.file.name)} · ${fmtKB(st.file.size)} · ${st.orig.w} × ${st.orig.h} px</p>
+            <label class="tl-lab">Format</label>
+            <div class="tl-seg" role="radiogroup" aria-label="Format">${[['image/jpeg','JPEG'], ['image/webp','WebP']].map(([v, l])=> `<button type="button" role="radio" aria-checked="${st.fmt === v}" data-fmt="${v}">${l}</button>`).join('')}</div>
+            <label class="tl-lab">Longest side</label>
+            <div class="tl-seg" role="radiogroup" aria-label="Longest side">${SIDES.map(([v, l])=> `<button type="button" role="radio" aria-checked="${st.side === v}" data-side="${v}">${l}</button>`).join('')}</div>
+            <label class="tl-lab" for="cmpQ">Quality: <span id="cmpQv">${st.q}</span>%</label>
+            <input type="range" class="ip-range" id="cmpQ" min="40" max="95" step="1" value="${st.q}">
+            <p class="tl-note" id="cmpEst" aria-live="polite">${estText()}</p>
+            <div class="tl-add"><button class="tl-btn primary" id="cmpSave">${ico('download')}Save compressed image</button></div>` : ''}
+          <p class="tl-note" id="cmpMsg" aria-live="polite"></p>`;
+        bind();
+        if(st.file) estimate();
+      };
+      draw();
+    } },
+
+    mergepdf:{ render(){
+      setHead('Merge PDFs', 'Join files in order');
+      const st = toolState.mergepdf || (toolState.mergepdf = { items:[] });
+      const MAX = 20;
+      const msg = t=> { const m = toolBody.querySelector('#mpMsg'); if(m) m.textContent = t || ''; };
+      const bind = ()=>{
+        bindFileRows(toolBody, st.items, draw);
+        toolBody.querySelector('#mpFile').addEventListener('change', e=>{
+          const picked = [...e.target.files].filter(isPdfFile); e.target.value = '';
+          if(!picked.length){ showToast('Please choose PDF files'); return; }
+          const room = MAX - st.items.length;
+          if(room <= 0){ showToast(`Up to ${MAX} files at a time`); return; }
+          picked.slice(0, room).forEach(f=> st.items.push({ id:nextFileId(), file:f, name:f.name || 'document.pdf' }));
+          draw();
+        });
+        const go = toolBody.querySelector('#mpGo');
+        if(!go) return;
+        go.addEventListener('click', async ()=>{
+          go.disabled = true; msg('Joining…');
+          try{
+            const blob = await mergePdfs(st.items, (i, total)=> msg(`Adding file ${i} of ${total}…`));
+            if(await deliverBlob(blob, `${toolBase()}_Merged.pdf`)) msg('Merged PDF saved ✓');
+          }catch(e){
+            msg(e && e.file ? `"${e.file}" is password-protected or damaged. Remove it and try again.` : "Couldn't join these files — try again");
+          }finally{ go.disabled = false; }
+        });
+      };
+      const draw = ()=>{
+        const n = st.items.length;
+        toolBody.innerHTML = `<p class="tl-lead">Add PDFs, arrange them in the order you want, then join them into one file. Files stay on this phone.</p>
+          <div class="tl-add wrap">${filePick('Add PDF files', 'application/pdf,.pdf', true, 'mpFile')}</div>
+          <div class="tl-list">${fileRows(st.items, 'PDF files')}</div>
+          <div class="tl-add"><button class="tl-btn primary" id="mpGo"${n < 2 ? ' disabled' : ''}>${ico('merge')}Merge PDFs</button></div>
+          <p class="tl-note" id="mpMsg" aria-live="polite">${n < 2 ? 'Add at least two files.' : `Up to ${MAX} files at a time. Password-protected PDFs can't be merged.`}</p>`;
+        bind();
+      };
+      draw();
     } }
+
   };
 
   // ---------- glue: tiles on Home, tool page, profile row, export buttons ----------
