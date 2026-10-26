@@ -46,3 +46,4 @@ jobs:
           python tests/smoke10_fit_offline.py
           python tests/smoke11_import_clean.py
           python tests/smoke12_csp.py
+          python tests/smoke13_ads_privacy.py
