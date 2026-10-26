@@ -39,6 +39,12 @@ jobs:
       - name: Add Android platform
         run: npx cap add android
 
+      - name: Generate the app icon from resources/
+        run: |
+          npx -y --package=@capacitor/assets@3 capacitor-assets generate --android \
+            --iconBackgroundColor '#F7EFE0' --iconBackgroundColorDark '#F7EFE0'
+          ls android/app/src/main/res/mipmap-xxxhdpi/ | grep ic_launcher
+
       - name: Add the AdMob application id (Google's public TEST id until you set ADMOB_APP_ID)
         env:
           ADMOB_APP_ID: ${{ vars.ADMOB_APP_ID || 'ca-app-pub-3940256099942544~3347511713' }}
