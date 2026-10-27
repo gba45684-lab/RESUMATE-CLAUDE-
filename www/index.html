@@ -1801,6 +1801,9 @@
   .jt-st button{ min-height:36px; padding:0 10px; border-radius:999px; border:1px solid var(--line-strong); background:var(--paper); color:var(--ink); font:600 12px var(--font-sans); cursor:pointer; }
   .jt-st button[aria-pressed="true"]{ background:var(--maroon); border-color:var(--maroon); color:#fff; }
   .sg-cv{ display:block; width:100%; max-width:360px; height:150px; touch-action:none; border:1px dashed var(--line-strong); border-radius:12px; background:#fff; }
+  .iv-q{ padding:14px; border-radius:16px; background:var(--paper); border:1px solid var(--line-strong); margin:0 0 12px; }
+  .iv-q b{ display:block; margin-bottom:8px; font-size:14px; }
+  .iv-count{ font-size:12px; color:var(--ink-soft); margin-top:6px; }
   .save-hint{ margin:0 0 6px; min-height:18px; font-size:12px; font-weight:600; color:var(--ink-soft); text-align:center; opacity:0; transition:opacity .25s ease; }
   .save-hint.on{ opacity:1; }
   .tl-golden .tl-tiles-h{ font-family:var(--font-serif); font-size:17px; font-weight:600; margin-bottom:11px; }
@@ -2186,10 +2189,14 @@
               <div class="tl-group"><p class="tl-subh">Resume</p><div class="tl-tilegrid">
                 <button type="button" class="tl-tile" data-tool="resumes"><i class="bd-i tl-ico" data-ic="layers"></i><b>My resumes</b><small data-tile-count>1 saved</small></button>
                 <button type="button" class="tl-tile" data-tool="score"><i class="bd-i tl-ico" data-ic="gauge"></i><b>Resume score</b><small data-tile-score>—</small></button>
-                <button type="button" class="tl-tile" data-tool="job"><i class="bd-i tl-ico" data-ic="target"></i><b>Job match</b><small>Check a job ad</small></button>
-                <button type="button" class="tl-tile" data-tool="letter"><i class="bd-i tl-ico" data-ic="mail"></i><b>Cover letter</b><small>Write in seconds</small></button>
-                <button type="button" class="tl-tile" data-tool="jobtracker"><i class="bd-i tl-ico" data-ic="target"></i><b>Job tracker</b><small>Applications and follow-ups</small></button>
                 <button type="button" class="tl-tile" data-tool="importpdf"><i class="bd-i tl-ico" data-ic="file"></i><b>Import PDF resume</b><small>Fill from an old CV</small></button>
+</div></div>
+<div class="tl-group"><p class="tl-subh">Career</p><div class="tl-tilegrid">
+                <button type="button" class="tl-tile" data-tool="job"><i class="bd-i tl-ico" data-ic="target"></i><b>Job match</b><small>Check a job ad</small></button>
+                <button type="button" class="tl-tile" data-tool="interview"><i class="bd-i tl-ico" data-ic="sparkles"></i><b>Interview prep</b><small>Questions and practice</small></button>
+                <button type="button" class="tl-tile" data-tool="jobtracker"><i class="bd-i tl-ico" data-ic="layout"></i><b>Job tracker</b><small>Applications and follow-ups</small></button>
+                <button type="button" class="tl-tile" data-tool="letter"><i class="bd-i tl-ico" data-ic="mail"></i><b>Cover letter</b><small>Write in seconds</small></button>
+                <button type="button" class="tl-tile" data-tool="messages"><i class="bd-i tl-ico" data-ic="mail"></i><b>Messages</b><small>Recruiter, LinkedIn, follow-up</small></button>
 </div></div>
 <div class="tl-group"><p class="tl-subh">Documents</p><div class="tl-tilegrid">
                 <button type="button" class="tl-tile" data-tool="pdftools"><i class="bd-i tl-ico" data-ic="file"></i><b>PDF tools</b><small>All PDF tools in one place</small></button>
@@ -2251,10 +2258,14 @@
               <div class="tl-group"><p class="tl-subh">Resume</p><div class="tl-tilegrid">
                 <button type="button" class="tl-tile" data-tool="resumes"><i class="bd-i tl-ico" data-ic="layers"></i><b>My resumes</b><small data-tile-count>1 saved</small></button>
                 <button type="button" class="tl-tile" data-tool="score"><i class="bd-i tl-ico" data-ic="gauge"></i><b>Resume score</b><small data-tile-score>—</small></button>
-                <button type="button" class="tl-tile" data-tool="job"><i class="bd-i tl-ico" data-ic="target"></i><b>Job match</b><small>Check a job ad</small></button>
-                <button type="button" class="tl-tile" data-tool="letter"><i class="bd-i tl-ico" data-ic="mail"></i><b>Cover letter</b><small>Write in seconds</small></button>
-                <button type="button" class="tl-tile" data-tool="jobtracker"><i class="bd-i tl-ico" data-ic="target"></i><b>Job tracker</b><small>Applications and follow-ups</small></button>
                 <button type="button" class="tl-tile" data-tool="importpdf"><i class="bd-i tl-ico" data-ic="file"></i><b>Import PDF resume</b><small>Fill from an old CV</small></button>
+</div></div>
+<div class="tl-group"><p class="tl-subh">Career</p><div class="tl-tilegrid">
+                <button type="button" class="tl-tile" data-tool="job"><i class="bd-i tl-ico" data-ic="target"></i><b>Job match</b><small>Check a job ad</small></button>
+                <button type="button" class="tl-tile" data-tool="interview"><i class="bd-i tl-ico" data-ic="sparkles"></i><b>Interview prep</b><small>Questions and practice</small></button>
+                <button type="button" class="tl-tile" data-tool="jobtracker"><i class="bd-i tl-ico" data-ic="layout"></i><b>Job tracker</b><small>Applications and follow-ups</small></button>
+                <button type="button" class="tl-tile" data-tool="letter"><i class="bd-i tl-ico" data-ic="mail"></i><b>Cover letter</b><small>Write in seconds</small></button>
+                <button type="button" class="tl-tile" data-tool="messages"><i class="bd-i tl-ico" data-ic="mail"></i><b>Messages</b><small>Recruiter, LinkedIn, follow-up</small></button>
 </div></div>
 <div class="tl-group"><p class="tl-subh">Documents</p><div class="tl-tilegrid">
                 <button type="button" class="tl-tile" data-tool="pdftools"><i class="bd-i tl-ico" data-ic="file"></i><b>PDF tools</b><small>All PDF tools in one place</small></button>
@@ -6752,6 +6763,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
           <div><span class="tl-tag ${cls}">${lab}</span><p class="tl-lead" style="margin:8px 0 0">${r.matched.length} of ${r.kws.length} key terms found in your resume.</p></div></div>
           ${r.missing.length ? `<p class="tl-h">Missing from your resume <button class="tl-link" id="jdAddAll">Add all to skills</button></p><div class="tl-chips">${r.missing.map(x=> `<button class="tl-chip miss" data-kw="${H(x.k)}" aria-label="Add ${H(x.k)} to skills">${ico('plus')}${H(x.k)}</button>`).join('')}</div><p class="tl-note">Only add a skill if you really have it. Adding puts it in your Skills list.</p>` : '<div class="tl-empty">Your resume already covers every key term. 🎯</div>'}
           ${r.matched.length ? `<p class="tl-h">Already covered</p><div class="tl-chips">${r.matched.map(x=> `<span class="tl-chip hit">${ico('check')}${H(x.k)}</span>`).join('')}</div>` : ''}
+          <p class="tl-note">How this score works: it counts how many of the job's main words appear in your resume. It is a guide, not a promise that any system will pass your resume. Add a skill only if it is true for you.</p>
           <div class="tl-add"><button class="tl-btn primary" id="jdLetter">${ico('mail')}Write a cover letter for this job</button></div>`;
         out.querySelectorAll('[data-kw]').forEach(b=> b.addEventListener('click', ()=>{ if(addSkill(b.dataset.kw)){ b.classList.remove('miss'); b.classList.add('done'); b.disabled = true; b.innerHTML = ico('check') + H(b.dataset.kw); buzz(8); } else showToast('Already in your skills'); }));
         const all = document.getElementById('jdAddAll'); if(all) all.addEventListener('click', ()=>{ if(!all.dataset.armed){ all.dataset.armed = '1'; all.textContent = 'Tap again — only add skills you really have'; setTimeout(()=>{ delete all.dataset.armed; all.textContent = 'Add all to skills'; }, 4000); return; } let n = 0; out.querySelectorAll('[data-kw]:not(.done)').forEach(b=>{ if(addSkill(b.dataset.kw)) n++; b.classList.remove('miss'); b.classList.add('done'); b.disabled = true; b.innerHTML = ico('check') + H(b.dataset.kw); }); showToast(n ? `Added ${n} to your skills` : 'Nothing new to add'); });
@@ -7123,7 +7135,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
           const due = !!j.follow && j.follow <= today && (j.status === 'applied' || j.status === 'interview');
           return `<div class="tl-row jt-row${due ? ' due' : ''}" data-id="${H(j.id)}">
             <div class="tl-meta"><b>${H(j.role || 'Role')} · ${H(j.company || 'Company')}</b>
-              <small>Applied ${H(j.applied || '—')}${j.follow ? ' · Follow up ' + H(j.follow) : ''}</small>
+              <small>Applied ${H(j.applied || '—')}${j.follow ? ' · Follow up ' + H(j.follow) : ''}${j.resume ? ' · Resume: ' + H(j.resume) : ''}</small>
               ${due ? '<small class="jt-due">Follow up due</small>' : ''}
               ${j.note ? `<small>${H(j.note)}</small>` : ''}
               <div class="jt-st" role="group" aria-label="Status">${STATUS.map(([k, l])=> `<button type="button" data-st="${k}" aria-pressed="${j.status === k}">${l}</button>`).join('')}</div>
@@ -7147,7 +7159,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
           if(!role && !co){ msg('Add a role or a company'); return; }
           const item = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), role, company: co,
             applied: toolBody.querySelector('#jtApplied').value || today, follow: toolBody.querySelector('#jtFollow').value || '',
-            note: toolBody.querySelector('#jtNote').value.trim(), status: 'applied' };
+            note: toolBody.querySelector('#jtNote').value.trim(), status: 'applied', resume: (rsActiveItem() || {}).label || resumeData.name || '' };
           if(!store([item, ...list])){ msg("Couldn't save on this phone — free up some space and try again"); return; }
           showToast('Application added'); draw();
         });
@@ -7273,6 +7285,83 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
         // the store purchase plugin is not in this build yet; nothing is charged here
         if(m) m.textContent = nativePlugin('RevenueCatPurchases') ? 'Opening the store…' : 'Purchases switch on once the Play Store listing is set up. Nothing has been charged.';
       }));
+    } },
+
+    interview:{ render(){
+      setHead('Interview prep', 'Practise with your own experience');
+      const BANK = {
+        'Software and IT': ['Tell me about a project you built from start to finish.', 'How do you debug a problem you have never seen before?', 'Describe a time you disagreed with a teammate about a technical choice.', 'How do you keep code quality high when deadlines are tight?', 'What would you do differently on a project you delivered?', 'Why do you want to work on this product?'],
+        'Sales': ['Walk me through how you would find new customers in your first month.', 'Tell me about a target you missed and what you did next.', 'How do you handle a customer who says your price is too high?', 'Describe a deal you won and what made the difference.', 'How do you follow up with a lead who has gone quiet?', 'What do you do when you are behind target at month end?'],
+        'Banking and finance': ['Why banking, and why this role?', 'How do you handle a customer who is upset about a charge or a delay?', 'How do you make sure a process follows the rules without slowing down?', 'Describe a time you found an error in numbers or records. What did you do?', 'How do you keep up with rules and products?', 'How do you explain a complex product to someone with no finance background?'],
+        'Customer support': ['How do you calm an upset customer on a call or chat?', 'Tell me about a difficult ticket you solved.', 'How do you handle a question you do not know the answer to?', 'How do you prioritise when many customers are waiting?', 'Describe a complaint you turned into a good outcome.', 'How do you write notes so the next person can help quickly?'],
+        'Operations': ['Describe a process you improved and how you measured it.', 'How do you handle a team member who keeps missing deadlines?', 'Tell me about a delivery that went wrong. What did you do?', 'How do you track several tasks at once?', 'How do you handle a supplier who misses a date?', 'Which numbers do you check every day, and why?'],
+        'Fresher and general': ['Tell me about yourself in two minutes.', 'Why did you choose your course or degree?', 'Tell me about a project from college or self-study.', 'What is one weakness you are working on?', 'Where do you see yourself in three years?', 'Why should we hire you over another fresher?']
+      };
+      const KEY = 'resumate_interview_v1';
+      const store = (()=>{ try{ return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; }catch(e){ return {}; } })();
+      const save = ()=>{ try{ localStorage.setItem(KEY, JSON.stringify(store)); }catch(e){} };
+      const famNow = ()=> Object.keys(BANK).includes(store.family) ? store.family : 'Fresher and general';
+      const exp = (resumeData.experience || []).find(e=> e && (e.title || e.org || (e.bullets || []).length)) || null;
+      const starter = exp ? `In my role as ${exp.title || 'my role'}${exp.org ? ' at ' + exp.org : ''}, ${(exp.bullets || []).filter(Boolean).slice(0, 2).join('. ')}`.replace(/\.\s*$/, '') + '.' : '';
+      const draw = ()=>{
+        const family = famNow(), qs = BANK[family];
+        toolBody.innerHTML = `<p class="tl-lead">Pick the kind of job, then answer each question in your own words. Use a real example from your work or study.</p>
+          <label class="tl-lab" for="ivFam">Job type</label>
+          <select id="ivFam" class="tl-input">${Object.keys(BANK).map(k=> `<option value="${H(k)}"${k === family ? ' selected' : ''}>${H(k)}</option>`).join('')}</select>
+          <p class="tl-note">Answer with a short story: what the situation was, what you did, and what happened (about 60–120 words).</p>
+          ${qs.map((q, i)=>{ const key = family + '|' + i, val = store[key] || ''; return `<div class="iv-q"><b>${i + 1}. ${H(q)}</b>
+            <textarea class="tl-ta" rows="4" data-key="${H(key)}" aria-label="Your answer to question ${i + 1}" maxlength="1200">${H(val)}</textarea>
+            <div class="iv-count" data-count="${H(key)}">${val.trim() ? val.trim().split(/\s+/).length + ' words' : ''}</div>
+            <div class="tl-add">${starter ? `<button class="tl-btn" type="button" data-starter="${H(key)}">Start from my experience</button>` : ''}</div></div>`; }).join('')}`;
+        const fam = toolBody.querySelector('#ivFam');
+        fam.addEventListener('change', ()=>{ store.family = fam.value; save(); draw(); });
+        toolBody.querySelectorAll('textarea[data-key]').forEach(t=> t.addEventListener('input', ()=>{
+          store[t.dataset.key] = t.value; save();
+          const n = t.value.trim() ? t.value.trim().split(/\s+/).length : 0;
+          const c = toolBody.querySelector(`[data-count="${t.dataset.key}"]`); if(c) c.textContent = n ? `${n} words${n < 60 ? ' · aim for 60–120' : n > 120 ? ' · a bit long' : ''}` : '';
+        }));
+        toolBody.querySelectorAll('[data-starter]').forEach(b=> b.addEventListener('click', ()=>{
+          const t = toolBody.querySelector(`textarea[data-key="${b.dataset.starter}"]`); if(!t) return;
+          t.value = t.value.trim() ? t.value : starter; store[b.dataset.starter] = t.value; save(); t.dispatchEvent(new Event('input'));
+          showToast('Edit it so it sounds like you');
+        }));
+      };
+      draw();
+    } },
+
+    messages:{ render(){
+      setHead('Messages', 'Recruiter, LinkedIn and follow-up');
+      const TYPES = [['recruiter', 'Reply to a recruiter'], ['linkedin', 'LinkedIn summary'], ['followup', 'Follow-up email']];
+      const skills = (resumeData.skills || '').split(/[,·]/).map(x=> x.trim()).filter(Boolean);
+      const st = toolState.messages || (toolState.messages = { type:'recruiter', recruiter:'', role:resumeData.role || '', company:'', date:'' });
+      const txt = ()=>{
+        const who = st.recruiter.trim() || 'there', role = st.role.trim() || 'the role', co = st.company.trim() || 'your company', me = resumeData.name || '';
+        if(st.type === 'recruiter') return `Hi ${who},\n\nThank you for reaching out about the ${role} role${st.company.trim() ? ' at ' + co : ''}. I am interested and would be glad to talk.\n\nMy background is ${resumeData.role || 'in my field'}${skills.length ? ', with skills in ' + skills.slice(0, 4).join(', ') : ''}.\n\nWhen would be a good time to speak?\n\n${me}`;
+        if(st.type === 'linkedin'){ const sm = (resumeData.summary || '').trim(); return `${resumeData.role || 'Professional'}${skills.length ? ' | ' + skills.slice(0, 4).join(' | ') : ''}${sm ? '\n\n' + sm.slice(0, 500) : ''}`; }
+        return `Subject: Following up on my application for ${role}\n\nDear ${st.recruiter.trim() || 'Hiring Team'},\n\nI applied for the ${role} role${st.company.trim() ? ' at ' + co : ''}${st.date ? ' on ' + st.date : ''} and wanted to check on its status. I remain very interested and am happy to share anything that helps.\n\nThank you,\n${me}${resumeData.phone ? '\n' + resumeData.phone : ''}`;
+      };
+      const draw = ()=>{
+        toolBody.innerHTML = `<p class="tl-lead">Short messages built from your resume. Change anything you like, then copy.</p>
+          <div class="tl-seg" role="radiogroup" aria-label="Message type">${TYPES.map(([v, l])=> `<button type="button" role="radio" aria-checked="${st.type === v}" data-type="${v}">${l}</button>`).join('')}</div>
+          ${st.type === 'linkedin' ? '' : `<label class="tl-lab" for="msRec">${st.type === 'recruiter' ? 'Their name (optional)' : 'Recruiter or hiring manager (optional)'}</label><input id="msRec" class="tl-input" maxlength="60" value="${H(st.recruiter)}" autocomplete="off">
+          <label class="tl-lab" for="msRole">Role</label><input id="msRole" class="tl-input" maxlength="60" value="${H(st.role)}" autocomplete="off">
+          <label class="tl-lab" for="msCo">Company (optional)</label><input id="msCo" class="tl-input" maxlength="60" value="${H(st.company)}" autocomplete="off">`}
+          ${st.type === 'followup' ? `<label class="tl-lab" for="msDate">Date you applied (optional)</label><input type="date" id="msDate" class="tl-input" value="${H(st.date)}">` : ''}
+          <label class="tl-lab" for="msOut">Your message</label><textarea id="msOut" class="tl-ta" rows="10" maxlength="2000">${H(txt())}</textarea>
+          <div class="tl-add"><button class="tl-btn primary" id="msCopy" type="button">${ico('download')}Copy</button></div>
+          <p class="tl-note">Nothing is sent from the app. Copy the text and paste it into your email, WhatsApp or LinkedIn.</p>`;
+        toolBody.querySelectorAll('[data-type]').forEach(b=> b.addEventListener('click', ()=>{ st.type = b.dataset.type; draw(); }));
+        const bindIn = (id, key)=>{ const el = toolBody.querySelector('#' + id); if(el) el.addEventListener('input', ()=>{ st[key] = el.value; toolBody.querySelector('#msOut').value = txt(); }); };
+        bindIn('msRec', 'recruiter'); bindIn('msRole', 'role'); bindIn('msCo', 'company'); bindIn('msDate', 'date');
+        const out = toolBody.querySelector('#msOut');
+        toolBody.querySelector('#msCopy').addEventListener('click', async ()=>{
+          const t = out.value;
+          try{ await navigator.clipboard.writeText(t); showToast('Copied ✓'); return; }catch(e){}
+          out.focus(); out.select(); let ok = false; try{ ok = document.execCommand('copy'); }catch(e){}
+          showToast(ok ? 'Copied ✓' : 'Select the text and copy it');
+        });
+      };
+      draw();
     } },
 
     importpdf:{ render(){
