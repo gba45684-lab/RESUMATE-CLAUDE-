@@ -2187,6 +2187,10 @@
                 <button type="button" class="tl-tile" data-tool="pdf2jpg"><i class="bd-i tl-ico" data-ic="image"></i><b>PDF to JPG</b><small>A picture per page</small></button>
                 <button type="button" class="tl-tile" data-tool="pdf2txt"><i class="bd-i tl-ico" data-ic="file"></i><b>PDF to text</b><small>Copy the words</small></button>
 </div></div>
+<div class="tl-group"><p class="tl-subh">Security</p><div class="tl-tilegrid">
+                <button type="button" class="tl-tile" data-tool="protectpdf"><i class="bd-i tl-ico" data-ic="shield"></i><b>Protect PDF</b><small>Add a password</small></button>
+                <button type="button" class="tl-tile" data-tool="unlockpdf"><i class="bd-i tl-ico" data-ic="check"></i><b>Unlock PDF</b><small>Remove a password</small></button>
+</div></div>
             </div>
 
               <div class="bd-resume" data-open-edit role="button" tabindex="0">
@@ -2260,6 +2264,10 @@
 <div class="tl-group"><p class="tl-subh">Convert</p><div class="tl-tilegrid">
                 <button type="button" class="tl-tile" data-tool="pdf2jpg"><i class="bd-i tl-ico" data-ic="image"></i><b>PDF to JPG</b><small>A picture per page</small></button>
                 <button type="button" class="tl-tile" data-tool="pdf2txt"><i class="bd-i tl-ico" data-ic="file"></i><b>PDF to text</b><small>Copy the words</small></button>
+</div></div>
+<div class="tl-group"><p class="tl-subh">Security</p><div class="tl-tilegrid">
+                <button type="button" class="tl-tile" data-tool="protectpdf"><i class="bd-i tl-ico" data-ic="shield"></i><b>Protect PDF</b><small>Add a password</small></button>
+                <button type="button" class="tl-tile" data-tool="unlockpdf"><i class="bd-i tl-ico" data-ic="check"></i><b>Unlock PDF</b><small>Remove a password</small></button>
 </div></div>
             </div>
 
@@ -6613,6 +6621,19 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
   const setHead = (t, s)=>{ toolTitle.textContent = t; toolSub.textContent = s || ''; };
   const ring = (pct, cls)=> `<svg class="tl-ring ${cls}" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="52" class="bg"/><circle cx="60" cy="60" r="52" class="fg" style="stroke-dasharray:${(326.7 * pct / 100).toFixed(1)} 326.7"/></svg>`;
 
+  // Protect and Unlock: qpdf (WebAssembly, vendored in vendor/qpdf) runs on the phone; each run gets a fresh instance
+  async function qpdfRun(args, input){
+    await loadScriptOnce('vendor/qpdf/qpdf.js');
+    const q = await window.Module({ noInitialRun:true, locateFile: f => 'vendor/qpdf/' + f, print:()=>{}, printErr:()=>{} });
+    q.FS.writeFile('/in.pdf', input);
+    try{ q.callMain([...args, '/in.pdf', '/out.pdf']); }catch(e){ /* qpdf ends with an exit code; the output file tells us the result */ }
+    try{ return q.FS.readFile('/out.pdf'); }catch(e){ throw new Error('qpdf failed'); }
+  }
+  const bindPw = (st, root)=>{
+    const a = root.querySelector('#pt-pw'), b = root.querySelector('#pt-pw2');
+    if(a){ a.value = st.pw; a.addEventListener('input', ()=>{ st.pw = a.value; }); }
+    if(b){ b.value = st.pw2; b.addEventListener('input', ()=>{ st.pw2 = b.value; }); }
+  };
   // one PDF in, one result out: shared screen for the Edit PDF and Convert tools
   const SHRINK_LEVELS = [['best', 'Best quality', 2, .85], ['balanced', 'Balanced', 1.5, .7], ['smallest', 'Smallest', 1.1, .5]];
   // renders each page to a canvas on the phone, one page at a time, so memory stays low
@@ -7040,6 +7061,30 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
         const lines = await extractPdfLines(st.file, 100000);
         if(!lines.length) return 'No text found — this looks like a scan. Use Import PDF to read it with OCR.';
         return (await deliverBlob(new Blob([lines.join('\n') + '\n'], { type:'text/plain;charset=utf-8' }), `${toolBase()}_text.txt`)) ? 'Saved ✓' : '';
+      } }),
+
+    protectpdf: pdfOneTool({ key:'protectpdf', title:'Protect PDF', sub:'Add a password', icon:'shield', action:'Protect and save', lead:'Lock a PDF with a password. Anyone who opens it must type the password. The file is encrypted with AES-256 on this phone.', init:{ pw:'', pw2:'' },
+      options: st => `<label class="tl-lab" for="pt-pw">Password (at least 6 characters)</label><input type="password" id="pt-pw" class="tl-input" autocomplete="new-password" maxlength="64">
+        <label class="tl-lab" for="pt-pw2">Type it again</label><input type="password" id="pt-pw2" class="tl-input" autocomplete="new-password" maxlength="64">`,
+      bind: bindPw,
+      run: async st => {
+        if(st.pw.length < 6) return 'Use at least 6 characters';
+        if(st.pw !== st.pw2) return "The two passwords don't match";
+        const owner = Array.from(crypto.getRandomValues(new Uint8Array(12)), b => b.toString(36)).join('');
+        const out = await qpdfRun(['--encrypt', st.pw, owner, '256', '--'], new Uint8Array(await st.file.arrayBuffer()));
+        return (await deliverBlob(new Blob([out], { type:'application/pdf' }), `${toolBase()}_protected.pdf`)) ? 'Saved ✓ · Keep this password safe. It cannot be recovered.' : '';
+      },
+      fail: "Couldn't protect this PDF. If it already has a password, unlock it first." }),
+
+    unlockpdf: pdfOneTool({ key:'unlockpdf', title:'Unlock PDF', sub:'Remove the password', icon:'check', action:'Unlock and save', lead:'Remove the password from a PDF you have the password for, so it opens without one. Leave the password empty if the PDF only has a permission lock.', init:{ pw:'' },
+      options: st => `<label class="tl-lab" for="pt-pw">Password (leave empty if it opens without one)</label><input type="password" id="pt-pw" class="tl-input" autocomplete="off" maxlength="128">`,
+      bind: bindPw,
+      run: async st => {
+        const args = st.pw ? ['--password=' + st.pw, '--decrypt'] : ['--decrypt'];
+        let out;
+        try{ out = await qpdfRun(args, new Uint8Array(await st.file.arrayBuffer())); }
+        catch(e){ return st.pw ? "That password isn't right. Check it and try again." : 'This PDF needs its password to open.'; }
+        return (await deliverBlob(new Blob([out], { type:'application/pdf' }), `${toolBase()}_unlocked.pdf`)) ? 'Saved ✓' : '';
       } }),
 
     importpdf:{ render(){
