@@ -6934,6 +6934,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
   // ---------- Back button (Android hardware / gesture): close the top-most layer first, then go Home, then ask before exiting ----------
   (function backNav(){
     const firstRun = ()=> document.getElementById('splashScreen') || document.getElementById('welcomeScreen') || document.getElementById('questionScreen');
+    // closes the top-most open layer; true when something was closed
     function closeTopLayer(){
       if(firstRun()) return true;                                   // never leave the app in the middle of first-run
       if(typeof rfsIsOpen === 'function' && rfsIsOpen()){ rfsClose(); return true; }
@@ -6941,20 +6942,36 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
       if(!dlv.hidden){ dlClose(); return true; }
       const pwEl = document.getElementById('paywall'); if(pwEl && !pwEl.hidden){ document.getElementById('pwClose').click(); return true; }
       if(sheet2.classList.contains('show')){ closeSheet2(); return true; }
-      if(editPanel.classList.contains('open')){ closeEdit(); return true; }
+      if(editPanel.classList.contains('open')){
+        if(contentStep > 0){ contentStep--; renderContentTab(); return true; }   // step back through the editor first
+        closeEdit(); return true;
+      }
       if(currentTab !== 'home'){ switchTab('home'); return true; }
       return false;
     }
     let armed = false, armT = 0;
+    // nothing left to close: the first press warns, a second press within 2 s leaves the app
+    function askOrLeave(leave){
+      if(!armed){ armed = true; showToast('Press back again to exit'); clearTimeout(armT); armT = setTimeout(()=>{ armed = false; }, 2200); return; }
+      leave();
+    }
+    // Android: the system back button and the back gesture both reach the native App plugin
+    function attachNative(){
+      const App = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+      if(!App || !App.addListener) return false;
+      App.addListener('backButton', ()=>{ if(closeTopLayer()) return; askOrLeave(()=>{ try{ App.exitApp(); }catch(e){} }); });
+      return true;
+    }
+    const isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+    if(isNative){
+      let tries = 0;
+      const t = setInterval(()=>{ if(attachNative() || ++tries > 40) clearInterval(t); }, 125);   // the plugin may arrive a moment after the page
+    }
+    // browser (and fallback): history back
     try{ history.pushState({ r:'app' }, ''); }catch(e){ return; }
     window.addEventListener('popstate', ()=>{
       if(closeTopLayer()){ try{ history.pushState({ r:'app' }, ''); }catch(e){} return; }
-      if(!armed){
-        armed = true; showToast('Press back again to exit');
-        try{ history.pushState({ r:'app' }, ''); }catch(e){}
-        clearTimeout(armT); armT = setTimeout(()=>{ armed = false; }, 2200); return;
-      }
-      history.back();                                               // second press inside 2 s: let the app/browser leave
+      askOrLeave(()=> history.back());
     });
   })();
 
