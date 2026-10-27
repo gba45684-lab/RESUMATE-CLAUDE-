@@ -46,7 +46,7 @@ with sync_playwright() as p:
     pg.evaluate("document.querySelector('.tool-bar #toolBack, #toolBack').click()"); pg.wait_for_timeout(600)
 
     # --- Images to PDF
-    pg.evaluate("document.querySelector('[data-tool=imgpdf]').click()"); pg.wait_for_timeout(700)
+    pg.evaluate("document.querySelector('[data-tool=pdftools]').click()"); pg.wait_for_timeout(500); pg.evaluate("document.querySelector('#toolBody [data-tool=imgpdf]').click()"); pg.wait_for_timeout(700)
     pg.set_input_files('#imgFile', [portrait, landscape, portrait]); pg.wait_for_timeout(800)
     chk('images to PDF: three images listed', pg.evaluate("document.querySelectorAll('#toolBody .tl-file').length") == 3)
     pg.evaluate("document.querySelector('#toolBody .tl-file [data-act=down]').click()"); pg.wait_for_timeout(300)
@@ -72,7 +72,7 @@ with sync_playwright() as p:
     pg.evaluate("document.getElementById('toolBack').click()"); pg.wait_for_timeout(600)
 
     # --- Merge PDFs
-    pg.evaluate("document.querySelector('[data-tool=mergepdf]').click()"); pg.wait_for_timeout(700)
+    pg.evaluate("document.querySelector('[data-tool=pdftools]').click()"); pg.wait_for_timeout(500); pg.evaluate("document.querySelector('#toolBody [data-tool=mergepdf]').click()"); pg.wait_for_timeout(700)
     chk('merge: button disabled with fewer than two files', pg.evaluate("document.getElementById('mpGo').disabled"))
     pg.set_input_files('#mpFile', [pdf1, pdf2]); pg.wait_for_timeout(800)
     chk('merge: two files listed', pg.evaluate("document.querySelectorAll('#toolBody .tl-file').length") == 2)
@@ -80,7 +80,7 @@ with sync_playwright() as p:
     d.value.save_as(TMP + 'merged.pdf')
     chk('merge: merged file has 3 pages (1 + 2)', pages(TMP + 'merged.pdf') == 3, pages(TMP + 'merged.pdf'))
     pg.evaluate("document.getElementById('toolBack').click()"); pg.wait_for_timeout(600)
-    pg.evaluate("document.querySelector('[data-tool=mergepdf]').click()"); pg.wait_for_timeout(700)
+    pg.evaluate("document.querySelector('[data-tool=pdftools]').click()"); pg.wait_for_timeout(500); pg.evaluate("document.querySelector('#toolBody [data-tool=mergepdf]').click()"); pg.wait_for_timeout(700)
     pg.set_input_files('#mpFile', [pdf1, broken]); pg.wait_for_timeout(600)
     pg.evaluate("document.getElementById('mpGo').click()"); pg.wait_for_timeout(4000)
     msg = pg.evaluate("document.getElementById('mpMsg').textContent")

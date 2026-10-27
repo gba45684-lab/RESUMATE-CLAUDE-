@@ -42,7 +42,8 @@ with sync_playwright() as p:
             pg.wait_for_timeout(400)
         return 'TIMEOUT'
     def open_tool(t):
-        pg.evaluate(f"document.querySelector('[data-tool={t}]').click()"); pg.wait_for_timeout(600)
+        pg.evaluate("document.querySelector('[data-tool=pdftools]').click()"); pg.wait_for_timeout(500)
+        pg.evaluate(f"document.querySelector('#toolBody [data-tool={t}]').click()"); pg.wait_for_timeout(600)
     def close_tool():
         pg.evaluate("document.getElementById('toolBack').click()"); pg.wait_for_timeout(500)
     def set_pw(id_, v):
@@ -50,7 +51,7 @@ with sync_playwright() as p:
     def click_go():
         pg.evaluate("document.getElementById('pt-go').click()")
 
-    chk('Security section and both tools on Home', pg.evaluate("[...document.querySelectorAll('.tl-subh')].map(e=>e.textContent).includes('Security') && !!document.querySelector('[data-tool=protectpdf]') && !!document.querySelector('[data-tool=unlockpdf]')"))
+    chk('PDF tools card is on Home', pg.evaluate("!!document.querySelector('[data-tool=pdftools]')"))
 
     # Protect: short and mismatched passwords are refused
     open_tool('protectpdf')

@@ -40,7 +40,7 @@ with sync_playwright() as p:
     pg.evaluate("document.querySelector('.rfs') && 0"); pg.keyboard.press('Escape'); pg.wait_for_timeout(400)
 
     # Busy message: Protect says it is encrypting straight away
-    pg.evaluate("document.querySelector('[data-tool=protectpdf]').click()"); pg.wait_for_timeout(600)
+    pg.evaluate("document.querySelector('[data-tool=pdftools]').click()"); pg.wait_for_timeout(500); pg.evaluate("document.querySelector('#toolBody [data-tool=protectpdf]').click()"); pg.wait_for_timeout(600)
     pg.set_input_files('#pt-file', pdf); pg.wait_for_timeout(400)
     pg.evaluate("(()=>{for(const id of ['pt-pw','pt-pw2']){const e=document.getElementById(id); e.value='secret123'; e.dispatchEvent(new Event('input'));}})()")
     with pg.expect_download(timeout=120000):
