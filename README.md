@@ -29,7 +29,7 @@ See `tests/README.md` for the full list and what each one checks.
 ## Build
 
 - **Debug APK:** runs on push to `main` (`resumate-android.yml`). Download the `ResuMate-debug-apk` artifact.
-- **Over-the-air update:** a push to `main` that changes `www/**` or `api/updates.js` publishes a new bundle (`resumate-ota.yml`). Phones pick it up automatically.
+- **Over-the-air update:** a push to `main` that changes `www/**` or `api/updates.js` runs the test suite and, only if it passes, publishes a new bundle (`resumate-ota.yml`). Phones pick it up automatically.
 - **Signed release:** `resumate-release.yml` (needs the signing secrets).
 
 ## Notes

@@ -5,6 +5,7 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  workflow_call:   # reused by resumate-ota.yml so an update is never published without a passing suite
 
 jobs:
   test:
