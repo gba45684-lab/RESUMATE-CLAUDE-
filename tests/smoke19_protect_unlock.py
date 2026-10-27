@@ -34,10 +34,11 @@ with sync_playwright() as p:
 
     msg = lambda: pg.evaluate("(document.getElementById('pt-msg')||{}).textContent||''")
     def wait_msg(limit=120):
+        # done when the Go button is enabled again (the busy text can be any wording)
         t0 = time.time()
+        pg.wait_for_timeout(150)
         while time.time() - t0 < limit:
-            m = msg()
-            if m and 'Working' not in m: return m
+            if not pg.evaluate("document.getElementById('pt-go').disabled"): return msg()
             pg.wait_for_timeout(400)
         return 'TIMEOUT'
     def open_tool(t):

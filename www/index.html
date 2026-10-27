@@ -1793,6 +1793,8 @@
   .tl-ico{ width:20px; height:20px; }
   .tl-tiles{ margin:0 0 22px; }
   .tl-tiles-h{ margin:0 0 9px; font-size:13px; font-weight:700; color:var(--ink); }
+  .save-hint{ margin:0 0 6px; min-height:18px; font-size:12px; font-weight:600; color:var(--ink-soft); text-align:center; opacity:0; transition:opacity .25s ease; }
+  .save-hint.on{ opacity:1; }
   .tl-hrow{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:9px; }
   .tl-hrow .tl-tiles-h{ margin:0; }
   .tl-allbtn{ min-height:44px; padding:0 12px; border:0; background:none; color:var(--maroon); font:600 13px var(--font-sans, inherit); cursor:pointer; border-radius:10px; }
@@ -2431,6 +2433,7 @@
               <div class="saved-pill" id="savedPill"><svg class="ic" viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg><span>Saved</span></div>
             </div>
 
+            <p class="save-hint" id="saveHint" aria-hidden="true"></p>
             <div class="segwrap hm-bf" style="--d:60ms" id="segwrap" role="tablist" aria-label="Resume editor sections">
               <div class="seg-ind" id="segInd"></div>
               <button class="on" data-seg="content" role="tab" aria-selected="true"><svg class="lu" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/></svg>Content</button>
@@ -2787,8 +2790,10 @@
       });
     }catch(e){}
   })();
+  let saveHintTimer = 0;
+  function flashSaved(){ const el = document.getElementById('saveHint'); if(!el) return; el.textContent = 'Saved on this phone ✓'; el.classList.add('on'); clearTimeout(saveHintTimer); saveHintTimer = setTimeout(()=> el.classList.remove('on'), 1500); }
   function saveResume(){
-    try{ const { photo, ...rest } = resumeData; localStorage.setItem(RESUME_KEY, JSON.stringify(rest)); try{ rsSyncActive(); }catch(e2){} return true; }catch(e){ return false; }
+    try{ const { photo, ...rest } = resumeData; localStorage.setItem(RESUME_KEY, JSON.stringify(rest)); try{ rsSyncActive(); }catch(e2){} flashSaved(); return true; }catch(e){ return false; }
   }
   // Profile photo: kept on this device so it is still there next visit, and shown everywhere (profile avatar + every template with a photo slot)
   const PHOTO_KEY = 'resumate_profile_photo';
@@ -6686,7 +6691,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
         if(o.bind) o.bind(st, toolBody, draw);
         const go = toolBody.querySelector('#pt-go'); if(!go) return;
         go.addEventListener('click', async ()=>{
-          go.disabled = true; msg('Working…');
+          go.disabled = true; msg(o.busy || 'Working…');
           try{ msg(await o.run(st, msg)); }
           catch(e){ msg(o.fail || "Couldn't do this with this PDF — it may be password-protected"); }
           finally{ go.disabled = false; }
@@ -7018,7 +7023,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
         bind();
       };
       draw();
-    } }    ,rotatepdf: pdfOneTool({ key:'rotatepdf', title:'Rotate PDF', sub:'Turn every page', icon:'rotate', action:'Rotate and save', lead:'Turn every page of a PDF the right way up.', init:{ deg:90 },
+    } }    ,rotatepdf: pdfOneTool({ key:'rotatepdf', title:'Rotate PDF', sub:'Turn every page', icon:'rotate', action:'Rotate and save', busy:'Rotating…', lead:'Turn every page of a PDF the right way up.', init:{ deg:90 },
       options: st => `<label class="tl-lab">Turn</label><div class="tl-seg" role="radiogroup" aria-label="Turn">${[[90,'Right 90°'],[270,'Left 90°'],[180,'Upside down']].map(([v,l])=> `<button type="button" role="radio" aria-checked="${st.deg === v}" data-deg="${v}">${l}</button>`).join('')}</div>`,
       bind: (st, root, draw)=> root.querySelectorAll('[data-deg]').forEach(b=> b.addEventListener('click', ()=>{ st.deg = +b.dataset.deg; draw(); })),
       run: async st => {
@@ -7028,7 +7033,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
         return (await deliverBlob(new Blob([await doc.save()], { type:'application/pdf' }), `${toolBase()}_rotated.pdf`)) ? 'Saved ✓' : '';
       } }),
 
-    croppdf: pdfOneTool({ key:'croppdf', title:'Crop PDF', sub:'Trim the edges', icon:'crop', action:'Crop and save', lead:'Trim the same amount from every edge of every page. Useful for cutting margins or scanner borders.', init:{ pct:5 },
+    croppdf: pdfOneTool({ key:'croppdf', title:'Crop PDF', sub:'Trim the edges', icon:'crop', action:'Crop and save', busy:'Cropping…', lead:'Trim the same amount from every edge of every page. Useful for cutting margins or scanner borders.', init:{ pct:5 },
       options: st => `<label class="tl-lab" for="pt-pct">Trim from each edge: <span id="pt-pv">${st.pct}</span>%</label><input type="range" id="pt-pct" min="0" max="30" step="1" value="${st.pct}">`,
       bind: (st, root)=>{ const r = root.querySelector('#pt-pct'); if(r) r.addEventListener('input', ()=>{ st.pct = +r.value; root.querySelector('#pt-pv').textContent = st.pct; }); },
       run: async st => {
@@ -7070,7 +7075,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
         return `Saved ${n} picture${n === 1 ? '' : 's'} ✓`;
       } }),
 
-    pdf2txt: pdfOneTool({ key:'pdf2txt', title:'PDF to text', sub:'Copy the words', icon:'file', action:'Get the text', lead:'Pull the words out of a PDF that has a text layer, and save them as a plain text file.',
+    pdf2txt: pdfOneTool({ key:'pdf2txt', title:'PDF to text', sub:'Copy the words', icon:'file', action:'Get the text', busy:'Reading the text…', lead:'Pull the words out of a PDF that has a text layer, and save them as a plain text file.',
       run: async st=>{
         const lines = await extractPdfLines(st.file, 100000);
         if(!lines.length) return 'No text found — this looks like a scan. Use Import PDF to read it with OCR.';
@@ -7088,9 +7093,10 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
         const out = await qpdfRun(['--encrypt', st.pw, owner, '256', '--'], new Uint8Array(await st.file.arrayBuffer()));
         return (await deliverBlob(new Blob([out], { type:'application/pdf' }), `${toolBase()}_protected.pdf`)) ? 'Saved ✓ · Keep this password safe. It cannot be recovered.' : '';
       },
+      busy:'Encrypting… this can take a few seconds on older phones',
       fail: "Couldn't protect this PDF. If it already has a password, unlock it first." }),
 
-    unlockpdf: pdfOneTool({ key:'unlockpdf', title:'Unlock PDF', sub:'Remove the password', icon:'check', action:'Unlock and save', lead:'Remove the password from a PDF you have the password for, so it opens without one. Leave the password empty if the PDF only has a permission lock.', init:{ pw:'' },
+    unlockpdf: pdfOneTool({ key:'unlockpdf', title:'Unlock PDF', sub:'Remove the password', icon:'check', action:'Unlock and save', busy:'Unlocking…', lead:'Remove the password from a PDF you have the password for, so it opens without one. Leave the password empty if the PDF only has a permission lock.', init:{ pw:'' },
       options: st => `<label class="tl-lab" for="pt-pw">Password (leave empty if it opens without one)</label><input type="password" id="pt-pw" class="tl-input" autocomplete="off" maxlength="128">`,
       bind: bindPw,
       run: async st => {
