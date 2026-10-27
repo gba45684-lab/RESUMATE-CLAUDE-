@@ -1793,6 +1793,13 @@
   .tl-ico{ width:20px; height:20px; }
   .tl-tiles{ margin:0 0 22px; }
   .tl-tiles-h{ margin:0 0 9px; font-size:13px; font-weight:700; color:var(--ink); }
+  .jt-form{ display:grid; gap:6px; margin:0 0 14px; }
+  .jt-row{ align-items:flex-start; }
+  .jt-row.due{ box-shadow:inset 3px 0 0 var(--maroon); }
+  .jt-due{ color:var(--maroon); font-weight:600; }
+  .jt-st{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .jt-st button{ min-height:36px; padding:0 10px; border-radius:999px; border:1px solid var(--line-strong); background:var(--paper); color:var(--ink); font:600 12px var(--font-sans); cursor:pointer; }
+  .jt-st button[aria-pressed="true"]{ background:var(--maroon); border-color:var(--maroon); color:#fff; }
   .save-hint{ margin:0 0 6px; min-height:18px; font-size:12px; font-weight:600; color:var(--ink-soft); text-align:center; opacity:0; transition:opacity .25s ease; }
   .save-hint.on{ opacity:1; }
   .tl-golden .tl-tiles-h{ font-family:var(--font-serif); font-size:17px; font-weight:600; margin-bottom:11px; }
@@ -2180,6 +2187,7 @@
                 <button type="button" class="tl-tile" data-tool="score"><i class="bd-i tl-ico" data-ic="gauge"></i><b>Resume score</b><small data-tile-score>—</small></button>
                 <button type="button" class="tl-tile" data-tool="job"><i class="bd-i tl-ico" data-ic="target"></i><b>Job match</b><small>Check a job ad</small></button>
                 <button type="button" class="tl-tile" data-tool="letter"><i class="bd-i tl-ico" data-ic="mail"></i><b>Cover letter</b><small>Write in seconds</small></button>
+                <button type="button" class="tl-tile" data-tool="jobtracker"><i class="bd-i tl-ico" data-ic="target"></i><b>Job tracker</b><small>Applications and follow-ups</small></button>
 </div></div>
 <div class="tl-group"><p class="tl-subh">Documents</p><div class="tl-tilegrid">
                 <button type="button" class="tl-tile" data-tool="pdftools"><i class="bd-i tl-ico" data-ic="file"></i><b>PDF tools</b><small>All PDF tools in one place</small></button>
@@ -2259,6 +2267,7 @@
                 <button type="button" class="tl-tile" data-tool="score"><i class="bd-i tl-ico" data-ic="gauge"></i><b>Resume score</b><small data-tile-score>—</small></button>
                 <button type="button" class="tl-tile" data-tool="job"><i class="bd-i tl-ico" data-ic="target"></i><b>Job match</b><small>Check a job ad</small></button>
                 <button type="button" class="tl-tile" data-tool="letter"><i class="bd-i tl-ico" data-ic="mail"></i><b>Cover letter</b><small>Write in seconds</small></button>
+                <button type="button" class="tl-tile" data-tool="jobtracker"><i class="bd-i tl-ico" data-ic="target"></i><b>Job tracker</b><small>Applications and follow-ups</small></button>
 </div></div>
 <div class="tl-group"><p class="tl-subh">Documents</p><div class="tl-tilegrid">
                 <button type="button" class="tl-tile" data-tool="pdftools"><i class="bd-i tl-ico" data-ic="file"></i><b>PDF tools</b><small>All PDF tools in one place</small></button>
@@ -7120,6 +7129,65 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
       });
       toolBody.innerHTML = `<p class="tl-lead">The same PDF tools as on Home.</p><div class="${H(home.className)}">${groups}</div>`;
       toolBody.querySelectorAll('[data-tool]').forEach(b=> b.addEventListener('click', ()=> toolOpen(b.dataset.tool)));
+    } },
+
+    jobtracker:{ render(){
+      setHead('Job tracker', 'Applications and follow-ups');
+      const KEY = 'resumate_jobs_v1';
+      const STATUS = [['applied','Applied'], ['interview','Interview'], ['offer','Offer'], ['rejected','Rejected']];
+      const ymd = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      const load = ()=>{ try{ const v = JSON.parse(localStorage.getItem(KEY) || '[]'); return Array.isArray(v) ? v : []; }catch(e){ return []; } };
+      const store = list=>{ try{ localStorage.setItem(KEY, JSON.stringify(list)); return true; }catch(e){ return false; } };
+      const msg = t=> { const m = toolBody.querySelector('#jtMsg'); if(m) m.textContent = t || ''; };
+      const draw = ()=>{
+        const list = load(), today = ymd(new Date());
+        const sorted = list.slice().sort((a, b)=> (a.follow || '9999') < (b.follow || '9999') ? -1 : (a.follow || '9999') > (b.follow || '9999') ? 1 : (b.applied || '') < (a.applied || '') ? -1 : 1);
+        const counts = STATUS.map(([k, l])=> `${l} ${list.filter(x=> x.status === k).length}`).join(' · ');
+        const rows = sorted.map(j=>{
+          const due = !!j.follow && j.follow <= today && (j.status === 'applied' || j.status === 'interview');
+          return `<div class="tl-row jt-row${due ? ' due' : ''}" data-id="${H(j.id)}">
+            <div class="tl-meta"><b>${H(j.role || 'Role')} · ${H(j.company || 'Company')}</b>
+              <small>Applied ${H(j.applied || '—')}${j.follow ? ' · Follow up ' + H(j.follow) : ''}</small>
+              ${due ? '<small class="jt-due">Follow up due</small>' : ''}
+              ${j.note ? `<small>${H(j.note)}</small>` : ''}
+              <div class="jt-st" role="group" aria-label="Status">${STATUS.map(([k, l])=> `<button type="button" data-st="${k}" aria-pressed="${j.status === k}">${l}</button>`).join('')}</div>
+            </div>
+            <button class="tl-ic danger" data-act="del" aria-label="Delete ${H(j.role || 'application')}">${ico('trash')}</button></div>`;
+        }).join('');
+        toolBody.innerHTML = `<p class="tl-lead">Track every application in one place. Follow-up dates show a due mark when they arrive. Stored on this phone.</p>
+          <p class="tl-note">${counts}</p>
+          <div class="jt-form">
+            <label class="tl-lab" for="jtRole">Role</label><input id="jtRole" class="tl-input" maxlength="60" autocomplete="off">
+            <label class="tl-lab" for="jtCo">Company</label><input id="jtCo" class="tl-input" maxlength="60" autocomplete="off">
+            <label class="tl-lab" for="jtApplied">Date applied</label><input type="date" id="jtApplied" class="tl-input" value="${today}">
+            <label class="tl-lab" for="jtFollow">Follow up on (optional)</label><input type="date" id="jtFollow" class="tl-input">
+            <label class="tl-lab" for="jtNote">Note (optional)</label><input id="jtNote" class="tl-input" maxlength="140" autocomplete="off">
+            <div class="tl-add"><button class="tl-btn primary" id="jtAdd">${ico('plus')}Add application</button></div>
+            <p class="tl-note" id="jtMsg" aria-live="polite"></p>
+          </div>
+          <div class="tl-list">${rows || '<p class="tl-note">No applications yet. Add one above.</p>'}</div>`;
+        toolBody.querySelector('#jtAdd').addEventListener('click', ()=>{
+          const role = toolBody.querySelector('#jtRole').value.trim(), co = toolBody.querySelector('#jtCo').value.trim();
+          if(!role && !co){ msg('Add a role or a company'); return; }
+          const item = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), role, company: co,
+            applied: toolBody.querySelector('#jtApplied').value || today, follow: toolBody.querySelector('#jtFollow').value || '',
+            note: toolBody.querySelector('#jtNote').value.trim(), status: 'applied' };
+          if(!store([item, ...list])){ msg("Couldn't save on this phone — free up some space and try again"); return; }
+          showToast('Application added'); draw();
+        });
+        toolBody.querySelectorAll('.jt-row').forEach(row=>{
+          const id = row.dataset.id;
+          row.querySelectorAll('[data-st]').forEach(b=> b.addEventListener('click', ()=>{
+            store(list.map(x=> x.id === id ? Object.assign({}, x, { status: b.dataset.st }) : x)); draw();
+          }));
+          row.querySelector('[data-act="del"]').addEventListener('click', e=>{
+            const b = e.currentTarget;
+            if(!b.classList.contains('arm')){ b.classList.add('arm'); showToast('Tap delete again to remove it'); setTimeout(()=> b.classList.remove('arm'), 3000); return; }
+            store(list.filter(x=> x.id !== id)); showToast('Deleted'); draw();
+          });
+        });
+      };
+      draw();
     } },
 
     importpdf:{ render(){
