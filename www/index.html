@@ -2016,6 +2016,16 @@
   html.lite .ai-skel i{ animation:none; }
   .ai-err-actions{ display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 2px; } .ai-btn2.sm{ min-height:38px; padding:0 14px; font-size:12.5px; }
   .ai-hero-q{ margin:10px 0 0; font-size:12px; font-weight:600; color:rgba(255,255,255,.85); }
+  /* Touch targets (44px minimum, see tests/smoke12_touch_targets.py).
+     Chips, quick-theme button and text links keep their look: the tappable area is widened with an
+     invisible ::before layer. Upgrade badges clip their children (overflow:hidden), so they get a real 44px height. */
+  .hm-chip{ min-height:44px; }
+  .sect-head{ position:relative !important; z-index:3 !important; }
+  .sect-head a{ position:relative; }
+  .sect-head a::before{ content:""; position:absolute; }
+  .th-quick{ width:44px; height:44px; }
+  .sect-head a::before{ inset:-15px -8px; }
+  .badge-premium,.tp-prem{ min-height:44px; height:44px; }
 </style>
 <script>
   // Smooth mode: saved choice wins; otherwise switch on automatically for low-end phones or when the OS asks for less motion
