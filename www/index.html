@@ -1804,6 +1804,8 @@
   .iv-q{ padding:14px; border-radius:16px; background:var(--paper); border:1px solid var(--line-strong); margin:0 0 12px; }
   .iv-q b{ display:block; margin-bottom:8px; font-size:14px; }
   .iv-count{ font-size:12px; color:var(--ink-soft); margin-top:6px; }
+  .rr-chip{ min-height:36px; padding:0 12px; border-radius:999px; border:1px solid var(--line-strong); background:var(--paper); color:var(--ink); font:600 12px var(--font-sans); cursor:pointer; }
+  .rr-chip[aria-pressed="true"]{ background:var(--maroon); border-color:var(--maroon); color:#fff; }
   .save-hint{ margin:0 0 6px; min-height:18px; font-size:12px; font-weight:600; color:var(--ink-soft); text-align:center; opacity:0; transition:opacity .25s ease; }
   .save-hint.on{ opacity:1; }
   .tl-golden .tl-tiles-h{ font-family:var(--font-serif); font-size:17px; font-weight:600; margin-bottom:11px; }
@@ -2189,6 +2191,7 @@
               <div class="tl-group"><p class="tl-subh">Resume</p><div class="tl-tilegrid">
                 <button type="button" class="tl-tile" data-tool="resumes"><i class="bd-i tl-ico" data-ic="layers"></i><b>My resumes</b><small data-tile-count>1 saved</small></button>
                 <button type="button" class="tl-tile" data-tool="score"><i class="bd-i tl-ico" data-ic="gauge"></i><b>Resume score</b><small data-tile-score>—</small></button>
+                <button type="button" class="tl-tile" data-tool="roleresume"><i class="bd-i tl-ico" data-ic="layers"></i><b>Start from a role</b><small>Fresher, sales, banking, IT</small></button>
                 <button type="button" class="tl-tile" data-tool="importpdf"><i class="bd-i tl-ico" data-ic="file"></i><b>Import PDF resume</b><small>Fill from an old CV</small></button>
 </div></div>
 <div class="tl-group"><p class="tl-subh">Career</p><div class="tl-tilegrid">
@@ -2258,6 +2261,7 @@
               <div class="tl-group"><p class="tl-subh">Resume</p><div class="tl-tilegrid">
                 <button type="button" class="tl-tile" data-tool="resumes"><i class="bd-i tl-ico" data-ic="layers"></i><b>My resumes</b><small data-tile-count>1 saved</small></button>
                 <button type="button" class="tl-tile" data-tool="score"><i class="bd-i tl-ico" data-ic="gauge"></i><b>Resume score</b><small data-tile-score>—</small></button>
+                <button type="button" class="tl-tile" data-tool="roleresume"><i class="bd-i tl-ico" data-ic="layers"></i><b>Start from a role</b><small>Fresher, sales, banking, IT</small></button>
                 <button type="button" class="tl-tile" data-tool="importpdf"><i class="bd-i tl-ico" data-ic="file"></i><b>Import PDF resume</b><small>Fill from an old CV</small></button>
 </div></div>
 <div class="tl-group"><p class="tl-subh">Career</p><div class="tl-tilegrid">
@@ -7359,6 +7363,49 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
           try{ await navigator.clipboard.writeText(t); showToast('Copied ✓'); return; }catch(e){}
           out.focus(); out.select(); let ok = false; try{ ok = document.execCommand('copy'); }catch(e){}
           showToast(ok ? 'Copied ✓' : 'Select the text and copy it');
+        });
+      };
+      draw();
+    } },
+
+    roleresume:{ render(){
+      setHead('Start from a role', 'A starting point for your field');
+      // Every bracket is a placeholder. Nothing here is a claim about the person until they replace it with their own facts.
+      const ROLES = {
+        'Fresher': { role:'Fresher · [your field]', summary:'Recent graduate in [course] from [college]. Built [project] using [tool]. Keen to learn and contribute to a [type of company] team.', skills:['MS Excel','Communication','Teamwork','[your tool]'], order:['projects','certifications','languages','achievements'] },
+        'Internship': { role:'Intern · [your field]', summary:'Student of [course] at [college], looking for a [duration] internship in [field]. Completed [project or course] that taught me [skill].', skills:['Communication','MS Office','Research','[your tool]'], order:['projects','certifications','achievements','languages'] },
+        'Sales': { role:'Sales executive', summary:'Sales professional with [X] years in [industry]. Met or beat target by [result]. Strong at finding leads, closing deals and keeping customers.', skills:['Lead generation','Negotiation','CRM','Cold calling','Customer relationships','MS Excel'], order:['achievements','certifications','languages','projects'] },
+        'Banking and finance': { role:'Banking officer', summary:'Banking professional with [X] years in [retail or corporate] banking. Experienced in [KYC, loans or onboarding]. Careful with accuracy and compliance.', skills:['KYC','Customer onboarding','Loan processing','Compliance','MS Excel','Cross-selling'], order:['certifications','achievements','languages','projects'] },
+        'Software and IT': { role:'Software developer', summary:'Developer with [X] years building [type] applications in [languages]. Delivered [result]. Works well in agile teams.', skills:['JavaScript','Python','SQL','Git','REST APIs','[your framework]'], order:['projects','certifications','languages','achievements'] },
+        'Customer support': { role:'Customer support executive', summary:'Customer support professional with [X] years handling calls, chats and emails. Resolves issues quickly and writes clear notes.', skills:['Customer service','CRM tools','Call handling','Email support','Typing speed','Hindi and English'], order:['certifications','achievements','languages','projects'] },
+        'Operations': { role:'Operations executive', summary:'Operations professional with [X] years in [logistics, manufacturing or process]. Improved [process] by [result]. Tracks targets and reports clearly.', skills:['MS Excel','Process improvement','Inventory management','Vendor coordination','Reporting'], order:['achievements','certifications','languages','projects'] }
+      };
+      const st = toolState.roleresume || (toolState.roleresume = { job:'Fresher', picked:null });
+      const pick = (job)=> { st.job = job; st.picked = ROLES[job].skills.slice(); };
+      if(!st.picked) pick(st.job);
+      const draw = ()=>{
+        const R = ROLES[st.job];
+        toolBody.innerHTML = `<p class="tl-lead">Choose the kind of job. We set a headline, a summary to edit, a skill list and a section order. Replace every [bracket] with your real details.</p>
+          <label class="tl-lab" for="rrJob">Job type</label>
+          <select id="rrJob" class="tl-input">${Object.keys(ROLES).map(k=> `<option value="${H(k)}"${k === st.job ? ' selected' : ''}>${H(k)}</option>`).join('')}</select>
+          <p class="tl-h">Headline</p><p class="tl-note">${H(R.role)}</p>
+          <p class="tl-h">Summary to edit</p><p class="tl-note">${H(R.summary)}</p>
+          <p class="tl-h">Skills: keep only the ones that are true for you</p>
+          <div class="tl-chips" role="group" aria-label="Skills">${R.skills.map(x=> `<button type="button" class="rr-chip" aria-pressed="${st.picked.includes(x)}" data-skill="${H(x)}">${H(x)}</button>`).join('')}</div>
+          <div class="tl-add"><button class="tl-btn primary" id="rrGo" type="button">${ico('plus')}Create resume from this</button></div>
+          <p class="tl-note" id="rrMsg" aria-live="polite">A new resume is made. Your other resumes stay as they are.</p>`;
+        toolBody.querySelector('#rrJob').addEventListener('change', e=>{ pick(e.target.value); draw(); });
+        toolBody.querySelectorAll('[data-skill]').forEach(b=> b.addEventListener('click', ()=>{
+          const x = b.dataset.skill; st.picked = st.picked.includes(x) ? st.picked.filter(y=> y !== x) : st.picked.concat(x);
+          b.setAttribute('aria-pressed', String(st.picked.includes(x)));
+        }));
+        toolBody.querySelector('#rrGo').addEventListener('click', ()=>{
+          const id = rsCreate('blank');
+          if(!id){ const m = toolBody.querySelector('#rrMsg'); if(m) m.textContent = `You can keep up to ${RS_MAX} resumes. Delete one first.`; return; }
+          Object.assign(resumeData, { role: R.role, summary: R.summary, skills: st.picked.join(', '), extrasOrder: R.order.slice() });
+          saveResume(); rsSyncActive(); rsRename(id, st.job); rsRefreshAll();
+          toolClose(); showToast('Resume created — replace the [brackets]');
+          setTimeout(()=> goStep(0), 150);
         });
       };
       draw();
