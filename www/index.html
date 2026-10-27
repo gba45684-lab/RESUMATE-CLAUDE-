@@ -1800,6 +1800,7 @@
   .jt-st{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
   .jt-st button{ min-height:36px; padding:0 10px; border-radius:999px; border:1px solid var(--line-strong); background:var(--paper); color:var(--ink); font:600 12px var(--font-sans); cursor:pointer; }
   .jt-st button[aria-pressed="true"]{ background:var(--maroon); border-color:var(--maroon); color:#fff; }
+  .sg-cv{ display:block; width:100%; max-width:360px; height:150px; touch-action:none; border:1px dashed var(--line-strong); border-radius:12px; background:#fff; }
   .save-hint{ margin:0 0 6px; min-height:18px; font-size:12px; font-weight:600; color:var(--ink-soft); text-align:center; opacity:0; transition:opacity .25s ease; }
   .save-hint.on{ opacity:1; }
   .tl-golden .tl-tiles-h{ font-family:var(--font-serif); font-size:17px; font-weight:600; margin-bottom:11px; }
@@ -2203,6 +2204,10 @@
                 <button type="button" class="tl-tile" data-tool="rotatepdf"><i class="bd-i tl-ico" data-ic="rotate"></i><b>Rotate PDF</b><small>Turn every page</small></button>
                 <button type="button" class="tl-tile" data-tool="croppdf"><i class="bd-i tl-ico" data-ic="crop"></i><b>Crop PDF</b><small>Trim the edges</small></button>
                 <button type="button" class="tl-tile" data-tool="shrinkpdf"><i class="bd-i tl-ico" data-ic="shrink"></i><b>Shrink PDF</b><small>Smaller file size</small></button>
+                <button type="button" class="tl-tile" data-tool="signpdf"><i class="bd-i tl-ico" data-ic="file"></i><b>Sign PDF</b><small>Draw and place a signature</small></button>
+                <button type="button" class="tl-tile" data-tool="splitpdf"><i class="bd-i tl-ico" data-ic="layout"></i><b>Split PDF</b><small>Separate page ranges</small></button>
+                <button type="button" class="tl-tile" data-tool="pagenums"><i class="bd-i tl-ico" data-ic="check"></i><b>Page numbers</b><small>1 of 10 on each page</small></button>
+                <button type="button" class="tl-tile" data-tool="watermark"><i class="bd-i tl-ico" data-ic="image"></i><b>Watermark</b><small>DRAFT or COPY on each page</small></button>
 </div></div>
 <div class="tl-group"><p class="tl-subh">Convert</p><div class="tl-tilegrid">
                 <button type="button" class="tl-tile" data-tool="pdf2jpg"><i class="bd-i tl-ico" data-ic="image"></i><b>PDF to JPG</b><small>A picture per page</small></button>
@@ -2283,6 +2288,10 @@
                 <button type="button" class="tl-tile" data-tool="rotatepdf"><i class="bd-i tl-ico" data-ic="rotate"></i><b>Rotate PDF</b><small>Turn every page</small></button>
                 <button type="button" class="tl-tile" data-tool="croppdf"><i class="bd-i tl-ico" data-ic="crop"></i><b>Crop PDF</b><small>Trim the edges</small></button>
                 <button type="button" class="tl-tile" data-tool="shrinkpdf"><i class="bd-i tl-ico" data-ic="shrink"></i><b>Shrink PDF</b><small>Smaller file size</small></button>
+                <button type="button" class="tl-tile" data-tool="signpdf"><i class="bd-i tl-ico" data-ic="file"></i><b>Sign PDF</b><small>Draw and place a signature</small></button>
+                <button type="button" class="tl-tile" data-tool="splitpdf"><i class="bd-i tl-ico" data-ic="layout"></i><b>Split PDF</b><small>Separate page ranges</small></button>
+                <button type="button" class="tl-tile" data-tool="pagenums"><i class="bd-i tl-ico" data-ic="check"></i><b>Page numbers</b><small>1 of 10 on each page</small></button>
+                <button type="button" class="tl-tile" data-tool="watermark"><i class="bd-i tl-ico" data-ic="image"></i><b>Watermark</b><small>DRAFT or COPY on each page</small></button>
 </div></div>
 <div class="tl-group"><p class="tl-subh">Convert</p><div class="tl-tilegrid">
                 <button type="button" class="tl-tile" data-tool="pdf2jpg"><i class="bd-i tl-ico" data-ic="image"></i><b>PDF to JPG</b><small>A picture per page</small></button>
@@ -7189,6 +7198,100 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
       };
       draw();
     } },
+
+    signpdf: pdfOneTool({ key:'signpdf', title:'Sign PDF', sub:'Add your signature', icon:'file', action:'Sign and save', lead:'Draw your signature with a finger or stylus, then choose the page and where it goes. Nothing is uploaded.', init:{ sig:'', page:1, pos:'right' },
+      options: st => `<label class="tl-lab" for="sgCv">Draw your signature</label><canvas id="sgCv" class="sg-cv" width="600" height="250" aria-label="Signature pad"></canvas>
+        <div class="tl-add wrap"><button class="tl-btn" id="sgClear" type="button">Clear</button></div>
+        <label class="tl-lab" for="sgPage">Page number</label><input type="number" id="sgPage" class="tl-input" min="1" value="${st.page}">
+        <label class="tl-lab">Place it</label><div class="tl-seg" role="radiogroup" aria-label="Place it">${[['left','Bottom left'], ['center','Bottom centre'], ['right','Bottom right']].map(([v, l])=> `<button type="button" role="radio" aria-checked="${st.pos === v}" data-pos="${v}">${l}</button>`).join('')}</div>`,
+      bind: (st, root, draw)=>{
+        const cv = root.querySelector('#sgCv'); if(!cv) return;
+        const cx = cv.getContext('2d'); cx.lineWidth = 5; cx.lineCap = 'round'; cx.lineJoin = 'round'; cx.strokeStyle = '#1a1a1a';
+        if(st.sig){ const im = new Image(); im.onload = ()=> cx.drawImage(im, 0, 0, cv.width, cv.height); im.src = st.sig; }
+        let down = false, last = null;
+        const at = e=>{ const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * cv.width / r.width, (e.clientY - r.top) * cv.height / r.height]; };
+        cv.addEventListener('pointerdown', e=>{ down = true; last = at(e); try{ cv.setPointerCapture(e.pointerId); }catch(err){} });
+        cv.addEventListener('pointermove', e=>{ if(!down) return; const q = at(e); cx.beginPath(); cx.moveTo(last[0], last[1]); cx.lineTo(q[0], q[1]); cx.stroke(); last = q; });
+        const end = ()=>{ if(!down) return; down = false; st.sig = cv.toDataURL('image/png'); };
+        cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
+        root.querySelector('#sgClear').addEventListener('click', ()=>{ st.sig = ''; cx.clearRect(0, 0, cv.width, cv.height); });
+        root.querySelector('#sgPage').addEventListener('input', e=>{ st.page = Math.max(1, +e.target.value || 1); });
+        root.querySelectorAll('[data-pos]').forEach(b=> b.addEventListener('click', ()=>{ st.pos = b.dataset.pos; draw(); }));
+      },
+      run: async st => {
+        if(!st.sig) return 'Draw your signature first';
+        await loadScriptOnce('vendor/pdf-lib.min.js');
+        const { PDFDocument } = PDFLib, doc = await PDFDocument.load(await st.file.arrayBuffer());
+        const pages = doc.getPages();
+        if(st.page > pages.length) return `This PDF has ${pages.length} page${pages.length === 1 ? '' : 's'}`;
+        const img = await doc.embedPng(st.sig), pg = pages[st.page - 1], { width } = pg.getSize();
+        const w = Math.min(180, width * 0.4), h = img.height * (w / img.width);
+        const x = st.pos === 'left' ? 48 : st.pos === 'right' ? width - 48 - w : (width - w) / 2;
+        pg.drawImage(img, { x, y: 48, width: w, height: h });
+        return (await deliverBlob(new Blob([await doc.save()], { type:'application/pdf' }), `${toolBase()}_signed.pdf`)) ? 'Saved ✓' : '';
+      } }),
+
+    splitpdf: pdfOneTool({ key:'splitpdf', title:'Split PDF', sub:'Separate page ranges', icon:'layout', action:'Split and save', lead:'Make separate PDFs from page ranges. For example, 1-3, 4, 5-8 makes three files.', init:{ ranges:'' },
+      options: st => `<label class="tl-lab" for="spR">Page ranges</label><input id="spR" class="tl-input" placeholder="e.g. 1-3, 4, 5-8" value="${H(st.ranges)}" autocomplete="off">`,
+      bind: (st, root)=>{ const r = root.querySelector('#spR'); if(r) r.addEventListener('input', ()=>{ st.ranges = r.value; }); },
+      run: async st => {
+        await loadScriptOnce('vendor/pdf-lib.min.js');
+        const { PDFDocument } = PDFLib, src = await PDFDocument.load(await st.file.arrayBuffer()), n = src.getPageCount();
+        const parts = st.ranges.split(',').map(x=> x.trim()).filter(Boolean);
+        if(!parts.length) return 'Type at least one page range';
+        const sets = [];
+        for(const part of parts){
+          const m = part.match(/^(\d+)(?:\s*-\s*(\d+))?$/);
+          if(!m) return `"${part}" is not a page range. Use numbers like 3 or 2-5`;
+          const a = +m[1], b = m[2] ? +m[2] : a;
+          if(a < 1 || b > n || a > b) return `Pages must be between 1 and ${n}`;
+          const idx = []; for(let i = a; i <= b; i++) idx.push(i - 1); sets.push(idx);
+        }
+        let saved = 0;
+        for(let k = 0; k < sets.length; k++){
+          const out = await PDFDocument.create();
+          (await out.copyPages(src, sets[k])).forEach(pg=> out.addPage(pg));
+          if(await deliverBlob(new Blob([await out.save()], { type:'application/pdf' }), `${toolBase()}_part${k + 1}.pdf`)) saved++;
+        }
+        return `Saved ${saved} file${saved === 1 ? '' : 's'} ✓`;
+      } }),
+
+    pagenums: pdfOneTool({ key:'pagenums', title:'Page numbers', sub:'1 of 10 on each page', icon:'check', action:'Add numbers and save', lead:'Add "1 of 10" style numbers at the bottom of every page.', init:{ pos:'center' },
+      options: st => `<label class="tl-lab">Place them</label><div class="tl-seg" role="radiogroup" aria-label="Place them">${[['left','Bottom left'], ['center','Bottom centre'], ['right','Bottom right']].map(([v, l])=> `<button type="button" role="radio" aria-checked="${st.pos === v}" data-pos="${v}">${l}</button>`).join('')}</div>`,
+      bind: (st, root, draw)=> root.querySelectorAll('[data-pos]').forEach(b=> b.addEventListener('click', ()=>{ st.pos = b.dataset.pos; draw(); })),
+      run: async st => {
+        await loadScriptOnce('vendor/pdf-lib.min.js');
+        const { PDFDocument, StandardFonts, rgb } = PDFLib, doc = await PDFDocument.load(await st.file.arrayBuffer());
+        const font = await doc.embedFont(StandardFonts.Helvetica), pages = doc.getPages(), total = pages.length, size = 9;
+        pages.forEach((pg, i)=>{
+          const { width } = pg.getSize(), text = `${i + 1} of ${total}`, tw = font.widthOfTextAtSize(text, size);
+          const x = st.pos === 'left' ? 40 : st.pos === 'right' ? width - 40 - tw : (width - tw) / 2;
+          pg.drawText(text, { x, y: 22, size, font, color: rgb(0.35, 0.35, 0.35) });
+        });
+        return (await deliverBlob(new Blob([await doc.save()], { type:'application/pdf' }), `${toolBase()}_numbered.pdf`)) ? 'Saved ✓' : '';
+      } }),
+
+    watermark: pdfOneTool({ key:'watermark', title:'Watermark', sub:'Text on every page', icon:'image', action:'Add watermark and save', lead:'Put a faded word such as DRAFT or COPY across every page. Use English letters and numbers.', init:{ text:'DRAFT', opacity:20 },
+      options: st => `<label class="tl-lab" for="wmText">Text</label><input id="wmText" class="tl-input" maxlength="30" value="${H(st.text)}" autocomplete="off">
+        <label class="tl-lab" for="wmOp">Strength: <span id="wmOpV">${st.opacity}</span>%</label><input type="range" id="wmOp" min="5" max="50" step="5" value="${st.opacity}">`,
+      bind: (st, root)=>{
+        const t = root.querySelector('#wmText'), o = root.querySelector('#wmOp');
+        if(t) t.addEventListener('input', ()=>{ st.text = t.value; });
+        if(o) o.addEventListener('input', ()=>{ st.opacity = +o.value; root.querySelector('#wmOpV').textContent = st.opacity; });
+      },
+      run: async st => {
+        const text = st.text.trim();
+        if(!text) return 'Type the watermark text';
+        if(/[^\x20-\x7E]/.test(text)) return 'Use English letters and numbers for the watermark';
+        await loadScriptOnce('vendor/pdf-lib.min.js');
+        const { PDFDocument, StandardFonts, rgb, degrees } = PDFLib, doc = await PDFDocument.load(await st.file.arrayBuffer());
+        const font = await doc.embedFont(StandardFonts.HelveticaBold), size = 54, c = Math.SQRT1_2;
+        doc.getPages().forEach(pg=>{
+          const { width, height } = pg.getSize(), tw = font.widthOfTextAtSize(text, size);
+          pg.drawText(text, { x: width / 2 - (tw / 2) * c, y: height / 2 - (tw / 2) * c, size, font, color: rgb(0.5, 0.5, 0.5), rotate: degrees(45), opacity: st.opacity / 100 });
+        });
+        return (await deliverBlob(new Blob([await doc.save()], { type:'application/pdf' }), `${toolBase()}_watermarked.pdf`)) ? 'Saved ✓' : '';
+      } }),
 
     importpdf:{ render(){
       setHead('Import from PDF', 'Fill details from an old resume');
