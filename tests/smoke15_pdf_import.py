@@ -46,8 +46,11 @@ with sync_playwright() as p:
     pg.evaluate("document.querySelector('[data-tool=importpdf]').click()"); pg.wait_for_timeout(700)
     chk('import tool opens with a PDF picker', pg.evaluate("!!document.querySelector('#impFile')"))
 
-    pg.set_input_files('#impFile', blank); pg.wait_for_timeout(2500)
-    chk('a PDF with no text says so', 'no text' in pg.evaluate("document.getElementById('impMsg').textContent"), pg.evaluate("document.getElementById('impMsg').textContent"))
+    pg.set_input_files('#impFile', blank)
+    for _ in range(240):
+        if "Reading" not in pg.evaluate("document.getElementById('impMsg').textContent"): break
+        pg.wait_for_timeout(1000)
+    chk('a PDF with no text says so', "Couldn't find any text" in pg.evaluate("document.getElementById('impMsg').textContent"), pg.evaluate("document.getElementById('impMsg').textContent"))
 
     pg.set_input_files('#impFile', resume); pg.wait_for_timeout(3500)
     val = lambda k: pg.evaluate(f"(document.getElementById('imp-{k}')||{{}}).value || ''")

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://*.workers.dev https://generativelanguage.googleapis.com; frame-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://*.workers.dev https://generativelanguage.googleapis.com; frame-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <meta name="theme-color" content="#F7EEDD" />
 <meta name="mobile-web-app-capable" content="yes" />
@@ -6521,6 +6521,53 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
     return n;
   }
 
+  // ---------- OCR for scanned resumes and photos: the engine and English data are bundled and run on the phone ----------
+  const OCR_BASE = new URL('vendor/ocr/', document.baseURI).href;
+  let ocrJob = null;
+  async function ocrCanvas(canvas, onProgress){
+    await loadScriptOnce(OCR_BASE + 'tesseract.min.js');
+    if(!window.Tesseract) throw new Error('ocr-missing');
+    if(!ocrJob) ocrJob = window.Tesseract.createWorker('eng', 1, {
+      workerPath: OCR_BASE + 'worker.min.js',
+      corePath: OCR_BASE + 'tesseract-core-lstm.wasm.js',
+      langPath: OCR_BASE,
+      gzip: true,
+      logger: m=>{ if(onProgress && m.status === 'recognizing text') onProgress(m.progress || 0); }
+    });
+    const worker = await ocrJob;
+    const { data } = await worker.recognize(canvas);
+    return String(data.text || '').split('\n').map(x=> x.trim()).filter(Boolean);
+  }
+  // frees the engine's memory after each import
+  async function ocrDone(){
+    const job = ocrJob; ocrJob = null;
+    if(job){ try{ const w = await job; await w.terminate(); }catch(e){} }
+  }
+  // scanned PDF: each page is drawn at about 150 dpi, then read
+  async function ocrPdfLines(file, maxPages, onProgress){
+    const lib = await pdfjsLib();
+    const doc = await lib.getDocument({ data:new Uint8Array(await file.arrayBuffer()), isEvalSupported:false, useSystemFonts:false }).promise;
+    const out = [];
+    try{
+      const n = Math.min(doc.numPages, maxPages);
+      for(let p = 1; p <= n; p++){
+        const page = await doc.getPage(p);
+        const vp = page.getViewport({ scale: 2 });
+        const c = document.createElement('canvas'); c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+        const cx = c.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, c.width, c.height);
+        await page.render({ canvasContext: cx, viewport: vp }).promise;
+        out.push(...await ocrCanvas(c, f=> onProgress && onProgress(((p - 1) + f) / n)));
+        c.width = 0; c.height = 0;
+      }
+    } finally { doc.destroy(); }
+    return out;
+  }
+  // photo of a resume: read the image at a size the phone can handle
+  async function ocrImageLines(file, onProgress){
+    const c = await photoToCanvas(file, 2200);
+    return ocrCanvas(c, onProgress);
+  }
+
   // ---------- tool page ----------
   const toolPage = document.getElementById('toolPage'), toolBody = document.getElementById('toolBody'), toolTitle = document.getElementById('toolTitle'), toolSub = document.getElementById('toolSub');
   let toolState = { open:false, name:'', ret:null };
@@ -6875,20 +6922,32 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
       const msg = t=> { const m = toolBody.querySelector('#impMsg'); if(m) m.textContent = t || ''; };
       const draw = ()=>{
         if(st.stage === 'pick'){
-          toolBody.innerHTML = `<p class="tl-lead">Choose a PDF resume. We read the text on this phone and suggest your details. You check them before anything changes.</p>
-            <div class="tl-add wrap">${filePick('Choose a PDF', 'application/pdf,.pdf', false, 'impFile')}</div>
-            <p class="tl-note">Experience and education aren't imported yet, so add those in the Content tab. Scanned PDFs without text can't be read.</p>
+          toolBody.innerHTML = `<p class="tl-lead">Choose a PDF resume or a photo of one. We read it on this phone and suggest your details. You check them before anything changes.</p>
+            <div class="tl-add wrap">${filePick('Choose a PDF or photo', 'application/pdf,.pdf,image/*', false, 'impFile')}</div>
+            <p class="tl-note">Work experience and education are suggested too. Scans are read with OCR on this phone, so check the suggestions carefully.</p>
             <p class="tl-note" id="impMsg" aria-live="polite"></p>`;
           toolBody.querySelector('#impFile').addEventListener('change', async e=>{
             const f = e.target.files[0]; e.target.value = ''; if(!f) return;
-            if(!isPdfFile(f)){ msg('Please choose a PDF file'); return; }
-            if(f.size > 15 * 1024 * 1024){ msg('That PDF is over 15 MB — try a smaller file'); return; }
-            msg('Reading the PDF…');
+            const photo = isImageFile(f);
+            if(!photo && !isPdfFile(f)){ msg('Please choose a PDF or a photo'); return; }
+            if(f.size > 15 * 1024 * 1024){ msg('That file is over 15 MB — try a smaller one'); return; }
+            msg('Reading the file…');
             try{
-              const lines = await extractPdfLines(f, 5);
-              if(!lines.length){ msg("This PDF has no text we can read. It may be a scan, so type the details in instead."); return; }
-              st.fields = parseResumeText(lines); st.fileName = f.name; st.stage = 'review'; draw();
-            }catch(err){ msg("Couldn't read this PDF. It may be damaged or password-protected."); }
+              let lines = photo ? [] : await extractPdfLines(f, 5);
+              let ocr = false;
+              if(!lines.length){
+                msg('No text layer found, so this looks like a scan. Reading it on this phone…');
+                const onP = pr=> msg(`Reading the scan… ${Math.round(pr * 100)}%`);
+                lines = photo ? await ocrImageLines(f, onP) : await ocrPdfLines(f, 2, onP);
+                ocr = true;
+                await ocrDone();
+              }
+              if(!lines.length){ msg("Couldn't find any text in this file. Try a sharper scan or a clearer photo."); return; }
+              st.fields = parseResumeText(lines); st.fileName = f.name; st.ocr = ocr; st.stage = 'review'; draw();
+            }catch(err){
+              await ocrDone();
+              msg(err && err.message === 'ocr-missing' ? "The text reader didn't load. Close the app, reopen it and try again." : "Couldn't read this file. It may be damaged or password-protected.");
+            }
           });
           return;
         }
@@ -6896,9 +6955,10 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
           ${LABELS.map(([k, l])=> ['summary', 'skills', 'experience', 'education'].includes(k)
             ? `<label class="tl-lab" for="imp-${k}">${l}</label><textarea class="tl-ta" id="imp-${k}" rows="3">${H(st.fields[k])}</textarea>`
             : `<label class="tl-lab" for="imp-${k}">${l}</label><input class="tl-input" id="imp-${k}" value="${H(st.fields[k])}" autocomplete="off">`).join('')}
+          ${st.ocr ? '<p class="tl-note">Read from a scan with OCR. Check every line, especially names, emails and numbers.</p>' : ''}
           <div class="tl-add wrap"><button class="tl-btn" id="impBack">Choose another</button><button class="tl-btn primary" id="impUse">${ico('check')}Use these details</button></div>
           <p class="tl-note" id="impMsg" aria-live="polite"></p>`;
-        toolBody.querySelector('#impBack').addEventListener('click', ()=>{ st.stage = 'pick'; st.fields = null; draw(); });
+        toolBody.querySelector('#impBack').addEventListener('click', ()=>{ st.stage = 'pick'; st.fields = null; st.ocr = false; draw(); });
         toolBody.querySelector('#impUse').addEventListener('click', ()=>{
           const out = {};
           LABELS.forEach(([k])=> out[k] = toolBody.querySelector('#imp-' + k).value.trim());
