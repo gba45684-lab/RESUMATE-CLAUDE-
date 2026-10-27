@@ -1,4 +1,4 @@
-# Checks the PDF tools card: it sits on Home, opens a screen with the same PDF tools as Home, and each one opens.
+# Checks the PDF tools card: Home keeps only the card for PDF work, and the card lists every PDF tool, each of which opens.
 import pathlib, functools, socket, threading
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from playwright.sync_api import sync_playwright
@@ -13,7 +13,7 @@ port = free_port()
 handler = functools.partial(SimpleHTTPRequestHandler, directory=WWW); handler.log_message = lambda *a, **k: None
 srv = ThreadingHTTPServer(('127.0.0.1', port), handler)
 threading.Thread(target=srv.serve_forever, daemon=True).start()
-PDF_TOOLS = ['importpdf', 'imgpdf', 'mergepdf', 'rotatepdf', 'croppdf', 'shrinkpdf', 'pdf2jpg', 'pdf2txt', 'protectpdf', 'unlockpdf']
+PDF_TOOLS = ['imgpdf', 'mergepdf', 'rotatepdf', 'croppdf', 'shrinkpdf', 'signpdf', 'splitpdf', 'pagenums', 'watermark', 'pdf2jpg', 'pdf2txt', 'protectpdf', 'unlockpdf']
 
 with sync_playwright() as p:
     b = p.chromium.launch()
@@ -25,21 +25,24 @@ with sync_playwright() as p:
     pg.goto(f'http://127.0.0.1:{port}/index.html'); pg.wait_for_timeout(4800)
     pg.evaluate("const p=document.getElementById('paywall'); if(p && !p.hidden) document.getElementById('pwClose').click()"); pg.wait_for_timeout(400)
 
-    chk('All tools button and search are gone', pg.evaluate("!document.querySelector('.tl-allbtn') && !document.getElementById('atSearch')"))
-    chk('PDF tools card is on Home', pg.evaluate("!!document.querySelector('.tl-tiles [data-tool=pdftools]') && document.querySelector('[data-tool=pdftools] b').textContent === 'PDF tools'"))
-    chk('Home still shows its PDF tiles', pg.evaluate("[...%s].every(t=> document.querySelector('.tl-tiles [data-tool=\"'+t+'\"]'))" % repr(PDF_TOOLS)))
+    chk('PDF tools card is on Home, in Documents', pg.evaluate("!!document.querySelector('.tl-tiles [data-tool=pdftools]') && document.querySelector('[data-tool=pdftools] b').textContent === 'PDF tools'"))
+    chk('Home has no other PDF tiles', pg.evaluate("%s.every(t=> !document.querySelector('.tl-tiles [data-tool=\"'+t+'\"]'))" % repr(PDF_TOOLS)))
+    chk('Import PDF resume is in the Resume group', pg.evaluate("!!document.querySelector('.tl-group [data-tool=importpdf]') && [...document.querySelectorAll('.tl-group')].some(g=> g.querySelector('[data-tool=importpdf]') && g.querySelector('.tl-subh').textContent === 'Resume')"))
+    chk('Smart tools has no Edit PDF, Convert or Security groups', pg.evaluate("![...document.querySelectorAll('.tl-tiles .tl-subh')].some(e=> ['Edit PDF','Convert','Security'].includes(e.textContent))"))
 
     pg.evaluate("document.querySelector('[data-tool=pdftools]').click()"); pg.wait_for_timeout(600)
     chk('card opens the PDF tools screen', pg.evaluate("document.getElementById('toolTitle').textContent") == 'PDF tools')
-    n = pg.evaluate("document.querySelectorAll('#toolBody .tl-tile').length")
-    chk('screen lists all 10 PDF tools', n == 10, n)
-    chk('screen has the Home group headings', pg.evaluate("[...document.querySelectorAll('#toolBody .tl-subh')].map(e=>e.textContent).join(',')") == 'Documents,Edit PDF,Convert,Security')
-    same = pg.evaluate("""(()=>{ const home = {}; document.querySelectorAll('.tl-tiles .tl-tile').forEach(t=> home[t.dataset.tool] = t.innerHTML);
-      const page = {}; document.querySelectorAll('#toolBody .tl-tile').forEach(t=> page[t.dataset.tool] = t.innerHTML);
-      return Object.keys(page).every(k=> home[k] === page[k]); })()""")
-    chk('each tile looks the same as on Home', same)
+    chk('screen lists all 13 PDF tools', pg.evaluate("document.querySelectorAll('#toolBody .tl-tile').length") == 13)
+    chk('screen has the four groups', pg.evaluate("[...document.querySelectorAll('#toolBody .tl-subh')].map(e=>e.textContent).join(',')") == 'Documents,Edit PDF,Convert,Security')
+    chk('screen has ResuMate Premium', pg.evaluate("!!document.querySelector('#toolBody [data-tool=premium]')"))
     pg.evaluate("document.querySelector('#toolBody [data-tool=rotatepdf]').click()"); pg.wait_for_timeout(600)
     chk('tapping a tile opens that tool', pg.evaluate("document.getElementById('toolTitle').textContent") == 'Rotate PDF', pg.evaluate("document.getElementById('toolTitle').textContent"))
+    pg.evaluate("document.getElementById('toolBack').click()"); pg.wait_for_timeout(500)
+    pg.evaluate("document.querySelector('[data-tool=pdftools]').click()"); pg.wait_for_timeout(600)
+    pg.evaluate("document.querySelector('#toolBody [data-tool=premium]').click()"); pg.wait_for_timeout(600)
+    chk('Premium opens from the card', pg.evaluate("document.getElementById('toolTitle').textContent") == 'ResuMate Premium')
+    pg.evaluate("document.querySelector('[data-plan=yearly]').click()"); pg.wait_for_timeout(200)
+    chk('buying says nothing is charged while purchases are off', 'Nothing has been charged' in pg.evaluate("document.getElementById('premMsg').textContent"))
     chk('no page errors', not errs, errs[:3])
     b.close()
 srv.shutdown()

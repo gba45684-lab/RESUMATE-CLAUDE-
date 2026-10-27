@@ -49,11 +49,14 @@ with sync_playwright() as p:
     pg.evaluate("const p=document.getElementById('paywall'); if(p && !p.hidden) document.getElementById('pwClose').click()"); pg.wait_for_timeout(400)
 
     tools = ['rotatepdf', 'croppdf', 'shrinkpdf', 'pdf2jpg', 'pdf2txt']
-    chk('all five tools appear on Home', all(pg.evaluate(f"document.querySelectorAll('[data-tool={t}]').length >= 1") for t in tools))
-    chk('Edit PDF and Convert sections exist', pg.evaluate("[...document.querySelectorAll('.tl-subh')].map(e=>e.textContent).includes('Edit PDF') && [...document.querySelectorAll('.tl-subh')].map(e=>e.textContent).includes('Convert')"))
+    chk('PDF tools card is on Home', pg.evaluate("!!document.querySelector('[data-tool=pdftools]')"))
+    pg.evaluate("document.querySelector('[data-tool=pdftools]').click()"); pg.wait_for_timeout(500)
+    chk('PDF tools card lists Edit PDF and Convert', pg.evaluate("[...document.querySelectorAll('#toolBody .tl-subh')].map(e=>e.textContent).includes('Edit PDF') && [...document.querySelectorAll('#toolBody .tl-subh')].map(e=>e.textContent).includes('Convert')"))
+    pg.evaluate("document.getElementById('toolBack').click()"); pg.wait_for_timeout(500)
 
     def open_tool(t):
-        pg.evaluate(f"document.querySelector('[data-tool={t}]').click()"); pg.wait_for_timeout(600)
+        pg.evaluate("document.querySelector('[data-tool=pdftools]').click()"); pg.wait_for_timeout(500)
+        pg.evaluate(f"document.querySelector('#toolBody [data-tool={t}]').click()"); pg.wait_for_timeout(600)
     def close_tool():
         pg.evaluate("document.getElementById('toolBack').click()"); pg.wait_for_timeout(500)
     def run_and_save(name=None):
