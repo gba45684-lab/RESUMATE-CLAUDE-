@@ -31,7 +31,7 @@ with sync_playwright() as p:
     def state_after(js, wait=900):
         pg.evaluate(js); pg.wait_for_timeout(wait); pg.evaluate("window.__ads.tick()"); pg.wait_for_timeout(500); return pg.evaluate("window.__ads.state")
     check('Templates: no ad', state_after("document.querySelector('[data-tab=templates]').click()")=='hidden')
-    check('AI Assistant: no ad', state_after("document.querySelector('[data-tab=ai]').click()")=='hidden')
+    check('AI Assistant: ad shown (requested)', state_after("document.querySelector('[data-tab=ai]').click()")=='shown')
     check('Profile: ad again', state_after("document.querySelector('[data-tab=profile]').click()")=='shown' and len(calls('resumeBanner'))>=1)
     check('Open sheet: no ad', state_after("document.querySelector('.prow').click()")=='hidden')
     check('Close sheet: ad again', state_after("document.getElementById('sheet2Close').click()", 1200)=='shown')

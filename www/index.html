@@ -3997,6 +3997,16 @@
   // ---------- Branchdesk Home: real numbers + a small activity log kept on this phone ----------
   const BD_KEY = 'resumate_activity';
   const BD_ICONS = {
+    target:'<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+    mail:'<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
+    layers:'<path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/>',
+    gauge:'<path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/>',
+    pencil:'<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>',
+    copy:'<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+    x:'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+    share:'<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98"/><path d="m15.41 6.51-6.82 3.98"/>',
+    alert:'<circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>',
+    fileword:'<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 13h8"/><path d="M8 17h8"/>',
     rotate:'<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>',
     crop:'<path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/>',
     shield:'<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>',
@@ -7634,7 +7644,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
 
   // ---------- Ads (Google AdMob): ONE banner, only where it cannot be tapped by mistake ----------
   // These are Google's public TEST ids. Put your real AdMob ids here (and in the Android manifest) before publishing.
-  const ADS = { testing:true, banner:'ca-app-pub-3940256099942544/6300978111', minSeconds:10, tabs:['home', 'profile'] };
+  const ADS = { testing:true, banner:'ca-app-pub-3940256099942544/6300978111', minSeconds:10, tabs:['home', 'profile', 'ai'] };
   window.__ads = (function(){
     const A = ()=> nativePlugin('AdMob');
     const born = Date.now(); let state = 'off', ready = false, busy = false, consentDone = false, error = '', retryAt = 0;
@@ -7648,6 +7658,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
       const sh = document.getElementById('sheet2'); if(sh && sh.classList.contains('show')) return false;
       if(editPanel.classList.contains('open')) return false;
       if(!ADS.tabs.includes(currentTab)) return false;
+      if(toolIsOpen()) return false;   // no banner over any tool page, PDF tools included
       if(window.visualViewport && window.visualViewport.height < window.innerHeight * 0.85) return false;
       if(document.hidden) return false;
       return true;
