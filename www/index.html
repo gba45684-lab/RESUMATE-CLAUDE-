@@ -2189,6 +2189,7 @@
               <div class="tl-group"><p class="tl-subh">Resume</p><div class="tl-tilegrid">
                 <button type="button" class="tl-tile" data-tool="resumes"><i class="bd-i tl-ico" data-ic="layers"></i><b>My resumes</b><small data-tile-count>1 saved</small></button>
                 <button type="button" class="tl-tile" data-tool="score"><i class="bd-i tl-ico" data-ic="gauge"></i><b>Resume score</b><small data-tile-score>—</small></button>
+                <button type="button" class="tl-tile" data-tool="roles"><i class="bd-i tl-ico" data-ic="layers"></i><b>Start from a role</b><small>India job types</small></button>
                 <button type="button" class="tl-tile" data-tool="importpdf"><i class="bd-i tl-ico" data-ic="file"></i><b>Import PDF resume</b><small>Fill from an old CV</small></button>
 </div></div>
 <div class="tl-group"><p class="tl-subh">Career</p><div class="tl-tilegrid">
@@ -2258,6 +2259,7 @@
               <div class="tl-group"><p class="tl-subh">Resume</p><div class="tl-tilegrid">
                 <button type="button" class="tl-tile" data-tool="resumes"><i class="bd-i tl-ico" data-ic="layers"></i><b>My resumes</b><small data-tile-count>1 saved</small></button>
                 <button type="button" class="tl-tile" data-tool="score"><i class="bd-i tl-ico" data-ic="gauge"></i><b>Resume score</b><small data-tile-score>—</small></button>
+                <button type="button" class="tl-tile" data-tool="roles"><i class="bd-i tl-ico" data-ic="layers"></i><b>Start from a role</b><small>India job types</small></button>
                 <button type="button" class="tl-tile" data-tool="importpdf"><i class="bd-i tl-ico" data-ic="file"></i><b>Import PDF resume</b><small>Fill from an old CV</small></button>
 </div></div>
 <div class="tl-group"><p class="tl-subh">Career</p><div class="tl-tilegrid">
@@ -7359,6 +7361,37 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
           try{ await navigator.clipboard.writeText(t); showToast('Copied ✓'); return; }catch(e){}
           out.focus(); out.select(); let ok = false; try{ ok = document.execCommand('copy'); }catch(e){}
           showToast(ok ? 'Copied ✓' : 'Select the text and copy it');
+        });
+      };
+      draw();
+    } },
+
+    roles:{ render(){
+      setHead('Start from a role', 'Resume for an Indian job type');
+      const PRESETS = [
+        { id:'fresher', name:'Fresher · Software and IT', title:'Software Developer (Fresher)', include:'Projects with what you built and the tools you used. Internships or college work. Certifications you hold. Languages you speak.', skills:['JavaScript','Python','SQL','Git','HTML and CSS','Data structures','Problem solving','Teamwork'] },
+        { id:'intern', name:'Internship', title:'Intern', include:'Relevant coursework, projects, and clubs or volunteer work. Say what you learned and what you delivered.', skills:['MS Excel','Google Sheets','Communication','Research','Canva','Presentations'] },
+        { id:'sales', name:'Sales', title:'Sales Executive', include:'Targets you met, with numbers. Regions or customer types you covered. Deals closed. Tools you used.', skills:['Lead generation','Negotiation','CRM tools','Cold calling','MS Excel','Customer relationship'] },
+        { id:'banking', name:'Banking and finance', title:'Banking Officer', include:'Customers you served and the products you handled. Records you kept accurate. Exams or certificates you have passed.', skills:['KYC checks','Loan processing','MS Excel','Customer service','Compliance','Data entry'] },
+        { id:'support', name:'Customer support', title:'Customer Support Executive', include:'Calls, chats or tickets you handled each day, and how many you resolved on first contact. Languages you speak with customers.', skills:['Ticketing tools','Communication','Problem solving','Hindi','English','Typing speed'] },
+        { id:'ops', name:'Operations', title:'Operations Executive', include:'Processes you improved and the result. Stock, orders or vendors you managed. Reports you prepared.', skills:['MS Excel','Inventory management','Vendor coordination','Data entry','Process improvement','Reporting'] }
+      ];
+      const st = toolState.roles || (toolState.roles = { id:'fresher' });
+      const draw = ()=>{
+        const P = PRESETS.find(x=> x.id === st.id) || PRESETS[0];
+        toolBody.innerHTML = `<p class="tl-lead">Pick the job type you are applying for. We set the job title and show what to include. Only add a skill if it is true for you.</p>
+          <div class="tl-chips" role="radiogroup" aria-label="Job type">${PRESETS.map(x=> `<button type="button" class="tl-chip${x.id === P.id ? ' done' : ''}" role="radio" aria-checked="${x.id === P.id}" data-id="${x.id}">${H(x.name)}</button>`).join('')}</div>
+          <p class="tl-h">Job title on the resume</p><p class="tl-note">${H(P.title)}</p>
+          <p class="tl-h">What to include</p><p class="tl-note">${H(P.include)}</p>
+          <p class="tl-h">Skills to consider (tap only the ones you have)</p>
+          <div class="tl-chips">${P.skills.map(k=> `<button type="button" class="tl-chip miss" data-skill="${H(k)}">${H(k)}</button>`).join('')}</div>
+          <div class="tl-add"><button class="tl-btn primary" id="rlGo" type="button">${ico('plus')}Create resume for this role</button></div>`;
+        toolBody.querySelectorAll('[data-id]').forEach(b=> b.addEventListener('click', ()=>{ st.id = b.dataset.id; draw(); }));
+        toolBody.querySelectorAll('[data-skill]').forEach(b=> b.addEventListener('click', ()=>{ if(addSkill(b.dataset.skill)){ b.classList.remove('miss'); b.classList.add('done'); b.disabled = true; showToast('Skill added'); } else showToast('Already on your resume'); }));
+        toolBody.querySelector('#rlGo').addEventListener('click', ()=>{
+          if(!rsCreate('blank')) return;
+          resumeData.role = P.title; rsSyncActive(); rsStore();
+          toolClose(); showToast(`New resume for ${P.name} ✓`); setTimeout(()=> goStep(0), 150);
         });
       };
       draw();
