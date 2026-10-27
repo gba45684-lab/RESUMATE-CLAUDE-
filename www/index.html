@@ -1795,10 +1795,6 @@
   .tl-tiles-h{ margin:0 0 9px; font-size:13px; font-weight:700; color:var(--ink); }
   .save-hint{ margin:0 0 6px; min-height:18px; font-size:12px; font-weight:600; color:var(--ink-soft); text-align:center; opacity:0; transition:opacity .25s ease; }
   .save-hint.on{ opacity:1; }
-  .tl-hrow{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:9px; }
-  .tl-hrow .tl-tiles-h{ margin:0; }
-  .tl-allbtn{ min-height:44px; padding:0 12px; border:0; background:none; color:var(--maroon); font:600 13px var(--font-sans, inherit); cursor:pointer; border-radius:10px; }
-  .tl-allbtn:focus-visible{ outline:2px solid var(--maroon); outline-offset:2px; }
   .tl-golden .tl-tiles-h{ font-family:var(--font-serif); font-size:17px; font-weight:600; margin-bottom:11px; }
   .tl-tilegrid{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; }
   .tl-group{ margin:0 0 14px; } .tl-group:last-child{ margin-bottom:0; }
@@ -2178,7 +2174,7 @@
               </div>
 
               <div class="tl-tiles tl-bd" role="group" aria-label="Smart tools">
-              <div class="tl-hrow"><p class="tl-tiles-h">Smart tools</p><button type="button" class="tl-allbtn" data-tool="alltools">All tools</button></div>
+              <p class="tl-tiles-h">Smart tools</p>
               <div class="tl-group"><p class="tl-subh">Resume</p><div class="tl-tilegrid">
                 <button type="button" class="tl-tile" data-tool="resumes"><i class="bd-i tl-ico" data-ic="layers"></i><b>My resumes</b><small data-tile-count>1 saved</small></button>
                 <button type="button" class="tl-tile" data-tool="score"><i class="bd-i tl-ico" data-ic="gauge"></i><b>Resume score</b><small data-tile-score>—</small></button>
@@ -2186,6 +2182,7 @@
                 <button type="button" class="tl-tile" data-tool="letter"><i class="bd-i tl-ico" data-ic="mail"></i><b>Cover letter</b><small>Write in seconds</small></button>
 </div></div>
 <div class="tl-group"><p class="tl-subh">Documents</p><div class="tl-tilegrid">
+                <button type="button" class="tl-tile" data-tool="pdftools"><i class="bd-i tl-ico" data-ic="file"></i><b>PDF tools</b><small>All PDF tools in one place</small></button>
                 <button type="button" class="tl-tile" data-tool="importpdf"><i class="bd-i tl-ico" data-ic="file"></i><b>Import PDF resume</b><small>Fill from an old CV</small></button>
                 <button type="button" class="tl-tile" data-tool="imgpdf"><i class="bd-i tl-ico" data-ic="file"></i><b>Images to PDF</b><small>Photos in one file</small></button>
                 <button type="button" class="tl-tile" data-tool="mergepdf"><i class="bd-i tl-ico" data-ic="merge"></i><b>Merge PDFs</b><small>Join in order</small></button>
@@ -2256,7 +2253,7 @@
             </div>
 
             <div class="tl-tiles tl-golden" role="group" aria-label="Smart tools">
-              <div class="tl-hrow"><p class="tl-tiles-h">Smart tools</p><button type="button" class="tl-allbtn" data-tool="alltools">All tools</button></div>
+              <p class="tl-tiles-h">Smart tools</p>
               <div class="tl-group"><p class="tl-subh">Resume</p><div class="tl-tilegrid">
                 <button type="button" class="tl-tile" data-tool="resumes"><i class="bd-i tl-ico" data-ic="layers"></i><b>My resumes</b><small data-tile-count>1 saved</small></button>
                 <button type="button" class="tl-tile" data-tool="score"><i class="bd-i tl-ico" data-ic="gauge"></i><b>Resume score</b><small data-tile-score>—</small></button>
@@ -2264,6 +2261,7 @@
                 <button type="button" class="tl-tile" data-tool="letter"><i class="bd-i tl-ico" data-ic="mail"></i><b>Cover letter</b><small>Write in seconds</small></button>
 </div></div>
 <div class="tl-group"><p class="tl-subh">Documents</p><div class="tl-tilegrid">
+                <button type="button" class="tl-tile" data-tool="pdftools"><i class="bd-i tl-ico" data-ic="file"></i><b>PDF tools</b><small>All PDF tools in one place</small></button>
                 <button type="button" class="tl-tile" data-tool="importpdf"><i class="bd-i tl-ico" data-ic="file"></i><b>Import PDF resume</b><small>Fill from an old CV</small></button>
                 <button type="button" class="tl-tile" data-tool="imgpdf"><i class="bd-i tl-ico" data-ic="file"></i><b>Images to PDF</b><small>Photos in one file</small></button>
                 <button type="button" class="tl-tile" data-tool="mergepdf"><i class="bd-i tl-ico" data-ic="merge"></i><b>Merge PDFs</b><small>Join in order</small></button>
@@ -7107,27 +7105,21 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
         return (await deliverBlob(new Blob([out], { type:'application/pdf' }), `${toolBase()}_unlocked.pdf`)) ? 'Saved ✓' : '';
       } }),
 
-    alltools:{ render(){
-      setHead('All tools', 'Search every tool');
-      const items = [];
-      document.querySelectorAll('.tl-tiles .tl-tile[data-tool]').forEach(el=>{
-        if(items.some(x=> x.tool === el.dataset.tool)) return;
-        const g = el.closest('.tl-group'), h = el.querySelector('small');
-        items.push({ tool:el.dataset.tool, name:(el.querySelector('b') || {}).textContent || '', hint:h ? h.textContent : '', group:g && g.querySelector('.tl-subh') ? g.querySelector('.tl-subh').textContent : '' });
+    pdftools:{ render(){
+      setHead('PDF tools', 'Everything for PDF files');
+      const home = [...document.querySelectorAll('.tl-tiles')].find(t=> t.offsetParent) || document.querySelector('.tl-tiles');
+      const wanted = ['Documents', 'Edit PDF', 'Convert', 'Security'], seen = {};
+      let groups = '';
+      home.querySelectorAll('.tl-group').forEach(g=>{
+        const h = g.querySelector('.tl-subh');
+        if(!h || !wanted.includes(h.textContent) || seen[h.textContent]) return;
+        seen[h.textContent] = true;
+        const copy = g.cloneNode(true);
+        copy.querySelectorAll('[data-tool="pdftools"]').forEach(x=> x.remove());
+        groups += copy.outerHTML;
       });
-      toolBody.innerHTML = `<div class="tl-add wrap"><input type="search" id="atSearch" class="tl-input" placeholder="Search, e.g. PDF or photo" aria-label="Search tools" autocomplete="off"></div>
-        <div class="tl-list" id="atList" aria-live="polite"></div>`;
-      const q = toolBody.querySelector('#atSearch'), list = toolBody.querySelector('#atList');
-      const paint = ()=>{
-        const w = q.value.trim().toLowerCase();
-        const hit = items.filter(i=> !w || (i.name + ' ' + i.hint + ' ' + i.group).toLowerCase().includes(w));
-        list.innerHTML = hit.length
-          ? hit.map(i=> `<button type="button" class="tl-row at-row" data-tool="${H(i.tool)}"><div class="tl-meta"><b>${H(i.name)}</b><small>${H(i.group)} · ${H(i.hint)}</small></div></button>`).join('')
-          : '<p class="tl-note">No tool matches that. Try another word.</p>';
-        list.querySelectorAll('.at-row').forEach(b=> b.addEventListener('click', ()=> toolOpen(b.dataset.tool)));
-      };
-      q.addEventListener('input', paint);
-      paint();
+      toolBody.innerHTML = `<p class="tl-lead">The same PDF tools as on Home.</p><div class="${H(home.className)}">${groups}</div>`;
+      toolBody.querySelectorAll('[data-tool]').forEach(b=> b.addEventListener('click', ()=> toolOpen(b.dataset.tool)));
     } },
 
     importpdf:{ render(){
