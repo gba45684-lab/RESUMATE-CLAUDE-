@@ -24,7 +24,7 @@ with sync_playwright() as p:
     pg.evaluate("const p=document.getElementById('paywall'); if(p && !p.hidden) document.getElementById('pwClose').click()"); pg.wait_for_timeout(300)
     chk('Image tools tile is on Home', pg.evaluate("!!document.querySelector('.tl-tile[data-tool=imagetools]')"))
     pg.evaluate("document.querySelector('.tl-tile[data-tool=imagetools]').click()"); pg.wait_for_timeout(500)
-    chk('Image tools hub lists the picture tools', pg.evaluate("['rotateimg','flipimg','cropimg','resizeimg','grayimg','convertimg'].every(k=> !!document.querySelector('#toolBody [data-tool='+k+']'))"))
+    chk('Image tools hub shows its picture tools on screen', pg.evaluate("['rotateimg','flipimg','cropimg','resizeimg','grayimg','convertimg'].every(k=> { const e = document.querySelector('#toolBody [data-tool='+k+']'); return !!e && e.offsetParent !== null; })"))
     pg.evaluate("document.querySelector('#toolBody [data-tool=rotateimg]').click()"); pg.wait_for_timeout(400)
     pg.set_input_files('#it-file', pic); pg.wait_for_timeout(400)
     with pg.expect_download(timeout=60000) as dl:
