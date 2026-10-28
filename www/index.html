@@ -2047,7 +2047,7 @@
   (function(){ try{
     var v = localStorage.getItem('resumate_lite'), low = (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) || (navigator.deviceMemory && navigator.deviceMemory <= 3);
     if(v === '1' || (v === null && low)) document.documentElement.classList.add('lite');
-    var th = localStorage.getItem('resumate_theme'); if(th === 'branchdesk' || th === 'midnight'){ document.documentElement.setAttribute('data-theme', 'branchdesk'); if(th === 'midnight') document.documentElement.setAttribute('data-mode', 'dark'); }
+    var th = localStorage.getItem('resumate_theme'); if(th === 'system') th = (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'midnight' : 'golden'; if(th === 'branchdesk' || th === 'midnight'){ document.documentElement.setAttribute('data-theme', 'branchdesk'); if(th === 'midnight') document.documentElement.setAttribute('data-mode', 'dark'); }
   }catch(e){} })();
   // the UI is designed for portrait; ask the system to hold it there where that is allowed (ignored otherwise)
   try{ if(screen.orientation && screen.orientation.lock) screen.orientation.lock('portrait').catch(function(){}); }catch(e){}
@@ -2167,6 +2167,7 @@
                 <button class="th-opt" type="button" role="radio" aria-checked="true" data-th="golden"><span class="dot"></span>Golden</button>
                 <button class="th-opt" type="button" role="radio" aria-checked="false" data-th="branchdesk"><span class="dot"></span>Branchdesk</button>
                 <button class="th-opt" type="button" role="radio" aria-checked="false" data-th="midnight"><span class="dot"></span>Midnight</button>
+                <button class="th-opt" type="button" role="radio" aria-checked="false" data-th="system"><span class="dot"></span>Auto</button>
               </div>
             </div>
 
@@ -4136,17 +4137,19 @@
     const seg = document.getElementById('themeSeg'), root = document.documentElement, flash = document.getElementById('themeFlash');
     const meta = document.querySelector('meta[name="theme-color"]');
     let themeSeq = 0;   // the newest choice wins: an animated switch that finishes late must not undo a newer one
+    const sysDark = ()=> !!(window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
     function apply(name, animate, ev){
       const seq = ++themeSeq;
+      const shown = name === 'system' ? (sysDark() ? 'midnight' : 'golden') : name;
       const swap = ()=>{
         if(seq !== themeSeq) return;
-        if(name === 'golden') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', 'branchdesk');
-        if(name === 'midnight') root.setAttribute('data-mode', 'dark'); else root.removeAttribute('data-mode');
+        if(shown === 'golden') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', 'branchdesk');
+        if(shown === 'midnight') root.setAttribute('data-mode', 'dark'); else root.removeAttribute('data-mode');
         seg.querySelectorAll('.th-opt').forEach(b=> b.setAttribute('aria-checked', b.dataset.th === name));
         if(meta) meta.setAttribute('content', getComputedStyle(root).getPropertyValue('--theme-color').trim() || '#F7EEDD');
       };
       const calm = root.classList.contains('lite') || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
-      if(animate && name !== 'golden' && document.startViewTransition && !calm){ try{ document.startViewTransition(swap); }catch(e){ swap(); } } else swap();
+      if(animate && shown !== 'golden' && document.startViewTransition && !calm){ try{ document.startViewTransition(swap); }catch(e){ swap(); } } else swap();
       try{ localStorage.setItem('resumate_theme', name); }catch(e){}
       if(animate && flash){
         const r = ev && ev.currentTarget ? ev.currentTarget.getBoundingClientRect() : null;
@@ -4162,8 +4165,10 @@
       const next = order[(order.indexOf(now && now.th) + 1) % order.length], target = seg.querySelector(`.th-opt[data-th="${next}"]`);
       if(target) apply(next, true, { currentTarget: c });
     });
-    let cur = 'golden'; try{ const t = localStorage.getItem('resumate_theme'); cur = (t === 'branchdesk' || t === 'midnight') ? t : 'golden'; }catch(e){}
+    let cur = 'golden'; try{ const t = localStorage.getItem('resumate_theme'); cur = (t === 'branchdesk' || t === 'midnight' || t === 'system') ? t : 'golden'; }catch(e){}
     apply(cur, false);
+    // Auto follows the phone: switch live when its dark setting changes
+    try{ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', ()=>{ const t = localStorage.getItem('resumate_theme'); if(t === 'system') apply('system', false); }); }catch(e){}
     seg.querySelectorAll('.th-opt').forEach(b=> b.addEventListener('click', ev=>{ if(b.getAttribute('aria-checked') === 'true') return; apply(b.dataset.th, true, ev); }));
     seg.addEventListener('keydown', e=>{
       if(e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
