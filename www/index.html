@@ -116,6 +116,18 @@
   .bullet-ai:active{ transform:scale(.96); }
   .ai-write{ margin-top:6px; }
   .rw-bar .rw-bar-x{ color:#F3D28A; opacity:.75; font-size:13px; padding:6px 2px; }
+  /* First-run tour */
+  .tour{ position:fixed; inset:0; z-index:9000; pointer-events:none; }
+  .tour-ring{ position:fixed; display:none; border-radius:18px; border:2px solid var(--gold-soft2, #F1DDB0); box-shadow:0 0 0 9999px rgba(20,12,8,.56); transition:all .25s ease; pointer-events:none; }
+  .tour-card{ position:fixed; left:16px; right:16px; bottom:calc(92px + env(safe-area-inset-bottom, 0px)); background:var(--paper, #FBF6EC); color:var(--ink, #2A1A12); border-radius:18px; padding:16px 18px; box-shadow:0 18px 40px -16px rgba(0,0,0,.5); pointer-events:auto; }
+  .tour-count{ margin:0 0 4px; font-size:11px; font-weight:700; letter-spacing:.06em; color:var(--ink-soft, #7A6557); text-transform:uppercase; }
+  .tour-card b{ display:block; font-size:17px; margin-bottom:4px; }
+  .tour-card p:last-of-type{ margin:0 0 12px; font-size:14px; line-height:1.45; color:var(--ink-soft, #5B4639); }
+  .tour-row{ display:flex; justify-content:space-between; gap:10px; }
+  .tour-row button{ min-height:44px; min-width:44px; padding:0 18px; border-radius:12px; font:inherit; font-weight:700; border:0; }
+  .tour-skip{ background:transparent; color:var(--ink-soft, #5B4639); }
+  .tour-next{ background:var(--maroon, #7A2418); color:#fff; }
+  .tour.hide{ opacity:0; transition:opacity .25s ease; }
 </style>
 <style>
   :root{
@@ -2187,29 +2199,7 @@
                 <button type="button" class="bd-btn" id="bdImport"><i class="bd-i" data-i="upload"></i>Import</button>
               </div>
 
-              <div class="tl-tiles tl-bd" role="group" aria-label="Smart tools">
-              <p class="tl-tiles-h">Smart tools</p>
-              <div class="tl-group"><p class="tl-subh">Resume</p><div class="tl-tilegrid">
-                <button type="button" class="tl-tile" data-tool="resumes"><i class="bd-i tl-ico" data-ic="layers"></i><b>My resumes</b><small data-tile-count>1 saved</small></button>
-                <button type="button" class="tl-tile" data-tool="score"><i class="bd-i tl-ico" data-ic="gauge"></i><b>Resume score</b><small data-tile-score>—</small></button>
-                <button type="button" class="tl-tile" data-tool="roleresume"><i class="bd-i tl-ico" data-ic="layers"></i><b>Start from a role</b><small>Fresher, sales, banking, IT</small></button>
-                <button type="button" class="tl-tile" data-tool="importpdf"><i class="bd-i tl-ico" data-ic="file"></i><b>Import PDF resume</b><small>Fill from an old CV</small></button>
-</div></div>
-<div class="tl-group"><p class="tl-subh">Career</p><div class="tl-tilegrid">
-                <button type="button" class="tl-tile" data-tool="job"><i class="bd-i tl-ico" data-ic="target"></i><b>Job match</b><small>Check a job ad</small></button>
-                <button type="button" class="tl-tile" data-tool="interview"><i class="bd-i tl-ico" data-ic="sparkles"></i><b>Interview prep</b><small>Questions and practice</small></button>
-                <button type="button" class="tl-tile" data-tool="jobtracker"><i class="bd-i tl-ico" data-ic="layout"></i><b>Job tracker</b><small>Applications and follow-ups</small></button>
-                <button type="button" class="tl-tile" data-tool="letter"><i class="bd-i tl-ico" data-ic="mail"></i><b>Cover letter</b><small>Write in seconds</small></button>
-                <button type="button" class="tl-tile" data-tool="messages"><i class="bd-i tl-ico" data-ic="mail"></i><b>Messages</b><small>Recruiter, LinkedIn, follow-up</small></button>
-</div></div>
-<div class="tl-group"><p class="tl-subh">Documents</p><div class="tl-tilegrid">
-                <button type="button" class="tl-tile" data-tool="pdftools"><i class="bd-i tl-ico" data-ic="file"></i><b>PDF tools</b><small>All PDF tools in one place</small></button>
-</div></div>
-<div class="tl-group"><p class="tl-subh">Photos</p><div class="tl-tilegrid">
-                <button type="button" class="tl-tile" data-tool="idphoto"><i class="bd-i tl-ico" data-ic="image"></i><b>Passport photo</b><small>Exact size, file limit</small></button>
-                <button type="button" class="tl-tile" data-tool="compress"><i class="bd-i tl-ico" data-ic="shrink"></i><b>Compress image</b><small>Smaller file size</small></button>
-</div></div>
-            </div>
+              <div class="tl-tiles tl-bd" role="group" aria-label="Smart tools" data-tiles-slot></div>
 
               <div class="bd-resume" data-open-edit role="button" tabindex="0">
                 <i class="bd-i" data-i="file"></i>
@@ -2257,29 +2247,7 @@
               </div>
             </div>
 
-            <div class="tl-tiles tl-golden" role="group" aria-label="Smart tools">
-              <p class="tl-tiles-h">Smart tools</p>
-              <div class="tl-group"><p class="tl-subh">Resume</p><div class="tl-tilegrid">
-                <button type="button" class="tl-tile" data-tool="resumes"><i class="bd-i tl-ico" data-ic="layers"></i><b>My resumes</b><small data-tile-count>1 saved</small></button>
-                <button type="button" class="tl-tile" data-tool="score"><i class="bd-i tl-ico" data-ic="gauge"></i><b>Resume score</b><small data-tile-score>—</small></button>
-                <button type="button" class="tl-tile" data-tool="roleresume"><i class="bd-i tl-ico" data-ic="layers"></i><b>Start from a role</b><small>Fresher, sales, banking, IT</small></button>
-                <button type="button" class="tl-tile" data-tool="importpdf"><i class="bd-i tl-ico" data-ic="file"></i><b>Import PDF resume</b><small>Fill from an old CV</small></button>
-</div></div>
-<div class="tl-group"><p class="tl-subh">Career</p><div class="tl-tilegrid">
-                <button type="button" class="tl-tile" data-tool="job"><i class="bd-i tl-ico" data-ic="target"></i><b>Job match</b><small>Check a job ad</small></button>
-                <button type="button" class="tl-tile" data-tool="interview"><i class="bd-i tl-ico" data-ic="sparkles"></i><b>Interview prep</b><small>Questions and practice</small></button>
-                <button type="button" class="tl-tile" data-tool="jobtracker"><i class="bd-i tl-ico" data-ic="layout"></i><b>Job tracker</b><small>Applications and follow-ups</small></button>
-                <button type="button" class="tl-tile" data-tool="letter"><i class="bd-i tl-ico" data-ic="mail"></i><b>Cover letter</b><small>Write in seconds</small></button>
-                <button type="button" class="tl-tile" data-tool="messages"><i class="bd-i tl-ico" data-ic="mail"></i><b>Messages</b><small>Recruiter, LinkedIn, follow-up</small></button>
-</div></div>
-<div class="tl-group"><p class="tl-subh">Documents</p><div class="tl-tilegrid">
-                <button type="button" class="tl-tile" data-tool="pdftools"><i class="bd-i tl-ico" data-ic="file"></i><b>PDF tools</b><small>All PDF tools in one place</small></button>
-</div></div>
-<div class="tl-group"><p class="tl-subh">Photos</p><div class="tl-tilegrid">
-                <button type="button" class="tl-tile" data-tool="idphoto"><i class="bd-i tl-ico" data-ic="image"></i><b>Passport photo</b><small>Exact size, file limit</small></button>
-                <button type="button" class="tl-tile" data-tool="compress"><i class="bd-i tl-ico" data-ic="shrink"></i><b>Compress image</b><small>Smaller file size</small></button>
-</div></div>
-            </div>
+            <div class="tl-tiles tl-golden" role="group" aria-label="Smart tools" data-tiles-slot></div>
 
             <div class="sect-head hm-bf" style="--d:520ms"><h3>My Resumes</h3><a data-nav="templates" role="button" tabindex="0">View all <svg class="lu" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></div>
             <div class="hm-rrow hm-bf" style="--d:560ms">
@@ -2530,6 +2498,30 @@
 
 <div id="printSheet"></div>
 
+<template id="tilesTpl">
+              <p class="tl-tiles-h">Smart tools</p>
+              <div class="tl-group"><p class="tl-subh">Resume</p><div class="tl-tilegrid">
+                <button type="button" class="tl-tile" data-tool="resumes"><i class="bd-i tl-ico" data-ic="layers"></i><b>My resumes</b><small data-tile-count>1 saved</small></button>
+                <button type="button" class="tl-tile" data-tool="score"><i class="bd-i tl-ico" data-ic="gauge"></i><b>Resume score</b><small data-tile-score>—</small></button>
+                <button type="button" class="tl-tile" data-tool="roleresume"><i class="bd-i tl-ico" data-ic="layers"></i><b>Start from a role</b><small>Fresher, sales, banking, IT</small></button>
+                <button type="button" class="tl-tile" data-tool="importpdf"><i class="bd-i tl-ico" data-ic="file"></i><b>Import PDF resume</b><small>Fill from an old CV</small></button>
+</div></div>
+<div class="tl-group"><p class="tl-subh">Career</p><div class="tl-tilegrid">
+                <button type="button" class="tl-tile" data-tool="job"><i class="bd-i tl-ico" data-ic="target"></i><b>Job match</b><small>Check a job ad</small></button>
+                <button type="button" class="tl-tile" data-tool="interview"><i class="bd-i tl-ico" data-ic="sparkles"></i><b>Interview prep</b><small>Questions and practice</small></button>
+                <button type="button" class="tl-tile" data-tool="jobtracker"><i class="bd-i tl-ico" data-ic="layout"></i><b>Job tracker</b><small>Applications and follow-ups</small></button>
+                <button type="button" class="tl-tile" data-tool="letter"><i class="bd-i tl-ico" data-ic="mail"></i><b>Cover letter</b><small>Write in seconds</small></button>
+                <button type="button" class="tl-tile" data-tool="messages"><i class="bd-i tl-ico" data-ic="mail"></i><b>Messages</b><small>Recruiter, LinkedIn, follow-up</small></button>
+</div></div>
+<div class="tl-group"><p class="tl-subh">Documents</p><div class="tl-tilegrid">
+                <button type="button" class="tl-tile" data-tool="pdftools"><i class="bd-i tl-ico" data-ic="file"></i><b>PDF tools</b><small>All PDF tools in one place</small></button>
+</div></div>
+<div class="tl-group"><p class="tl-subh">Photos</p><div class="tl-tilegrid">
+                <button type="button" class="tl-tile" data-tool="idphoto"><i class="bd-i tl-ico" data-ic="image"></i><b>Passport photo</b><small>Exact size, file limit</small></button>
+                <button type="button" class="tl-tile" data-tool="compress"><i class="bd-i tl-ico" data-ic="shrink"></i><b>Compress image</b><small>Smaller file size</small></button>
+</div></div></template>
+<script>/* Home tiles are written once in #tilesTpl and copied into both theme layouts */
+document.querySelectorAll('[data-tiles-slot]').forEach(function(el){ el.appendChild(document.getElementById('tilesTpl').content.cloneNode(true)); });</script>
 <script src="vendor/html2canvas.min.js"></script>
 <script src="vendor/jspdf.umd.min.js"></script>
 <div class="tool" id="toolPage" role="dialog" aria-modal="true" aria-labelledby="toolTitle" tabindex="-1" hidden>
@@ -2629,6 +2621,66 @@
   })();
 
 
+  // ---------- First-run tour: four spotlights on the real controls, shown once after the first-run questions ----------
+  (function(){
+    const KEY_PENDING = 'resumate_tour_pending', KEY_DONE = 'resumate_tour_done';
+    const get = k => { try{ return localStorage.getItem(k); }catch(e){ return null; } };
+    const put = (k, v) => { try{ if(v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); }catch(e){} };
+    const STEPS = [
+      { sel: '.hm-tile-main', title: 'Create your resume', text: 'Start with a designed template, then fill in your details. It saves on this phone as you type.' },
+      { sel: '.tl-tile[data-tool="roleresume"]', title: 'Not sure where to start?', text: 'Pick your job type. We set a headline, a summary to edit and a skill list.' },
+      { sel: '.tl-tile[data-tool="job"]', title: 'Check a job', text: 'See how well a job matches your resume, and track each application in the job tracker.' },
+      { sel: '[data-tab="ai"]', title: 'Get help with wording', text: 'The AI Assistant suggests stronger summaries and bullet points for your resume.' }
+    ];
+    let shown = null, idx = 0;
+    const visible = el => el && el.offsetParent !== null;
+    function targetFor(step){ return [...document.querySelectorAll(step.sel)].find(visible) || null; }
+    function build(){
+      const wrap = document.createElement('div');
+      wrap.className = 'tour'; wrap.setAttribute('role', 'dialog'); wrap.setAttribute('aria-modal', 'true'); wrap.setAttribute('aria-label', 'App tour');
+      wrap.innerHTML = '<div class="tour-ring" aria-hidden="true"></div><div class="tour-card"><p class="tour-count" id="tourCount"></p><b id="tourTitle"></b><p id="tourText"></p><div class="tour-row"><button type="button" class="tour-skip" id="tourSkip">Skip</button><button type="button" class="tour-next" id="tourNext">Next</button></div></div>';
+      document.body.appendChild(wrap);
+      wrap.querySelector('#tourSkip').addEventListener('click', finish);
+      wrap.querySelector('#tourNext').addEventListener('click', ()=> go(idx + 1));
+      return wrap;
+    }
+    function place(wrap){
+      const step = STEPS[idx], el = targetFor(step), ring = wrap.querySelector('.tour-ring');
+      if(el){ const r = el.getBoundingClientRect(); ring.style.display = 'block'; ring.style.left = (r.left - 6) + 'px'; ring.style.top = (r.top - 6) + 'px'; ring.style.width = (r.width + 12) + 'px'; ring.style.height = (r.height + 12) + 'px'; }
+      else ring.style.display = 'none';
+      // the card goes above a target that sits low on screen, so it never hides what it points at
+      const card = wrap.querySelector('.tour-card');
+      if(el && el.getBoundingClientRect().bottom > window.innerHeight * 0.5){ card.style.top = 'auto'; card.style.bottom = (window.innerHeight - el.getBoundingClientRect().top + 14) + 'px'; }
+      else { card.style.top = 'auto'; card.style.bottom = ''; }
+    }
+    function go(i){
+      while(i < STEPS.length && !targetFor(STEPS[i])) i++;      // skip steps whose control is not on screen
+      if(i >= STEPS.length) return finish();
+      idx = i; const wrap = shown || (shown = build());
+      const last = !STEPS.slice(i + 1).some(s => targetFor(s));
+      wrap.querySelector('#tourCount').textContent = (i + 1) + ' of ' + STEPS.length;
+      wrap.querySelector('#tourTitle').textContent = STEPS[i].title;
+      wrap.querySelector('#tourText').textContent = STEPS[i].text;
+      wrap.querySelector('#tourNext').textContent = last ? 'Done' : 'Next';
+      place(wrap);
+      const el = targetFor(STEPS[i]); if(el) el.scrollIntoView({ block: 'nearest' });
+    }
+    function finish(){
+      put(KEY_PENDING, null); put(KEY_DONE, '1');
+      if(shown){ shown.classList.add('hide'); const w = shown; setTimeout(()=> w.remove(), 250); shown = null; }
+    }
+    window.addEventListener('resize', ()=>{ if(shown) place(shown); });
+    window.resumateStartTour = function(){
+      if(get(KEY_DONE) === '1' || shown) return;
+      // wait until the welcome, questions and paywall are gone, so the tour never sits underneath them
+      const covered = ['welcomeScreen', 'questionScreen', 'paywall', 'splashScreen'].some(id=>{ const e = document.getElementById(id); return !!e && e.offsetParent !== null; });
+      if(covered) return setTimeout(window.resumateStartTour, 500);
+      go(0);
+    };
+    // a person who closed the app before the tour ended gets it on their next visit
+    if(get(KEY_PENDING) === '1' && get(KEY_DONE) !== '1') setTimeout(window.resumateStartTour, 1500);
+  })();
+
   // ---------- Question gate: after Welcome, before Home. Q1 name, Q2 goal. Waits for the person — Next (needs an answer) or Skip. ----------
   (function(){
     const Q_KEY = 'resumate_goal_answered', N_KEY = 'resumate_user_name';
@@ -2657,7 +2709,9 @@
       try{ if(name) localStorage.setItem(N_KEY, name); localStorage.setItem(Q_KEY, goal || 'skipped'); }catch(e){}
       window.resumateGoal = goal || 'skipped';
       if(window.resumateOnboard) window.resumateOnboard({ name, goal });
+      try{ localStorage.setItem('resumate_tour_pending', '1'); }catch(e){}
       qs.classList.add('hide'); setTimeout(()=> qs.remove(), 400);
+      if(window.resumateStartTour) setTimeout(window.resumateStartTour, 900);
     }
     next.addEventListener('click', ()=>{ if(next.disabled) return; if(step===0) show(1); else finish(); });
     document.getElementById('qSkip').addEventListener('click', ()=>{ if(step===0){ nameEl.value = ''; show(1); } else finish(); });
@@ -7401,7 +7455,8 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
         'Operations': { role:'Operations executive', summary:'Operations professional with [X] years in [logistics, manufacturing or process]. Improved [process] by [result]. Tracks targets and reports clearly.', skills:['MS Excel','Process improvement','Inventory management','Vendor coordination','Reporting'], order:['achievements','certifications','languages','projects'] }
       };
       const st = toolState.roleresume || (toolState.roleresume = { job:'Fresher', picked:null });
-      const pick = (job)=> { st.job = job; st.picked = ROLES[job].skills.slice(); };
+      // placeholders such as [your tool] are shown but never ticked, so they are not saved into the resume by default
+      const pick = (job)=> { st.job = job; st.picked = ROLES[job].skills.filter(x=> !x.includes('[')); };
       if(!st.picked) pick(st.job);
       const draw = ()=>{
         const R = ROLES[st.job];
