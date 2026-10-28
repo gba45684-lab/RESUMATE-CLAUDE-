@@ -24,14 +24,14 @@ with sync_playwright() as p:
         pg.evaluate("const p=document.getElementById('paywall'); if(p && !p.hidden) document.getElementById('pwClose').click()"); pg.wait_for_timeout(300)
         return ctx, pg, errs
     ctx, pg, errs = open_page()
-    chk('Golden layout shows every Smart tools tile', pg.evaluate(VISIBLE) == 12, pg.evaluate(VISIBLE))
+    chk('Golden layout shows every Smart tools tile', pg.evaluate(VISIBLE) == 13, pg.evaluate(VISIBLE))
     chk('one template fills both theme slots', pg.evaluate("document.querySelectorAll('[data-tool=roleresume]').length") == 2, pg.evaluate("document.querySelectorAll('[data-tool=roleresume]').length"))
     pg.evaluate("document.querySelector('.tl-tile[data-tool=roleresume]').click()"); pg.wait_for_timeout(500)
     chk('a tile still opens its tool', pg.evaluate("document.getElementById('toolBody').innerHTML.includes('rrJob')"))
     chk('placeholder skills are not ticked by default', pg.evaluate("[...document.querySelectorAll('[data-skill]')].filter(e=>e.getAttribute('aria-pressed')==='true' && e.dataset.skill.includes('[')).length") == 0)
     chk('no page errors', not errs, errs[:3]); ctx.close()
     ctx, pg, errs = open_page('branchdesk')
-    chk('Branchdesk layout shows every Smart tools tile', pg.evaluate(VISIBLE) == 12, pg.evaluate(VISIBLE))
+    chk('Branchdesk layout shows every Smart tools tile', pg.evaluate(VISIBLE) == 13, pg.evaluate(VISIBLE))
     chk('no page errors on Branchdesk', not errs, errs[:3]); ctx.close()
     # first-run tour: starts after the question gate, steps through real controls, can be skipped, never repeats
     ctx = b.new_context(viewport={'width': 393, 'height': 852}, is_mobile=True, has_touch=True)

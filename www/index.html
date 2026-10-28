@@ -2517,6 +2517,7 @@
                 <button type="button" class="tl-tile" data-tool="pdftools"><i class="bd-i tl-ico" data-ic="file"></i><b>PDF tools</b><small>All PDF tools in one place</small></button>
 </div></div>
 <div class="tl-group"><p class="tl-subh">Photos</p><div class="tl-tilegrid">
+                <button type="button" class="tl-tile" data-tool="imagetools"><i class="bd-i tl-ico" data-ic="image"></i><b>Image tools</b><small>Rotate, crop, resize and more</small></button>
                 <button type="button" class="tl-tile" data-tool="idphoto"><i class="bd-i tl-ico" data-ic="image"></i><b>Passport photo</b><small>Exact size, file limit</small></button>
                 <button type="button" class="tl-tile" data-tool="compress"><i class="bd-i tl-ico" data-ic="shrink"></i><b>Compress image</b><small>Smaller file size</small></button>
 </div></div></template>
@@ -4066,6 +4067,7 @@ document.querySelectorAll('[data-tiles-slot]').forEach(function(el){ el.appendCh
     settings:'<path d="M4 21v-7"/><path d="M4 10V3"/><path d="M12 21v-9"/><path d="M12 8V3"/><path d="M20 21v-5"/><path d="M20 12V3"/><path d="M2 14h4"/><path d="M10 8h4"/><path d="M18 16h4"/>',
     star:'<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
     user:'<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+    flip:'<path d="M8 3H5a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h3"/><path d="M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3"/><path d="M12 20v2"/><path d="M12 14v2"/><path d="M12 8v2"/><path d="M12 2v2"/>',
     rotate:'<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>',
     crop:'<path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/>',
     shield:'<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>',
@@ -6748,11 +6750,12 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
       const st = toolState[o.key] || (toolState[o.key] = Object.assign({ file:null, name:'' }, o.init || {}));
       const msg = t=> { const m = toolBody.querySelector('#pt-msg'); if(m) m.textContent = t || ''; };
       const draw = ()=>{
-        toolBody.innerHTML = `<p class="tl-lead">${o.lead}</p>
+        toolBody.innerHTML = `${swapBar(o.key)}<p class="tl-lead">${o.lead}</p>
           <div class="tl-add wrap">${filePick(st.file ? 'Choose another PDF' : 'Choose a PDF', 'application/pdf,.pdf', false, 'pt-file')}</div>
           ${st.file ? `<p class="tl-note">${H(st.name)} · ${fmtKB(st.file.size)}</p>${o.options ? o.options(st) : ''}
           <div class="tl-add"><button class="tl-btn primary" id="pt-go">${ico(o.icon)}${o.action}</button></div>` : ''}
           <p class="tl-note" id="pt-msg" aria-live="polite">${st.file ? '' : 'Choose a PDF to start. Files stay on this phone.'}</p>`;
+        bindSwap();
         toolBody.querySelector('#pt-file').addEventListener('change', e=>{
           const f = e.target.files[0]; e.target.value = ''; if(!f) return;
           if(!isPdfFile(f)){ showToast('Please choose a PDF'); return; }
@@ -6765,6 +6768,84 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
           go.disabled = true; msg(o.busy || 'Working…');
           try{ msg(await o.run(st, msg)); }
           catch(e){ msg(o.fail || "Couldn't do this with this PDF — it may be password-protected"); }
+          finally{ go.disabled = false; }
+        });
+      };
+      draw();
+    } };
+  }
+
+  // ---------- Swap bar: two related tools share one screen; the bar flips between them ----------
+  const SWAP_PAIR = {
+    pdf2jpg:['pdf2jpg','PDF to pictures','imgpdf','Pictures to PDF'], imgpdf:['pdf2jpg','PDF to pictures','imgpdf','Pictures to PDF'],
+    mergepdf:['mergepdf','Merge PDFs','splitpdf','Split PDF'], splitpdf:['mergepdf','Merge PDFs','splitpdf','Split PDF'],
+    protectpdf:['protectpdf','Protect PDF','unlockpdf','Unlock PDF'], unlockpdf:['protectpdf','Protect PDF','unlockpdf','Unlock PDF']
+  };
+  function swapBar(key){
+    const pr = SWAP_PAIR[key]; if(!pr) return '';
+    const [a, la, b, lb] = pr;
+    return `<div class="tl-seg swap-bar" role="radiogroup" aria-label="Switch tool">${[[a, la], [b, lb]].map(([k, l])=> `<button type="button" role="radio" aria-checked="${k === key}" data-swap="${k}">${H(l)}</button>`).join('')}</div>`;
+  }
+  function bindSwap(){
+    toolBody.querySelectorAll('[data-swap]').forEach(b=> b.addEventListener('click', ()=>{ if(b.getAttribute('aria-checked') !== 'true') toolOpen(b.dataset.swap); }));
+  }
+
+  // ---------- Picture tools: one factory for every single-picture tool (same shape as pdfOneTool) ----------
+  const FMT_ITEMS = [['image/jpeg', 'JPG'], ['image/png', 'PNG'], ['image/webp', 'WebP']];
+  const segOpt = (st, key, items, label)=> `<label class="tl-lab">${H(label)}</label><div class="tl-seg" role="radiogroup" aria-label="${H(label)}">${items.map(([v, l])=> `<button type="button" role="radio" aria-checked="${String(st[key]) === v}" data-opt="${key}" data-val="${v}">${H(l)}</button>`).join('')}</div>`;
+  // turn, flip, crop, resize and grey-scale one picture on a canvas
+  function editCanvas(src, o){
+    const r = ((o.rot || 0) % 360 + 360) % 360, swap = r === 90 || r === 270;
+    const p = o.crop || 0, sx = Math.round(src.width * p / 100), sy = Math.round(src.height * p / 100);
+    const sw = Math.max(1, src.width - 2 * sx), sh = Math.max(1, src.height - 2 * sy);
+    const k = o.scale || 1, cw = Math.max(1, Math.round(sw * k)), ch = Math.max(1, Math.round(sh * k));
+    const out = document.createElement('canvas'); out.width = swap ? ch : cw; out.height = swap ? cw : ch;
+    const cx = out.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, out.width, out.height);
+    cx.imageSmoothingQuality = 'high';
+    cx.translate(out.width / 2, out.height / 2);
+    cx.scale(o.flipH ? -1 : 1, o.flipV ? -1 : 1);   // flips happen on the final picture, so they come before the turn
+    cx.rotate(r * Math.PI / 180);
+    cx.drawImage(src, sx, sy, sw, sh, -cw / 2, -ch / 2, cw, ch);
+    if(o.gray){
+      const d = cx.getImageData(0, 0, out.width, out.height), px = d.data;
+      for(let i = 0; i < px.length; i += 4){ const g = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]; px[i] = px[i + 1] = px[i + 2] = g; }
+      cx.putImageData(d, 0, 0);
+    }
+    return out;
+  }
+  async function imageEditRun(st, o, suffix){
+    const src = await photoToCanvas(st.file, 3000);
+    const out = editCanvas(src, o);
+    const fmt = o.fmt || 'image/jpeg', ext = fmt === 'image/png' ? 'png' : fmt === 'image/webp' ? 'webp' : 'jpg';
+    const blob = await toBlobAsync(out, fmt, 0.92);
+    if(!blob) throw new Error('encode');
+    const saved = await deliverBlob(blob, `${toolBase()}_${suffix}.${ext}`);
+    return saved ? `Saved ✓ ${out.width} × ${out.height} px` : 'Not saved';
+  }
+  function imageOneTool(o){
+    return { render(){
+      setHead(o.title, o.sub);
+      const st = toolState[o.key] || (toolState[o.key] = Object.assign({ file:null, name:'' }, o.init || {}));
+      const msg = t=> { const m = toolBody.querySelector('#it-msg'); if(m) m.textContent = t || ''; };
+      const draw = ()=>{
+        toolBody.innerHTML = `${swapBar(o.key)}<p class="tl-lead">${o.lead}</p>
+          <div class="tl-add wrap">${filePick(st.file ? 'Choose another picture' : 'Choose a picture', 'image/*', false, 'it-file')}</div>
+          ${st.file ? `<p class="tl-note">${H(st.name)} · ${fmtKB(st.file.size)}</p>${o.options ? o.options(st) : ''}
+          <div class="tl-add"><button class="tl-btn primary" id="it-go">${ico(o.icon)}${o.action}</button></div>` : ''}
+          <p class="tl-note" id="it-msg" aria-live="polite">${st.file ? '' : 'Choose a picture to start. It stays on this phone.'}</p>`;
+        bindSwap();
+        toolBody.querySelectorAll('[data-opt]').forEach(b=> b.addEventListener('click', ()=>{ st[b.dataset.opt] = b.dataset.val; draw(); }));
+        toolBody.querySelector('#it-file').addEventListener('change', e=>{
+          const f = e.target.files[0]; e.target.value = ''; if(!f) return;
+          if(!isImageFile(f)){ showToast('Please choose a picture'); return; }
+          Object.assign(st, { file:f, name:f.name }); draw();
+        });
+        const go = toolBody.querySelector('#it-go'); if(!go) return;
+        go.addEventListener('click', async ()=>{
+          if(st.file.size > fileLimitMB() * 1048576){ showToast(`Free use is up to ${FREE_FILE_MB} MB per file. Premium raises it to ${PREMIUM_FILE_MB} MB.`); toolOpen('premium'); return; }
+          go.disabled = true; msg(o.busy || 'Working…');
+          try{ msg(await o.run(st, msg)); }
+          catch(e){ msg(o.fail || "Couldn't change this picture — try a JPG or PNG"); }
           finally{ go.disabled = false; }
         });
       };
@@ -6957,6 +7038,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
       const IP_MAX = 30;
       const msg = t=> { const m = toolBody.querySelector('#imgMsg'); if(m) m.textContent = t || ''; };
       const bind = ()=>{
+        bindSwap();
         bindFileRows(toolBody, st.items, draw);
         toolBody.querySelectorAll('[data-size]').forEach(b=> b.addEventListener('click', ()=>{ st.size = b.dataset.size; draw(); }));
         toolBody.querySelectorAll('[data-margin]').forEach(b=> b.addEventListener('click', ()=>{ st.margin = b.dataset.margin; draw(); }));
@@ -6983,7 +7065,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
       };
       const draw = ()=>{
         const n = st.items.length;
-        toolBody.innerHTML = `<p class="tl-lead">Add photos or scans, put them in order, then make one PDF. Everything is done on this phone.</p>
+        toolBody.innerHTML = `${swapBar('imgpdf')}<p class="tl-lead">Add photos or scans, put them in order, then make one PDF. Everything is done on this phone.</p>
           <div class="tl-add wrap">${filePick('Add images', 'image/*', true, 'imgFile')}</div>
           <div class="tl-list">${fileRows(st.items, 'images')}</div>
           <label class="tl-lab">Page size</label>
@@ -7064,6 +7146,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
       const MAX = 20;
       const msg = t=> { const m = toolBody.querySelector('#mpMsg'); if(m) m.textContent = t || ''; };
       const bind = ()=>{
+        bindSwap();
         bindFileRows(toolBody, st.items, draw);
         toolBody.querySelector('#mpFile').addEventListener('change', e=>{
           const picked = [...e.target.files].filter(isPdfFile); e.target.value = '';
@@ -7087,7 +7170,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
       };
       const draw = ()=>{
         const n = st.items.length;
-        toolBody.innerHTML = `<p class="tl-lead">Add PDFs, arrange them in the order you want, then join them into one file. Files stay on this phone.</p>
+        toolBody.innerHTML = `${swapBar('mergepdf')}<p class="tl-lead">Add PDFs, arrange them in the order you want, then join them into one file. Files stay on this phone.</p>
           <div class="tl-add wrap">${filePick('Add PDF files', 'application/pdf,.pdf', true, 'mpFile')}</div>
           <div class="tl-list">${fileRows(st.items, 'PDF files')}</div>
           <div class="tl-add"><button class="tl-btn primary" id="mpGo"${n < 2 ? ' disabled' : ''}>${ico('merge')}Merge PDFs</button></div>
@@ -7136,6 +7219,39 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
         if(!(await deliverBlob(blob, `${toolBase()}_small.pdf`))) return '';
         return blob.size < st.file.size ? `Saved ✓ · ${fmtKB(st.file.size)} → ${fmtKB(blob.size)}` : `Saved, but it isn't smaller (${fmtKB(st.file.size)} → ${fmtKB(blob.size)}). The original is the better choice.`;
       } }),
+
+    rotateimg: imageOneTool({ key:'rotateimg', title:'Rotate image', sub:'Turn clockwise', icon:'rotate', action:'Rotate and save', busy:'Rotating…', lead:'Turn a picture a quarter, half or three-quarter turn.', init:{ deg:'90', fmt:'image/jpeg' },
+      options: st=> segOpt(st, 'deg', [['90', '90°'], ['180', '180°'], ['270', '270°']], 'Turn') + segOpt(st, 'fmt', FMT_ITEMS, 'Save as'),
+      run: st=> imageEditRun(st, { rot:Number(st.deg), fmt:st.fmt }, 'rotated') }),
+    flipimg: imageOneTool({ key:'flipimg', title:'Flip image', sub:'Mirror the picture', icon:'flip', action:'Flip and save', busy:'Flipping…', lead:'Mirror a picture left to right, or top to bottom.', init:{ dir:'h', fmt:'image/jpeg' },
+      options: st=> segOpt(st, 'dir', [['h', 'Left and right'], ['v', 'Top and bottom']], 'Flip') + segOpt(st, 'fmt', FMT_ITEMS, 'Save as'),
+      run: st=> imageEditRun(st, { flipH:st.dir === 'h', flipV:st.dir === 'v', fmt:st.fmt }, 'flipped') }),
+    cropimg: imageOneTool({ key:'cropimg', title:'Crop image', sub:'Trim the edges', icon:'crop', action:'Crop and save', busy:'Cropping…', lead:'Trim the same amount from every edge of a picture. Useful for cutting borders.', init:{ pct:'5', fmt:'image/jpeg' },
+      options: st=> segOpt(st, 'pct', [['5', '5%'], ['10', '10%'], ['15', '15%']], 'Trim from each edge') + segOpt(st, 'fmt', FMT_ITEMS, 'Save as'),
+      run: st=> imageEditRun(st, { crop:Number(st.pct), fmt:st.fmt }, 'cropped') }),
+    resizeimg: imageOneTool({ key:'resizeimg', title:'Resize image', sub:'Make it smaller', icon:'shrink', action:'Resize and save', busy:'Resizing…', lead:'Make a picture smaller by a fixed amount. Smaller pictures are quicker to send.', init:{ scale:'0.5', fmt:'image/jpeg' },
+      options: st=> segOpt(st, 'scale', [['0.25', '25%'], ['0.5', '50%'], ['0.75', '75%']], 'Make it') + segOpt(st, 'fmt', FMT_ITEMS, 'Save as'),
+      run: st=> imageEditRun(st, { scale:Number(st.scale), fmt:st.fmt }, 'smaller') }),
+    grayimg: imageOneTool({ key:'grayimg', title:'Black and white', sub:'Grey-scale picture', icon:'image', action:'Make black and white', busy:'Converting…', lead:'Turn a colour picture into black and white. Good for scanned documents.', init:{ fmt:'image/jpeg' },
+      options: st=> segOpt(st, 'fmt', FMT_ITEMS, 'Save as'),
+      run: st=> imageEditRun(st, { gray:true, fmt:st.fmt }, 'bw') }),
+    convertimg: imageOneTool({ key:'convertimg', title:'Change format', sub:'JPG, PNG or WebP', icon:'file', action:'Convert and save', busy:'Converting…', lead:'Change a picture between JPG, PNG and WebP. PNG and WebP are good for sharp graphics. Transparent areas are saved white.', init:{ fmt:'image/png' },
+      options: st=> segOpt(st, 'fmt', FMT_ITEMS, 'Save as'),
+      run: st=> imageEditRun(st, { fmt:st.fmt }, 'converted') }),
+
+    imagetools:{ render(){
+      setHead('Image tools', 'Rotate, crop, resize and more');
+      const T = (t, ic, b, sm)=> `<button type="button" class="tl-tile" data-tool="${t}"><i class="bd-i tl-ico" data-ic="${ic}"></i><b>${b}</b><small>${sm}</small></button>`;
+      const GROUPS = [
+        ['Turn and crop', [T('rotateimg','rotate','Rotate','Quarter, half or three-quarter turn'), T('flipimg','flip','Flip','Left and right, or top and bottom'), T('cropimg','crop','Crop','Trim the edges'), T('resizeimg','shrink','Resize','25%, 50% or 75%')]],
+        ['Colour and format', [T('grayimg','image','Black and white','Grey-scale picture'), T('convertimg','file','Change format','JPG, PNG or WebP'), T('compress','shrink','Compress','Smaller file size')]],
+        ['Pictures and PDF', [T('imgpdf','download','Pictures to PDF','One PDF from many pictures'), T('pdf2jpg','image','PDF to pictures','A picture for each page'), T('idphoto','image','Passport photo','Exact size for forms')]]
+      ];
+      toolBody.innerHTML = `<p class="tl-lead">Every picture tool in one place. Pictures stay on this phone.</p><div class="tl-tiles tl-bd">` +
+        GROUPS.map(([h, tiles])=> `<div class="tl-group"><p class="tl-subh">${h}</p><div class="tl-tilegrid">${tiles.join('')}</div></div>`).join('') + '</div>';
+      toolBody.querySelectorAll('.tl-ico[data-ic]').forEach(el=> el.style.setProperty('--m', bdMask(el.dataset.ic)));
+      toolBody.querySelectorAll('[data-tool]').forEach(b=> b.addEventListener('click', ()=> toolOpen(b.dataset.tool)));
+    } },
 
     pdf2jpg: pdfOneTool({ key:'pdf2jpg', title:'PDF to JPG', sub:'A picture for each page', icon:'image', action:'Convert to JPG', lead:'Each page becomes a sharp JPG picture. A one-page PDF gives one picture; a longer PDF gives one picture per page.',
       run: async (st, msg)=>{
