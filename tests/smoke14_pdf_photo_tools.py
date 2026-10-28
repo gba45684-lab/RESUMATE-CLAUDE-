@@ -30,7 +30,8 @@ with sync_playwright() as p:
     pg.evaluate("const p=document.getElementById('paywall'); if(p && !p.hidden) document.getElementById('pwClose').click()"); pg.wait_for_timeout(500)
 
     # --- Passport photo
-    pg.evaluate("document.querySelector('[data-tool=idphoto]').click()"); pg.wait_for_timeout(700)
+    pg.evaluate("document.querySelector('.tl-tile[data-tool=imagetools]').click()"); pg.wait_for_timeout(500)
+    pg.evaluate("document.querySelector('#toolBody [data-tool=idphoto]').click()"); pg.wait_for_timeout(700)
     chk('passport tool opens with a file picker', pg.evaluate("!!document.querySelector('#ipFile')"))
     pg.set_input_files('#ipFile', portrait); pg.wait_for_timeout(1200)
     chk('passport: preview shows after choosing a photo', pg.evaluate("!!document.querySelector('#ipPrev')"))
@@ -60,7 +61,8 @@ with sync_playwright() as p:
     pg.evaluate("document.getElementById('toolBack').click()"); pg.wait_for_timeout(600)
 
     # --- Compress image
-    pg.evaluate("document.querySelector('[data-tool=compress]').click()"); pg.wait_for_timeout(700)
+    pg.evaluate("document.querySelector('.tl-tile[data-tool=imagetools]').click()"); pg.wait_for_timeout(500)
+    pg.evaluate("document.querySelector('#toolBody [data-tool=compress]').click()"); pg.wait_for_timeout(700)
     pg.set_input_files('#cmpFile', landscape); pg.wait_for_timeout(1000)
     pg.evaluate("document.querySelector('[data-side=\"800\"]').click()"); pg.wait_for_timeout(1200)
     pg.evaluate("const q=document.getElementById('cmpQ'); q.value=60; q.dispatchEvent(new Event('change'))"); pg.wait_for_timeout(900)

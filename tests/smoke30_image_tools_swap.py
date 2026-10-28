@@ -26,6 +26,12 @@ with sync_playwright() as p:
     pg.evaluate("document.querySelector('.tl-tile[data-tool=imagetools]').click()"); pg.wait_for_timeout(500)
     chk('Image tools hub shows its picture tools on screen', pg.evaluate("['rotateimg','flipimg','cropimg','resizeimg','grayimg','convertimg'].every(k=> { const e = document.querySelector('#toolBody [data-tool='+k+']'); return !!e && e.offsetParent !== null; })"))
     pg.evaluate("document.querySelector('#toolBody [data-tool=rotateimg]').click()"); pg.wait_for_timeout(400)
+    chk('first use shows a tip', pg.evaluate("!!document.querySelector('#toolBody .tool-hint')"))
+    pg.evaluate("document.querySelector('#toolBody .tool-hint-x').click()"); pg.wait_for_timeout(200)
+    pg.evaluate("document.getElementById('toolBack').click()"); pg.wait_for_timeout(300)
+    pg.evaluate("document.querySelector('.tl-tile[data-tool=imagetools]').click()"); pg.wait_for_timeout(400)
+    pg.evaluate("document.querySelector('#toolBody [data-tool=rotateimg]').click()"); pg.wait_for_timeout(400)
+    chk('the tip does not come back on the next visit', pg.evaluate("!document.querySelector('#toolBody .tool-hint')"))
     pg.set_input_files('#it-file', pic); pg.wait_for_timeout(400)
     with pg.expect_download(timeout=60000) as dl:
         pg.evaluate("document.getElementById('it-go').click()")
