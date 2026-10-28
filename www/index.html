@@ -132,6 +132,20 @@
   .tool-hint{ display:flex; align-items:center; gap:12px; margin:0 0 14px; padding:12px 14px; border-radius:14px; background:#F6EBD3; color:#4A3426; border:1px solid rgba(90,60,40,.12); font-size:14px; line-height:1.45; }
   .tool-hint p{ margin:0; flex:1; }
   .tool-hint-x{ min-height:44px; min-width:44px; padding:0 12px; border:0; border-radius:12px; background:transparent; color:#7A2418; font:inherit; font-weight:700; }
+  /* Start from a role: the starting-point card */
+  .rr-card{ margin:14px 0 16px; padding:14px 14px 12px; border-radius:16px; background:rgba(255,255,255,.6); border:1px solid rgba(90,60,40,.1); }
+  .rr-k{ margin:12px 0 4px; font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-soft); }
+  .rr-k:first-child{ margin-top:0; }
+  .rr-v{ margin:0 0 2px; font-size:15px; line-height:1.45; color:var(--ink); }
+  /* Home: Smart tools groups can be folded; the choice is remembered on this phone */
+  .tl-grp{ display:flex; align-items:center; justify-content:space-between; width:100%; min-height:44px; padding:0; border:0; background:transparent; font:inherit; font-weight:600; color:var(--ink-soft); cursor:pointer; text-align:left; }
+  .tl-grp::after{ content:''; width:8px; height:8px; border-right:2px solid currentColor; border-bottom:2px solid currentColor; transform:rotate(45deg); margin-right:6px; transition:transform .2s ease; }
+  .tl-group.collapsed .tl-grp::after{ transform:rotate(-45deg); }
+  .tl-group.collapsed .tl-tilegrid{ display:none; }
+  /* section labels are a little heavier so they read clearly */
+  .tl-subh{ font-weight:600; }
+  /* the "?" that brings back a tool's tip */
+  #toolHelp{ margin-left:auto; font-weight:800; font-size:16px; }
 </style>
 <style>
   :root{
@@ -2200,7 +2214,7 @@
               <p class="bd-h">Quick actions</p>
               <div class="bd-actions">
                 <button type="button" class="bd-btn primary" data-nav="templates"><i class="bd-i" data-i="plus"></i>New resume</button>
-                <button type="button" class="bd-btn" id="bdImport"><i class="bd-i" data-i="upload"></i>Import</button>
+                <button type="button" class="bd-btn" id="bdImport"><i class="bd-i" data-i="upload"></i>Restore</button>
               </div>
 
               <div class="tl-tiles tl-bd" role="group" aria-label="Smart tools" data-tiles-slot></div>
@@ -2242,7 +2256,7 @@
               </div>
               <div class="hm-tile hm-bf" style="--d:430ms" id="importResumeBtn">
                 <div class="ti" style="background:#DCEBFB;color:#2C5C9E"><svg class="lu" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg></div>
-                <div><b>Import</b><small>From a backup</small></div>
+                <div><b>Restore backup</b><small>From a saved file</small></div>
                 <input type="file" accept="application/json" id="importFileInput" style="display:none">
               </div>
               <div class="hm-tile hm-bf" style="--d:480ms" id="shareAppBtn">
@@ -2504,26 +2518,41 @@
 
 <template id="tilesTpl">
               <p class="tl-tiles-h">Smart tools</p>
-              <div class="tl-group"><p class="tl-subh">Resume</p><div class="tl-tilegrid">
+              <div class="tl-group"><button type="button" class="tl-subh tl-grp" aria-expanded="true" data-grp="Resume">Resume</button><div class="tl-tilegrid">
                 <button type="button" class="tl-tile" data-tool="resumes"><i class="bd-i tl-ico" data-ic="layers"></i><b>My resumes</b><small data-tile-count>1 saved</small></button>
                 <button type="button" class="tl-tile" data-tool="score"><i class="bd-i tl-ico" data-ic="gauge"></i><b>Resume score</b><small data-tile-score>—</small></button>
                 <button type="button" class="tl-tile" data-tool="roleresume"><i class="bd-i tl-ico" data-ic="layers"></i><b>Start from a role</b><small>Fresher, sales, banking, IT</small></button>
                 <button type="button" class="tl-tile" data-tool="importpdf"><i class="bd-i tl-ico" data-ic="file"></i><b>Import PDF resume</b><small>Fill from an old CV</small></button>
 </div></div>
-<div class="tl-group"><p class="tl-subh">Career</p><div class="tl-tilegrid">
+<div class="tl-group"><button type="button" class="tl-subh tl-grp" aria-expanded="true" data-grp="Career">Career</button><div class="tl-tilegrid">
                 <button type="button" class="tl-tile" data-tool="job"><i class="bd-i tl-ico" data-ic="target"></i><b>Job match</b><small>Check a job ad</small></button>
                 <button type="button" class="tl-tile" data-tool="interview"><i class="bd-i tl-ico" data-ic="sparkles"></i><b>Interview prep</b><small>Questions and practice</small></button>
                 <button type="button" class="tl-tile" data-tool="jobtracker"><i class="bd-i tl-ico" data-ic="layout"></i><b>Job tracker</b><small>Applications and follow-ups</small></button>
                 <button type="button" class="tl-tile" data-tool="letter"><i class="bd-i tl-ico" data-ic="mail"></i><b>Cover letter</b><small>Write in seconds</small></button>
                 <button type="button" class="tl-tile" data-tool="messages"><i class="bd-i tl-ico" data-ic="mail"></i><b>Messages</b><small>Recruiter, LinkedIn, follow-up</small></button>
 </div></div>
-<div class="tl-group"><p class="tl-subh">Documents</p><div class="tl-tilegrid">
+<div class="tl-group"><button type="button" class="tl-subh tl-grp" aria-expanded="true" data-grp="Documents">Documents</button><div class="tl-tilegrid">
                 <button type="button" class="tl-tile" data-tool="pdftools"><i class="bd-i tl-ico" data-ic="file"></i><b>PDF tools</b><small>All PDF tools in one place</small></button>
                 <button type="button" class="tl-tile" data-tool="imagetools"><i class="bd-i tl-ico" data-ic="image"></i><b>Image tools</b><small>Rotate, crop, resize and more</small></button>
 </div></div>
 </template>
 <script>/* Home tiles are written once in #tilesTpl and copied into both theme layouts */
-document.querySelectorAll('[data-tiles-slot]').forEach(function(el){ el.appendChild(document.getElementById('tilesTpl').content.cloneNode(true)); });</script>
+document.querySelectorAll('[data-tiles-slot]').forEach(function(el){ el.appendChild(document.getElementById('tilesTpl').content.cloneNode(true)); });
+// Home groups fold; the choice is remembered on this phone
+(function(){
+  // each theme layout has its own copy of a group; both copies always show the same state
+  function setFolded(name, folded){
+    document.querySelectorAll('[data-tiles-slot] .tl-grp[data-grp="' + name + '"]').forEach(function(b){ b.parentElement.classList.toggle('collapsed', folded); b.setAttribute('aria-expanded', String(!folded)); });
+    try{ localStorage.setItem('resumate_grp_' + name, folded ? '0' : '1'); }catch(e){}
+  }
+  document.querySelectorAll('[data-tiles-slot] .tl-grp').forEach(function(btn){
+    var name = btn.dataset.grp, closed = false;
+    try{ closed = localStorage.getItem('resumate_grp_' + name) === '0'; }catch(e){}
+    if(closed) setFolded(name, true);
+    btn.addEventListener('click', function(){ setFolded(name, !btn.parentElement.classList.contains('collapsed')); });
+  });
+})();
+</script>
 <script src="vendor/html2canvas.min.js"></script>
 <script src="vendor/jspdf.umd.min.js"></script>
 <div class="tool" id="toolPage" role="dialog" aria-modal="true" aria-labelledby="toolTitle" tabindex="-1" hidden>
@@ -3808,13 +3837,13 @@ document.querySelectorAll('[data-tiles-slot]').forEach(function(el){ el.appendCh
     return saved;
   }
   // Reads dimensions cheaply, then lets the browser decode the picture already scaled down (a 50-200 MP phone photo never has to be fully decoded).
-  async function photoToCanvas(file, max){
+  async function photoToCanvas(file, max, keepAlpha){
     const url = URL.createObjectURL(file);
     try{
       const img = await new Promise((res, rej)=>{ const im = new Image(); im.onload = ()=> res(im); im.onerror = ()=> rej(new Error('decode')); im.src = url; });
       const k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight)), w = Math.max(1, Math.round(img.naturalWidth * k)), h = Math.max(1, Math.round(img.naturalHeight * k));
       const c = document.createElement('canvas'); c.width = w; c.height = h;
-      const cx = c.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, w, h);
+      const cx = c.getContext('2d'); if(!keepAlpha){ cx.fillStyle = '#fff'; cx.fillRect(0, 0, w, h); }
       let drawn = false;
       if(window.createImageBitmap && k < 1){
         try{
@@ -5993,7 +6022,12 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
   document.getElementById('dlvBack').addEventListener('click', dlClose);
   document.addEventListener('keydown', e=>{ if(e.key === 'Escape' && !dlv.hidden){ e.stopImmediatePropagation(); dlClose(); } }, true);
   document.getElementById('dlvShare').addEventListener('click', ()=>{ if(dlvCur) dlShare(dlvCur.id); });
-  document.getElementById('dlvSave').addEventListener('click', async ()=>{ if(dlvCur && await deliverBlob(dlvCur.pdf, dlvCur.name)) showToast('Saved a copy ✓'); });
+  // bracket placeholders such as [your field] come from the starting templates; warn, but still save
+  const leftPlaceholders = ()=> { try{ return (JSON.stringify(resumeData).match(/\[[A-Za-z][^\]\n]{0,40}\]/g) || []).length; }catch(e){ return 0; } };
+  document.getElementById('dlvSave').addEventListener('click', async ()=>{
+    const left = leftPlaceholders();
+    if(dlvCur && await deliverBlob(dlvCur.pdf, dlvCur.name)) showToast(left ? `Saved ✓ · ${left} [bracket] left to replace` : 'Saved a copy ✓');
+  });
   document.getElementById('dlvOpen').addEventListener('click', async ()=>{
     if(!dlvCur) return;
     if(isNative()){ try{ await nativeShareFile(dlvCur.pdf, dlvCur.name, dlvCur.name); }catch(e){ if(!isCancel(e)) showToast("Couldn't open that file"); } return; }
@@ -6027,6 +6061,8 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
         kept = true;
       }catch(e){}
       showToast(kept ? 'Resume downloaded ✓ · saved in My Downloads' : 'Resume downloaded ✓');
+      const leftBrackets = leftPlaceholders();
+      if(leftBrackets) setTimeout(()=> showToast(`${leftBrackets} [bracket] still to replace in this resume`), 1600);
     }catch(err){
       showToast('Download failed — try again');
     }finally{
@@ -6719,7 +6755,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
     cropimg:'Choose how much to trim from every edge.',
     resizeimg:'Pick a smaller size. Smaller pictures are quicker to send.',
     grayimg:'Turns a colour picture into black and white. Good for scanned documents.',
-    convertimg:'PNG keeps sharp graphics; JPG is smaller for photos.',
+    convertimg:'PNG and WebP keep transparent areas. JPG is smaller for photos.',
     idphoto:'Pick the exact size your form asks for, then position the face in the frame.',
     compress:'Choose a smaller size, then check the picture is still clear before you send it.',
     premium:'Free use covers files up to 10 MB. Premium raises the limit.'
@@ -6739,6 +6775,8 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
     const f = TOOLS[name]; if(!f) return;
     toolBody.scrollTop = 0; toolBody.innerHTML = ''; f.render(arg);
     showToolHint(name);
+    const help = document.getElementById('toolHelp');
+    if(help) help.hidden = !TOOL_HINTS[name];
     if(!toolState.open){ toolPage.hidden = false; requestAnimationFrame(()=> requestAnimationFrame(()=> toolPage.classList.add('go'))); }
     toolState.open = true; setTimeout(()=> toolPage.focus({ preventScroll:true }), 60); buzz(6);
   }
@@ -6748,6 +6786,12 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
     studioRefreshTiles();
   }
   document.getElementById('toolBack').addEventListener('click', toolClose);
+  (function(){   // the "?" in the tool header shows that tool's tip again
+    const bar = document.querySelector('#toolPage .tool-bar'); if(!bar) return;
+    const help = document.createElement('button'); help.type = 'button'; help.className = 'dlv-ic'; help.id = 'toolHelp'; help.hidden = true; help.setAttribute('aria-label', 'Show tip'); help.textContent = '?';
+    bar.appendChild(help);
+    help.addEventListener('click', ()=>{ const name = toolState.name; try{ localStorage.removeItem('resumate_hint_' + name); }catch(e){} showToolHint(name); });
+  })();
   document.addEventListener('keydown', e=>{ if(e.key === 'Escape' && toolState.open && !document.getElementById('resumeFs').hidden === false && document.getElementById('paywall').hidden){ e.stopImmediatePropagation(); toolClose(); } }, true);
   function goStep(step){
     toolClose(); contentStep = Math.max(0, Math.min(contentSteps.length - 1, step)); renderContentTab(); openEdit();
@@ -6848,7 +6892,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
     const sw = Math.max(1, src.width - 2 * sx), sh = Math.max(1, src.height - 2 * sy);
     const k = o.scale || 1, cw = Math.max(1, Math.round(sw * k)), ch = Math.max(1, Math.round(sh * k));
     const out = document.createElement('canvas'); out.width = swap ? ch : cw; out.height = swap ? cw : ch;
-    const cx = out.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, out.width, out.height);
+    const cx = out.getContext('2d'); if(!o.alpha){ cx.fillStyle = '#fff'; cx.fillRect(0, 0, out.width, out.height); }
     cx.imageSmoothingQuality = 'high';
     cx.translate(out.width / 2, out.height / 2);
     cx.scale(o.flipH ? -1 : 1, o.flipV ? -1 : 1);   // flips happen on the final picture, so they come before the turn
@@ -6862,9 +6906,10 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
     return out;
   }
   async function imageEditRun(st, o, suffix){
-    const src = await photoToCanvas(st.file, 3000);
-    const out = editCanvas(src, o);
-    const fmt = o.fmt || 'image/jpeg', ext = fmt === 'image/png' ? 'png' : fmt === 'image/webp' ? 'webp' : 'jpg';
+    const fmt = o.fmt || 'image/jpeg', alpha = fmt !== 'image/jpeg';
+    const src = await photoToCanvas(st.file, 3000, alpha);
+    const out = editCanvas(src, Object.assign({ alpha }, o));
+    const ext = fmt === 'image/png' ? 'png' : fmt === 'image/webp' ? 'webp' : 'jpg';
     const blob = await toBlobAsync(out, fmt, 0.92);
     if(!blob) throw new Error('encode');
     const saved = await deliverBlob(blob, `${toolBase()}_${suffix}.${ext}`);
@@ -7283,7 +7328,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
     grayimg: imageOneTool({ key:'grayimg', title:'Black and white', sub:'Grey-scale picture', icon:'image', action:'Make black and white', busy:'Converting…', lead:'Turn a colour picture into black and white. Good for scanned documents.', init:{ fmt:'image/jpeg' },
       options: st=> segOpt(st, 'fmt', FMT_ITEMS, 'Save as'),
       run: st=> imageEditRun(st, { gray:true, fmt:st.fmt }, 'bw') }),
-    convertimg: imageOneTool({ key:'convertimg', title:'Change format', sub:'JPG, PNG or WebP', icon:'file', action:'Convert and save', busy:'Converting…', lead:'Change a picture between JPG, PNG and WebP. PNG and WebP are good for sharp graphics. Transparent areas are saved white.', init:{ fmt:'image/png' },
+    convertimg: imageOneTool({ key:'convertimg', title:'Change format', sub:'JPG, PNG or WebP', icon:'file', action:'Convert and save', busy:'Converting…', lead:'Change a picture between JPG, PNG and WebP. PNG and WebP keep transparent areas; JPG has no transparency, so those areas become white.', init:{ fmt:'image/png' },
       options: st=> segOpt(st, 'fmt', FMT_ITEMS, 'Save as'),
       run: st=> imageEditRun(st, { fmt:st.fmt }, 'converted') }),
 
@@ -7625,24 +7670,31 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
       const pick = (job)=> { st.job = job; st.picked = ROLES[job].skills.filter(x=> !x.includes('[')); };
       if(!st.picked) pick(st.job);
       const draw = ()=>{
-        const R = ROLES[st.job];
-        toolBody.innerHTML = `<p class="tl-lead">Choose the kind of job. We set a headline, a summary to edit, a skill list and a section order. Replace every [bracket] with your real details.</p>
+        const R = ROLES[st.job], full = rs.items.length >= RS_MAX;
+        toolBody.innerHTML = `<p class="tl-lead">Pick the kind of job. We set a headline, a summary and a skill list. Then replace each [bracket] with your own facts.</p>
           <label class="tl-lab" for="rrJob">Job type</label>
           <select id="rrJob" class="tl-input">${Object.keys(ROLES).map(k=> `<option value="${H(k)}"${k === st.job ? ' selected' : ''}>${H(k)}</option>`).join('')}</select>
-          <p class="tl-h">Headline</p><p class="tl-note">${H(R.role)}</p>
-          <p class="tl-h">Summary to edit</p><p class="tl-note">${H(R.summary)}</p>
-          <p class="tl-h">Skills: keep only the ones that are true for you</p>
-          <div class="tl-chips" role="group" aria-label="Skills">${R.skills.map(x=> `<button type="button" class="rr-chip" aria-pressed="${st.picked.includes(x)}" data-skill="${H(x)}">${H(x)}</button>`).join('')}</div>
-          <div class="tl-add"><button class="tl-btn primary" id="rrGo" type="button">${ico('plus')}Create resume from this</button></div>
-          <p class="tl-note" id="rrMsg" aria-live="polite">A new resume is made. Your other resumes stay as they are.</p>`;
+          <div class="rr-card">
+            <p class="rr-k">Headline</p><p class="rr-v">${H(R.role)}</p>
+            <p class="rr-k">Summary to edit</p><p class="rr-v">${H(R.summary)}</p>
+            <p class="rr-k">Skills: tick the ones that are true for you</p>
+            <div class="tl-chips" role="group" aria-label="Skills">${R.skills.map(x=> `<button type="button" class="rr-chip" aria-pressed="${st.picked.includes(x)}" data-skill="${H(x)}">${H(x)}</button>`).join('')}</div>
+          </div>
+          <div class="tl-add">${full
+            ? `<button class="tl-btn primary" id="rrManage" type="button">${ico('layers')}Manage my resumes</button>`
+            : `<button class="tl-btn primary" id="rrGo" type="button">${ico('plus')}Create resume from this</button>`}</div>
+          <p class="tl-note" id="rrMsg" aria-live="polite">${full ? `You already have ${RS_MAX} resumes, the most this phone keeps. Delete one in My resumes to make room.` : 'A new resume is made. Your other resumes stay as they are.'}</p>`;
         toolBody.querySelector('#rrJob').addEventListener('change', e=>{ pick(e.target.value); draw(); });
         toolBody.querySelectorAll('[data-skill]').forEach(b=> b.addEventListener('click', ()=>{
           const x = b.dataset.skill; st.picked = st.picked.includes(x) ? st.picked.filter(y=> y !== x) : st.picked.concat(x);
           b.setAttribute('aria-pressed', String(st.picked.includes(x)));
         }));
-        toolBody.querySelector('#rrGo').addEventListener('click', ()=>{
+        const manage = toolBody.querySelector('#rrManage');
+        if(manage) manage.addEventListener('click', ()=> toolOpen('resumes'));
+        const go = toolBody.querySelector('#rrGo');
+        if(go) go.addEventListener('click', ()=>{
           const id = rsCreate('blank');
-          if(!id){ const m = toolBody.querySelector('#rrMsg'); if(m) m.textContent = `You can keep up to ${RS_MAX} resumes. Delete one first.`; return; }
+          if(!id){ draw(); return; }
           Object.assign(resumeData, { role: R.role, summary: R.summary, skills: st.picked.join(', '), extrasOrder: R.order.slice() });
           saveResume(); rsSyncActive(); rsRename(id, st.job); rsRefreshAll();
           toolClose(); showToast('Resume created — replace the [brackets]');
