@@ -7247,7 +7247,9 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
         ['Colour and format', [T('grayimg','image','Black and white','Grey-scale picture'), T('convertimg','file','Change format','JPG, PNG or WebP'), T('compress','shrink','Compress','Smaller file size')]],
         ['Pictures and PDF', [T('imgpdf','download','Pictures to PDF','One PDF from many pictures'), T('pdf2jpg','image','PDF to pictures','A picture for each page'), T('idphoto','image','Passport photo','Exact size for forms')]]
       ];
-      toolBody.innerHTML = `<p class="tl-lead">Every picture tool in one place. Pictures stay on this phone.</p><div class="tl-tiles tl-bd">` +
+      const home = [...document.querySelectorAll('.tl-tiles')].find(t=> t.offsetParent);
+      const cls = home ? home.className : 'tl-tiles tl-golden';   // same tile layout as the theme in use
+      toolBody.innerHTML = `<p class="tl-lead">Every picture tool in one place. Pictures stay on this phone.</p><div class="${H(cls)}">` +
         GROUPS.map(([h, tiles])=> `<div class="tl-group"><p class="tl-subh">${h}</p><div class="tl-tilegrid">${tiles.join('')}</div></div>`).join('') + '</div>';
       toolBody.querySelectorAll('.tl-ico[data-ic]').forEach(el=> el.style.setProperty('--m', bdMask(el.dataset.ic)));
       toolBody.querySelectorAll('[data-tool]').forEach(b=> b.addEventListener('click', ()=> toolOpen(b.dataset.tool)));
