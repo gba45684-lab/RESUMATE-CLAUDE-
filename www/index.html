@@ -2082,7 +2082,8 @@
   // keep the last few errors so "Copy diagnostics" can show what went wrong on a real phone
   (function(){
     function keep(m){ try{ var a = JSON.parse(localStorage.getItem('resumate_errors') || '[]'); a.unshift({ t: Date.now(), m: String(m).slice(0, 240) }); localStorage.setItem('resumate_errors', JSON.stringify(a.slice(0, 15))); }catch(e){} }
-    window.addEventListener('error', function(e){ keep((e.message || 'error') + (e.filename ? ' @' + String(e.filename).split('/').pop() + ':' + e.lineno : '')); });
+    try{ localStorage.removeItem('resumate_boot_error'); }catch(e){}
+    window.addEventListener('error', function(e){ var m = (e.message || 'error') + (e.filename ? ' @' + String(e.filename).split('/').pop() + ':' + e.lineno : ''); keep(m); try{ if(performance.now() < 10000 && !localStorage.getItem('resumate_boot_error')) localStorage.setItem('resumate_boot_error', m.slice(0, 240)); }catch(_){} });
     window.addEventListener('unhandledrejection', function(e){ keep('promise: ' + (e.reason && (e.reason.message || e.reason))); });
   })();
 </script>
@@ -5974,6 +5975,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
       'Cores/Memory: ' + (navigator.hardwareConcurrency || '?') + ' / ' + (navigator.deviceMemory || '?') + ' GB', 'Online: ' + navigator.onLine, 'Saved items: ' + keys + ' keys, ' + saved + ' downloads',
       'Native parts: AdMob ' + (nativePlugin('AdMob') ? 'yes' : 'MISSING') + ', Browser ' + (nativePlugin('Browser') ? 'yes' : 'MISSING') + ', native app ' + isNative() + (window.__ads ? ', ads ' + window.__ads.state + (window.__ads.error ? ' (' + window.__ads.error + ')' : '') : ''),
       'PDF libs: ' + (typeof html2canvas) + ', ' + (window.jspdf ? 'jspdf' : 'no jspdf'), 'UA: ' + navigator.userAgent,
+      'Startup error: ' + ((function(){ try{ return localStorage.getItem('resumate_boot_error'); }catch(e){ return ''; } })() || 'none'),
       'Recent errors: ' + (errs.length ? '\n' + errs.map(e=> ' - ' + new Date(e.t).toLocaleString() + ': ' + e.m).join('\n') : 'none')
     ].join('\n');
     let ok = false;
@@ -6099,7 +6101,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
   const clone = o => JSON.parse(JSON.stringify(o));
   const blankData = (name)=> ({ name: name || 'Your Name', role:'', email:'', phone:'', location:'', linkedin:'', summary:'', experience:[{ title:'', org:'', dates:'', bullets:[''] }], education:[{ degree:'', org:'', dates:'' }],
     skills:'', certifications:[], projects:[], languages:[], achievements:[], extrasOrder:['certifications','projects','languages','achievements'] });
-  let rs = { active:null, items:[] };
+  let rs = { active:null, items:[] }, rsReady = false;
   function rsLoad(){ try{ const v = JSON.parse(localStorage.getItem(RS_KEY) || 'null'); if(v && Array.isArray(v.items) && v.items.length){ rs = v; } }catch(e){} }
   function rsStore(){ try{ localStorage.setItem(RS_KEY, JSON.stringify(rs)); return true; }catch(e){ return false; } }
   const rsMeta = ()=> ({ tpl:selectedTemplateCode, accent:customAccent, font:customFont, size:pageSize });
@@ -6120,7 +6122,9 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
     customAccent = m.accent || null; customFont = m.font || '';
     if(m.size && PAGE_SIZES[m.size] && m.size !== pageSize) setPageSize(m.size, true);
   }
-  function rsActiveItem(){ return rs.items.find(i=> i.id === rs.active) || rs.items[0]; }
+  // If the list is ever empty (for example the start-up code stopped early), rebuild it from the resume on screen instead of failing.
+  function rsEnsure(){ rs = { active:'r1', items:[{ id:'r1', label:'', userLabel:false, updated:Date.now(), data:rsCapture(), ...rsMeta() }] }; }
+  function rsActiveItem(){ if(!rs.items.length) rsEnsure(); return rs.items.find(i=> i && i.id === rs.active) || rs.items[0]; }
   function rsSyncActive(){
     const it = rsActiveItem(); if(!it) return;
     it.data = rsCapture(); Object.assign(it, rsMeta()); it.updated = Date.now();
@@ -6128,7 +6132,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
     rsStore();
   }
   function rsInit(){
-    rsLoad();
+    rsReady = true; rsLoad();
     if(!rs.items.length){
       rs = { active:'r1', items:[{ id:'r1', label:'', userLabel:false, updated:Date.now(), data:rsCapture(), ...rsMeta() }] };
       rsSyncActive();
@@ -6136,6 +6140,8 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
       const it = rsActiveItem(); rs.active = it.id; rsApplyData(it.data); rsApplyMeta(it);
     }
   }
+  // If the main script stopped before its last line, still finish start-up once it has ended.
+  setTimeout(()=>{ if(!rsReady){ try{ rsInit(); rsRefreshAll(); }catch(e){} } }, 0);
   function rsRefreshAll(){
     contentStep = 0; renderContentTab(); applyIdentityEverywhere(); syncAll(); if(typeof renderPreviewTemplate === 'function') renderPreviewTemplate();
     bdRender(); studioRefreshTiles();
@@ -8037,11 +8043,13 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
     }
     const up = plugins().CapacitorUpdater;
     if(up && up.addListener){
-      up.addListener('updaterEvent', ev => {
-        if(!ev || ev.type !== 'updateAvailable') return;
-        const b = ev.data && ev.data.bundle;
-        announce(String((b && (b.version || b.name)) || ''));
-      }).catch(()=>{});
+      try{
+        Promise.resolve(up.addListener('updaterEvent', ev => {
+          if(!ev || ev.type !== 'updateAvailable') return;
+          const b = ev.data && ev.data.bundle;
+          announce(String((b && (b.version || b.name)) || ''));
+        })).catch(()=>{});
+      }catch(e){}
     }
   })();
   setTimeout(()=> maybeWhatsNew(0), 2500);

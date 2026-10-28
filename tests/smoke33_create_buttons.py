@@ -42,5 +42,24 @@ with sync_playwright() as p:
     chk('a failure shows a message', "didn't work" in toast and 'boom' in toast, toast)
     chk('the failure is kept for Copy diagnostics', 'Create resume from this' in pg.evaluate("localStorage.getItem('resumate_errors')||''"))
     chk('the failed tap added no resume', pg.evaluate(CNT) == n, (n, pg.evaluate(CNT)))
-    chk('no page errors', not errs, errs[:3]); ctx.close(); b.close()
+    chk('no page errors', not errs, errs[:3]); ctx.close()
+
+    # 5) the start-up code stops early (a plug-in or any other error): the resume list must still work
+    CAP = "window.Capacitor={isNativePlatform:()=>true,Plugins:{AdMob:{requestConsentInfo:async()=>({status:'NOT_REQUIRED'}),initialize:async()=>({}),showBanner:async()=>({}),hideBanner:async()=>({}),resumeBanner:async()=>({})},Browser:{open:async()=>({})},CapacitorUpdater:{notifyAppReady(){},addListener(){ return undefined; }}}};"
+    ABORT = "const __si = window.setInterval; window.setInterval = function(f, ms, ...a){ if(ms === 1200) throw new Error('forced start-up stop'); return __si(f, ms, ...a); };"
+    for label, init in [('update plug-in returns no Promise', CAP), ('script stops at the ads block', ABORT)]:
+        c2 = b.new_context(viewport={'width': 393, 'height': 852}, has_touch=True, is_mobile=True); c2.add_init_script(init + INIT)
+        q = c2.new_page(); e2 = []; q.on('pageerror', lambda e: e2.append(str(e)[:100])); q.goto(URL); q.wait_for_timeout(2800)
+        q.evaluate("(()=>{const c=document.getElementById('pwClose'); if(c&&c.offsetParent) c.click();})()"); q.wait_for_timeout(300)
+        q.evaluate("[...document.querySelectorAll('.tl-tile[data-tool=resumes]')].find(x=>x.offsetParent).click()"); q.wait_for_timeout(700)
+        n = q.evaluate(CNT); q.evaluate("document.getElementById('rsNewBlank').click()"); q.wait_for_timeout(900)
+        chk('New blank resume works when ' + label, q.evaluate(CNT) == n + 1, (n, q.evaluate(CNT), e2[:2]))
+        q.evaluate("document.querySelector('[data-tab=home]').click()"); q.wait_for_timeout(500)
+        q.evaluate("(()=>{const t=document.getElementById('toolPage'); if(t&&!t.hidden) document.getElementById('toolBack').click();})()"); q.wait_for_timeout(500)
+        q.evaluate("[...document.querySelectorAll('.tl-tile[data-tool=roleresume]')].find(x=>x.offsetParent).click()"); q.wait_for_timeout(700)
+        n = q.evaluate(CNT); q.evaluate("document.getElementById('rrGo').click()"); q.wait_for_timeout(900)
+        chk('Create resume from this works when ' + label, q.evaluate(CNT) == n + 1, (n, q.evaluate(CNT)))
+        if 'ads' in label: chk('the start-up error is kept for Copy diagnostics', 'forced start-up stop' in (q.evaluate("localStorage.getItem('resumate_boot_error')") or ''), q.evaluate("localStorage.getItem('resumate_boot_error')"))
+        c2.close()
+    b.close()
 print(f"{sum(res)}/{len(res)} passed"); raise SystemExit(0 if all(res) else 1)
