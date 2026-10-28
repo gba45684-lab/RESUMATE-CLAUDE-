@@ -128,6 +128,10 @@
   .tour-skip{ background:transparent; color:var(--ink-soft, #5B4639); }
   .tour-next{ background:var(--maroon, #7A2418); color:#fff; }
   .tour.hide{ opacity:0; transition:opacity .25s ease; }
+  /* First-use tip inside a tool */
+  .tool-hint{ display:flex; align-items:center; gap:12px; margin:0 0 14px; padding:12px 14px; border-radius:14px; background:#F6EBD3; color:#4A3426; border:1px solid rgba(90,60,40,.12); font-size:14px; line-height:1.45; }
+  .tool-hint p{ margin:0; flex:1; }
+  .tool-hint-x{ min-height:44px; min-width:44px; padding:0 12px; border:0; border-radius:12px; background:transparent; color:#7A2418; font:inherit; font-weight:700; }
 </style>
 <style>
   :root{
@@ -2515,12 +2519,9 @@
 </div></div>
 <div class="tl-group"><p class="tl-subh">Documents</p><div class="tl-tilegrid">
                 <button type="button" class="tl-tile" data-tool="pdftools"><i class="bd-i tl-ico" data-ic="file"></i><b>PDF tools</b><small>All PDF tools in one place</small></button>
-</div></div>
-<div class="tl-group"><p class="tl-subh">Photos</p><div class="tl-tilegrid">
                 <button type="button" class="tl-tile" data-tool="imagetools"><i class="bd-i tl-ico" data-ic="image"></i><b>Image tools</b><small>Rotate, crop, resize and more</small></button>
-                <button type="button" class="tl-tile" data-tool="idphoto"><i class="bd-i tl-ico" data-ic="image"></i><b>Passport photo</b><small>Exact size, file limit</small></button>
-                <button type="button" class="tl-tile" data-tool="compress"><i class="bd-i tl-ico" data-ic="shrink"></i><b>Compress image</b><small>Smaller file size</small></button>
-</div></div></template>
+</div></div>
+</template>
 <script>/* Home tiles are written once in #tilesTpl and copied into both theme layouts */
 document.querySelectorAll('[data-tiles-slot]').forEach(function(el){ el.appendChild(document.getElementById('tilesTpl').content.cloneNode(true)); });</script>
 <script src="vendor/html2canvas.min.js"></script>
@@ -6687,10 +6688,57 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
   const toolPage = document.getElementById('toolPage'), toolBody = document.getElementById('toolBody'), toolTitle = document.getElementById('toolTitle'), toolSub = document.getElementById('toolSub');
   let toolState = { open:false, name:'', ret:null };
   function toolIsOpen(){ return toolState.open; }
+  // ---------- First-use hints: one short tip per tool, shown the first time it opens ----------
+  const TOOL_HINTS = {
+    resumes:'Each resume keeps its own template and colours. Tap one to edit it.',
+    score:'Tap a line to see how to improve it. Scores update as you edit.',
+    roleresume:'Pick a job type and tick the skills that are true for you. Replace every [bracket] with your details.',
+    importpdf:'Pick an old PDF or a photo of a resume. Check every suggested field before it is used.',
+    job:'Paste a job ad to see which keywords your resume is missing.',
+    interview:'Choose a job type to see likely questions. Practise a few answers out loud.',
+    jobtracker:'Add each application, then set its status so follow-ups are not missed.',
+    letter:'Fill in the role and company, then copy the letter into your email.',
+    messages:'Ready-made messages for recruiters and LinkedIn. Change the bracketed parts.',
+    pdftools:'Tap a tool to open it. The switch at the top of related tools flips between them.',
+    imagetools:'Pick a picture, choose the change, then save. Pictures never leave this phone.',
+    imgpdf:'Add pictures, put them in order, then make one PDF.',
+    mergepdf:'Add PDFs and arrange them in order before joining.',
+    splitpdf:'Enter page ranges such as 1-3, 4, 5-8. Each range becomes its own file.',
+    rotatepdf:'Choose the turn, then save a new copy. Your original is not changed.',
+    croppdf:'Choose how much to trim from every edge.',
+    shrinkpdf:'Pages become pictures to shrink the file, so text cannot be selected afterwards.',
+    signpdf:'Draw your signature, choose the page, then place it where it should go.',
+    pagenums:'Pick where the numbers go. They are added to every page.',
+    watermark:'Type a short word such as DRAFT. It is placed across every page.',
+    pdf2jpg:'Each page becomes a picture. Use the switch at the top to make a PDF from pictures.',
+    pdf2txt:'Works for PDFs that have real text. Scanned PDFs need OCR first.',
+    protectpdf:'Use a password you will remember. Without it the file cannot be opened.',
+    unlockpdf:'You need the current password. Leave it empty only if the PDF has a permission lock.',
+    rotateimg:'Choose the turn, then save. Your original picture is not changed.',
+    flipimg:'Choose a mirror direction, then save.',
+    cropimg:'Choose how much to trim from every edge.',
+    resizeimg:'Pick a smaller size. Smaller pictures are quicker to send.',
+    grayimg:'Turns a colour picture into black and white. Good for scanned documents.',
+    convertimg:'PNG keeps sharp graphics; JPG is smaller for photos.',
+    idphoto:'Pick the exact size your form asks for, then position the face in the frame.',
+    compress:'Choose a smaller size, then check the picture is still clear before you send it.',
+    premium:'Free use covers files up to 10 MB. Premium raises the limit.'
+  };
+  function showToolHint(name){
+    const text = TOOL_HINTS[name]; if(!text) return;
+    const key = 'resumate_hint_' + name;
+    try{ if(localStorage.getItem(key) === '1') return; localStorage.setItem(key, '1'); }catch(e){ return; }
+    const box = document.createElement('div');
+    box.className = 'tool-hint'; box.setAttribute('role', 'note');
+    box.innerHTML = `<p><b>Tip.</b> ${H(text)}</p><button type="button" class="tool-hint-x">Got it</button>`;
+    box.querySelector('button').addEventListener('click', ()=> box.remove());
+    toolBody.insertBefore(box, toolBody.firstChild);
+  }
   function toolOpen(name, arg){
     toolState.ret = document.activeElement; toolState.name = name;
     const f = TOOLS[name]; if(!f) return;
     toolBody.scrollTop = 0; toolBody.innerHTML = ''; f.render(arg);
+    showToolHint(name);
     if(!toolState.open){ toolPage.hidden = false; requestAnimationFrame(()=> requestAnimationFrame(()=> toolPage.classList.add('go'))); }
     toolState.open = true; setTimeout(()=> toolPage.focus({ preventScroll:true }), 60); buzz(6);
   }
