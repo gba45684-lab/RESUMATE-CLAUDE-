@@ -6157,6 +6157,22 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
     rs.active = id; rsApplyData(data); rsStore(); rsSyncActive(); rsRefreshAll();
     return id;
   }
+  // A tap that still works if the browser drops the click (the finger slid a little, or the screen redrew mid-tap).
+  // It runs once, and a failure is shown and kept for "Copy diagnostics" instead of silently doing nothing.
+  function tapOn(el, fn, what){
+    if(!el) return; let fired = false, timer = 0;
+    const run = ev=>{
+      if(fired) return; fired = true; setTimeout(()=>{ fired = false; }, 700);
+      try{ fn(ev); }catch(err){
+        const m = (what || 'Action') + ': ' + (err && err.message ? err.message : err);
+        try{ const a = JSON.parse(localStorage.getItem('resumate_errors') || '[]'); a.unshift({ t:Date.now(), m:String(m).slice(0, 240) }); localStorage.setItem('resumate_errors', JSON.stringify(a.slice(0, 15))); }catch(e){}
+        showToast("That didn't work: " + String(err && err.message ? err.message : err).slice(0, 80));
+      }
+    };
+    el.addEventListener('click', ev=>{ clearTimeout(timer); run(ev); });
+    el.addEventListener('pointerup', ev=>{ if(ev.pointerType === 'mouse') return; clearTimeout(timer); timer = setTimeout(()=> run(ev), 350); });
+    el.addEventListener('pointercancel', ()=> clearTimeout(timer));
+  }
   function rsRename(id, label){ const it = rs.items.find(i=> i.id === id); if(!it) return; label = (label || '').trim().slice(0, 40); if(label){ it.label = label; it.userLabel = true; } else { it.userLabel = false; if(id === rs.active) rsSyncActive(); } rsStore(); }
   function rsDelete(id){
     if(rs.items.length <= 1){ showToast('Keep at least one resume'); return false; }
@@ -6972,8 +6988,8 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
           });
           row.addEventListener('keydown', e=>{ if(e.target === row && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); row.click(); } });
         });
-        document.getElementById('rsNewBlank').addEventListener('click', ()=>{ if(rsCreate('blank')){ toolClose(); showToast('New blank resume'); setTimeout(()=> goStep(0), 150); } });
-        document.getElementById('rsNewCopy').addEventListener('click', ()=>{ if(rsCreate('copy')){ showToast('Copied — now editing the copy'); draw(); } });
+        tapOn(document.getElementById('rsNewBlank'), ()=>{ if(rsCreate('blank')){ toolClose(); showToast('New blank resume'); setTimeout(()=> goStep(0), 150); } }, 'New blank resume');
+        tapOn(document.getElementById('rsNewCopy'), ()=>{ if(rsCreate('copy')){ showToast('Copied — now editing the copy'); draw(); } }, 'Copy of current');
       };
       draw();
     } },
@@ -7686,16 +7702,14 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
         const manage = toolBody.querySelector('#rrManage');
         if(manage) manage.addEventListener('click', ()=> toolOpen('resumes'));
         const go = toolBody.querySelector('#rrGo');
-        if(go) go.addEventListener('click', ()=>{
-          try{
-            const id = rsCreate('blank');
-            if(!id){ draw(); return; }
-            Object.assign(resumeData, { role: R.role, summary: R.summary, skills: st.picked.join(', '), extrasOrder: R.order.slice() });
-            saveResume(); rsSyncActive(); rsRename(id, st.job); rsRefreshAll();
-            toolClose(); showToast('Resume created — replace the [brackets]');
-            setTimeout(()=> goStep(0), 150);
-          }catch(err){ showToast("Couldn't create the resume: " + (err && err.message ? err.message : 'unknown error')); }
-        });
+        if(go) tapOn(go, ()=>{
+          const id = rsCreate('blank');
+          if(!id){ draw(); return; }
+          Object.assign(resumeData, { role: R.role, summary: R.summary, skills: st.picked.join(', '), extrasOrder: R.order.slice() });
+          saveResume(); rsSyncActive(); rsRename(id, st.job); rsRefreshAll();
+          toolClose(); showToast('Resume created — replace the [brackets]');
+          setTimeout(()=> goStep(0), 150);
+        }, 'Create resume from this');
       };
       draw();
     } },
