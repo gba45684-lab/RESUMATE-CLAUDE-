@@ -6779,9 +6779,13 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
     if(help) help.hidden = !TOOL_HINTS[name];
     if(!toolState.open){ toolPage.hidden = false; requestAnimationFrame(()=> requestAnimationFrame(()=> toolPage.classList.add('go'))); }
     toolState.open = true; setTimeout(()=> toolPage.focus({ preventScroll:true }), 60); buzz(6);
+    // the native ad banner sits over the bottom of the screen: take it down at once, not on the next 1.2 s tick
+    if(window.__ads && window.__ads.tick) window.__ads.tick();
+    document.querySelectorAll('.tour').forEach(t=> { t.hidden = true; });   // the tour waits while a tool is open
   }
   function toolClose(){
     if(!toolState.open) return; toolState.open = false; toolPage.classList.remove('go');
+    document.querySelectorAll('.tour').forEach(t=> { t.hidden = false; });
     setTimeout(()=>{ if(!toolState.open){ toolPage.hidden = true; toolBody.innerHTML = ''; } if(toolState.ret && toolState.ret.focus) try{ toolState.ret.focus({ preventScroll:true }); }catch(e){} }, 320);
     studioRefreshTiles();
   }
