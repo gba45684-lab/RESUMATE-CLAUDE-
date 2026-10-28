@@ -30,7 +30,7 @@ with sync_playwright() as p:
     chk('the tool opens', pg.evaluate("document.getElementById('toolTitle').textContent") == 'Start from a role')
     pg.select_option('#rrJob', 'Software and IT'); pg.wait_for_timeout(300)
     chk('the headline is set for IT', 'Software developer' in pg.evaluate("document.getElementById('toolBody').textContent"))
-    chk('every skill starts selected', pg.evaluate("document.querySelectorAll('[data-skill][aria-pressed=true]').length") == 6)
+    chk('real skills start selected, placeholders do not', pg.evaluate("[...document.querySelectorAll('[data-skill]')].filter(e=>e.getAttribute('aria-pressed')==='true').map(e=>e.dataset.skill).every(x=>!x.includes('['))") and pg.evaluate("document.querySelectorAll('[data-skill][aria-pressed=true]').length") == 5)
     pg.evaluate("document.querySelector('[data-skill=Git]').click()"); pg.wait_for_timeout(100)
     chk('a skill can be unselected', pg.evaluate("document.querySelector('[data-skill=Git]').getAttribute('aria-pressed')") == 'false')
     pg.evaluate("document.getElementById('rrGo').click()"); pg.wait_for_timeout(900)
