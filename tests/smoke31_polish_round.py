@@ -75,12 +75,10 @@ with sync_playwright() as p:
     pg.evaluate(f"{VISG}.click()"); pg.wait_for_timeout(200)
     chk('it opens again', pg.evaluate(f"!{VISG}.parentElement.classList.contains('collapsed')"))
 
-    # 5) "?" brings back a tool's tip
+    # 5) no "?" button anywhere; the first-use tip still shows once
     pg.evaluate("document.querySelector('.tl-tile[data-tool=pdftools]').click()"); pg.wait_for_timeout(400)
-    pg.evaluate("document.querySelector('#toolBody .tool-hint-x') && document.querySelector('#toolBody .tool-hint-x').click()"); pg.wait_for_timeout(200)
-    chk('the ? button is shown on a tool with a tip', pg.evaluate("document.getElementById('toolHelp').hidden === false && document.getElementById('toolHelp').offsetParent !== null"))
-    pg.evaluate("document.getElementById('toolHelp').click()"); pg.wait_for_timeout(200)
-    chk('? brings the tip back', pg.evaluate("!!document.querySelector('#toolBody .tool-hint')"))
+    chk('the tip shows on first use', pg.evaluate("!!document.querySelector('#toolBody .tool-hint')"))
+    chk('there is no ? help button', pg.evaluate("!document.getElementById('toolHelp')"))
     chk('no page errors (groups, tips)', not errs, errs[:3]); ctx.close()
 
     # 6) Transparent PNG/WebP stay transparent; JPG becomes white where there was transparency

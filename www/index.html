@@ -144,8 +144,6 @@
   .tl-group.collapsed .tl-tilegrid{ display:none; }
   /* section labels are a little heavier so they read clearly */
   .tl-subh{ font-weight:600; }
-  /* the "?" that brings back a tool's tip */
-  #toolHelp{ margin-left:auto; font-weight:800; font-size:16px; }
 </style>
 <style>
   :root{
@@ -6775,8 +6773,6 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
     const f = TOOLS[name]; if(!f) return;
     toolBody.scrollTop = 0; toolBody.innerHTML = ''; f.render(arg);
     showToolHint(name);
-    const help = document.getElementById('toolHelp');
-    if(help) help.hidden = !TOOL_HINTS[name];
     if(!toolState.open){ toolPage.hidden = false; requestAnimationFrame(()=> requestAnimationFrame(()=> toolPage.classList.add('go'))); }
     toolState.open = true; setTimeout(()=> toolPage.focus({ preventScroll:true }), 60); buzz(6);
     // the native ad banner sits over the bottom of the screen: take it down at once, not on the next 1.2 s tick
@@ -6790,12 +6786,6 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
     studioRefreshTiles();
   }
   document.getElementById('toolBack').addEventListener('click', toolClose);
-  (function(){   // the "?" in the tool header shows that tool's tip again
-    const bar = document.querySelector('#toolPage .tool-bar'); if(!bar) return;
-    const help = document.createElement('button'); help.type = 'button'; help.className = 'dlv-ic'; help.id = 'toolHelp'; help.hidden = true; help.setAttribute('aria-label', 'Show tip'); help.textContent = '?';
-    bar.appendChild(help);
-    help.addEventListener('click', ()=>{ const name = toolState.name; try{ localStorage.removeItem('resumate_hint_' + name); }catch(e){} showToolHint(name); });
-  })();
   document.addEventListener('keydown', e=>{ if(e.key === 'Escape' && toolState.open && !document.getElementById('resumeFs').hidden === false && document.getElementById('paywall').hidden){ e.stopImmediatePropagation(); toolClose(); } }, true);
   function goStep(step){
     toolClose(); contentStep = Math.max(0, Math.min(contentSteps.length - 1, step)); renderContentTab(); openEdit();
@@ -7697,12 +7687,14 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
         if(manage) manage.addEventListener('click', ()=> toolOpen('resumes'));
         const go = toolBody.querySelector('#rrGo');
         if(go) go.addEventListener('click', ()=>{
-          const id = rsCreate('blank');
-          if(!id){ draw(); return; }
-          Object.assign(resumeData, { role: R.role, summary: R.summary, skills: st.picked.join(', '), extrasOrder: R.order.slice() });
-          saveResume(); rsSyncActive(); rsRename(id, st.job); rsRefreshAll();
-          toolClose(); showToast('Resume created — replace the [brackets]');
-          setTimeout(()=> goStep(0), 150);
+          try{
+            const id = rsCreate('blank');
+            if(!id){ draw(); return; }
+            Object.assign(resumeData, { role: R.role, summary: R.summary, skills: st.picked.join(', '), extrasOrder: R.order.slice() });
+            saveResume(); rsSyncActive(); rsRename(id, st.job); rsRefreshAll();
+            toolClose(); showToast('Resume created — replace the [brackets]');
+            setTimeout(()=> goStep(0), 150);
+          }catch(err){ showToast("Couldn't create the resume: " + (err && err.message ? err.message : 'unknown error')); }
         });
       };
       draw();
