@@ -11,7 +11,7 @@ h = functools.partial(SimpleHTTPRequestHandler, directory=WWW); h.log_message = 
 srv = ThreadingHTTPServer(('127.0.0.1', port), h); threading.Thread(target=srv.serve_forever, daemon=True).start()
 BASE = "if(!sessionStorage.getItem('s')){sessionStorage.setItem('s','1');localStorage.setItem('resumate_lite','1');localStorage.setItem('resumate_seen_welcome','1');localStorage.setItem('resumate_goal_answered','skipped');localStorage.setItem('resumate_tour_done','1')}"
 ENUM = """(()=>{ const out=[]; const sel='button, a, [role=button], [role=tab], [role=radio], [data-tool], [data-nav], [data-tab], input[type=checkbox]';
-  document.querySelectorAll(sel).forEach((el,i)=>{ if(!el.offsetParent) return; if(el.disabled) return; const r=el.getBoundingClientRect(); if(r.width<2||r.height<2) return;
+  document.querySelectorAll(sel).forEach((el,i)=>{ if(!el.offsetParent) return; if(el.disabled) return; let a=el, dead=false; while(a&&a!==document.body){const cs=getComputedStyle(a); if(cs.visibility==='hidden'||cs.opacity==='0'||cs.display==='none'||a.hidden||a.getAttribute('aria-hidden')==='true'){dead=true;break} a=a.parentElement} if(dead) return; const r=el.getBoundingClientRect(); if(r.width<2||r.height<2) return;
     const label=((el.getAttribute('aria-label')||el.textContent||el.id||el.className||'')+'').trim().replace(/\\s+/g,' ').slice(0,60);
     out.push({i, label, id:el.id||'', tool:el.dataset.tool||'', tag:el.tagName}); el.setAttribute('data-audit', String(i)); }); return out; })()"""
 def fresh(b, extra=''):
@@ -38,7 +38,7 @@ def audit_screen(b, name, prep, extra=''):
         try:
             # re-open the screen if a previous click moved us away
             pg.evaluate(f"(()=>{{ const el=document.querySelector('[data-audit=\"{it['i']}\"]'); if(!el) return 'gone'; const r=el.getBoundingClientRect(); const top=document.elementFromPoint(r.left+r.width/2, r.top+r.height/2); if(top && top!==el && !el.contains(top)) return 'covered:'+(top.id||top.className||top.tagName); return 'ok'; }})()")
-            st = pg.evaluate(f"(()=>{{ const el=document.querySelector('[data-audit=\"{it['i']}\"]'); if(!el) return 'gone'; const r=el.getBoundingClientRect(); const top=document.elementFromPoint(r.left+r.width/2, r.top+r.height/2); return (top && (top===el || el.contains(top))) ? 'ok' : ('covered by '+(top? (top.id||top.className||top.tagName) : 'nothing')); }})()")
+            st = pg.evaluate(f"(()=>{{ const el=document.querySelector('[data-audit=\"{it['i']}\"]'); if(!el) return 'gone'; el.scrollIntoView({{block:'center'}}); const r=el.getBoundingClientRect(); const top=document.elementFromPoint(r.left+r.width/2, r.top+r.height/2); return (top && (top===el || el.contains(top))) ? 'ok' : ('covered by '+(top? (top.id||top.className||top.tagName) : 'nothing')); }})()")
             if st.startswith('covered') or st.startswith('covered by'):
                 report['covered'].append({'screen': name, 'label': it['label'], 'by': st})
             if st == 'gone':
