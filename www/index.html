@@ -4301,8 +4301,10 @@ document.querySelectorAll('[data-tiles-slot]').forEach(function(el){ el.appendCh
     const end = ()=>{ if(y0 === null) return; pw.style.transition = ''; pw.style.transform = ''; if(dy > 110) close(); y0 = null; dy = 0; };
     hero.addEventListener('pointerup', end); hero.addEventListener('pointercancel', end);
     // wait until splash, welcome and the first-run questions are gone, then show
+    const launchedAt = Date.now();
     const waitTimer = setInterval(()=>{
-      if(!document.getElementById('splashScreen') && !document.getElementById('welcomeScreen') && !document.getElementById('questionScreen')){ clearInterval(waitTimer); setTimeout(()=>{ if(!(window.__billing && window.__billing.upgraded())) show(); }, 250); }
+      const tourFirst = (()=>{ try{ return localStorage.getItem('resumate_tour_pending') === '1' && localStorage.getItem('resumate_tour_done') !== '1' && (Date.now() - launchedAt) < 180000; }catch(e){ return false; } })();
+      if(!tourFirst && !document.getElementById('splashScreen') && !document.getElementById('welcomeScreen') && !document.getElementById('questionScreen')){ clearInterval(waitTimer); setTimeout(()=>{ if(!(window.__billing && window.__billing.upgraded())) show(); }, 250); }
     }, 150);
   })();
 
@@ -5664,6 +5666,11 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
   function isCancel(err){ return /cancel/i.test(String((err && (err.message || err.name)) || err)); }
 
   async function deliverBlob(blob, filename){
+    const ok = await deliverBlobRaw(blob, filename);
+    if(ok && window.__ads && window.__ads.afterExport){ try{ window.__ads.afterExport(); }catch(e){} }
+    return ok;
+  }
+  async function deliverBlobRaw(blob, filename){
     if(isNative()){
       try{ if(await nativeShareFile(blob, filename, filename)) return true; }
       catch(err){ if(isCancel(err)) return true; showToast("Couldn't open the share sheet — try again"); return false; }
@@ -8084,7 +8091,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
 
   // ---------- Ads (Google AdMob): ONE banner, only where it cannot be tapped by mistake ----------
   // These are Google's public TEST ids. Put your real AdMob ids here (and in the Android manifest) before publishing.
-  const ADS = { testing:true, banner:'ca-app-pub-3940256099942544/6300978111', minSeconds:10, tabs:['home', 'profile', 'ai'] };
+  const ADS = { testing:true, banner:'ca-app-pub-3940256099942544/6300978111', interstitial:'ca-app-pub-3940256099942544/1033173712', minSeconds:10, interstitialAfterSeconds:180, tabs:['home', 'profile', 'ai'] };
   window.__ads = (function(){
     const A = ()=> nativePlugin('AdMob');
     const born = Date.now(); let state = 'off', ready = false, busy = false, consentDone = false, error = '', retryAt = 0;
@@ -8128,8 +8135,22 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
       try{ await A().hideBanner(); state = 'hidden'; }catch(e){ state = 'off'; }
     }
     function tick(){ if(allowed()) show(); else hide(); }
+    // Full-screen ad at a natural break: right after a finished export. Once per launch, never in the first few minutes.
+    let interShown = false;
+    async function afterExport(){
+      if(interShown || !isNative() || upgraded() || !A()) return false;
+      if((Date.now() - born) / 1000 < ADS.interstitialAfterSeconds) return false;
+      if(document.hidden) return false;
+      interShown = true;
+      try{
+        const P = A();
+        await P.prepareInterstitial({ adId: ADS.interstitial, isTesting: ADS.testing });
+        await P.showInterstitial();
+        return true;
+      }catch(e){ interShown = false; error = 'interstitial: ' + String((e && e.message) || e).slice(0, 80); return false; }
+    }
     setInterval(tick, 1200); document.addEventListener('visibilitychange', tick);
-    return { tick, allowed, get state(){ return state; }, get error(){ return error; } };
+    return { tick, allowed, afterExport, get state(){ return state; }, get error(){ return error; } };
   })();
 
   // Tell the Android update plugin this version started, otherwise it rolls the update back.
