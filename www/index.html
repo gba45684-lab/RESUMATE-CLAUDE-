@@ -5699,10 +5699,50 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
     if(ok){ exportCountUp(); if(window.__ads && window.__ads.afterExport){ try{ window.__ads.afterExport(); }catch(e){} } }
     return ok;
   }
+  // Save to the device and show it in the notification panel with Open and Share (no share sheet first)
+  const SAVED_TYPE = 'resumate_saved_file';
+  let savedNotesReady = null;
+  function ensureSavedNotes(){
+    if(savedNotesReady) return savedNotesReady;
+    savedNotesReady = (async()=>{
+      const LN = nativePlugin('LocalNotifications'); if(!LN) return false;
+      try{
+        await LN.registerActionTypes({ types:[{ id:SAVED_TYPE, actions:[{ id:'open', title:'Open' }, { id:'share', title:'Share' }] }] });
+        await LN.addListener('localNotificationActionPerformed', async ev=>{
+          const path = ev && ev.notification && ev.notification.extra && ev.notification.extra.path;
+          if(!path) return;
+          try{ const SH = nativePlugin('Share'); if(SH) await SH.share({ title: ev.notification.title || 'ResuMate', files:[path], dialogTitle:'Open or share' }); }
+          catch(e){ if(!isCancel(e)) showToast("Couldn't open that file"); }
+        });
+        return true;
+      }catch(e){ return false; }
+    })();
+    return savedNotesReady;
+  }
+  async function nativeSaveAndNotify(blob, filename){
+    const FS = nativePlugin('Filesystem'), LN = nativePlugin('LocalNotifications');
+    if(!FS) return false;
+    const safe = String(filename || 'ResuMate.pdf').replace(/[\\/:*?"<>|]+/g, '_');
+    const w = await FS.writeFile({ path: 'ResuMate/' + safe, data: await blobToBase64(blob), directory: 'DOCUMENTS', recursive: true });
+    let notified = false;
+    if(LN){
+      try{
+        await ensureSavedNotes();
+        let perm = await LN.checkPermissions(); if(perm.display !== 'granted') perm = await LN.requestPermissions();
+        if(perm.display === 'granted'){
+          await LN.createChannel({ id:'saved', name:'Saved files', description:'Files you save from ResuMate', importance:4, vibration:true });
+          await LN.schedule({ notifications:[{ id:(Date.now() % 2000000000) + 1, title:'Saved: ' + safe, body:'Tap Open or Share.', channelId:'saved', actionTypeId:SAVED_TYPE, extra:{ path: w.uri }, schedule:{ at: new Date(Date.now() + 300) } }] });
+          notified = true;
+        }
+      }catch(e){}
+    }
+    showToast(notified ? 'Saved ✓ — open or share it from your notifications' : 'Saved ✓ (turn on notifications to get Open and Share)');
+    return true;
+  }
   async function deliverBlobRaw(blob, filename){
     if(isNative()){
-      try{ if(await nativeShareFile(blob, filename, filename)) return true; }
-      catch(err){ if(isCancel(err)) return true; showToast("Couldn't open the share sheet — try again"); return false; }
+      try{ if(await nativeSaveAndNotify(blob, filename)) return true; }
+      catch(err){ showToast("Couldn't save the file — try again"); return false; }
     }
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -7456,7 +7496,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
       const GROUPS = [
         ['Turn and crop', [T('rotateimg','rotate','Rotate','Quarter, half or three-quarter turn'), T('flipimg','flip','Flip','Left and right, or top and bottom'), T('cropimg','crop','Crop','Trim the edges'), T('resizeimg','shrink','Resize','25%, 50% or 75%')]],
         ['Colour and format', [T('grayimg','image','Black and white','Grey-scale picture'), T('convertimg','file','Change format','JPG, PNG or WebP'), T('compress','shrink','Compress','Smaller file size')]],
-        ['Pictures and PDF', [T('imgpdf','download','Pictures to PDF','One PDF from many pictures'), T('pdf2jpg','image','PDF to pictures','A picture for each page'), T('idphoto','image','Passport photo','Exact size for forms')]]
+        ['Photos for forms', [T('idphoto','image','Passport photo','Exact size for forms')]]
       ];
       const home = [...document.querySelectorAll('.tl-tiles')].find(t=> t.offsetParent);
       const cls = home ? home.className : 'tl-tiles tl-golden';   // same tile layout as the theme in use

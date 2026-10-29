@@ -27,13 +27,13 @@ with sync_playwright() as p:
     pg.evaluate("document.getElementById('exportAtsBtn').click()"); pg.wait_for_timeout(2500)
     calls = pg.evaluate("window.__calls")
     fs = [c for c in calls if c['fn']=='writeFile']; sh = [c for c in calls if c['fn']=='share']
-    chk('ATS: written to the app cache as a .pdf', bool(fs) and fs[0]['path'].endswith('_Resume_ATS.pdf') and fs[0]['directory']=='CACHE', calls)
+    chk('ATS: saved to the device as a .pdf (Documents/ResuMate)', bool(fs) and fs[0]['path'].endswith('_Resume_ATS.pdf') and fs[0]['path'].startswith('ResuMate/') and fs[0]['directory']=='DOCUMENTS', calls)
     chk('ATS: data is a real PDF (base64 of %PDF)', bool(fs) and fs[0]['head'].startswith('JVBER'), fs and fs[0]['head'])
-    chk('ATS: share sheet opened with the file', bool(sh) and bool(sh[-1]['files']), calls)
+    chk('ATS: no share sheet opens by itself (Open and Share are in the notification)', not sh, calls)
     # Word export
     pg.evaluate("window.__calls.length = 0"); pg.evaluate("document.getElementById('exportDocxBtn').click()"); pg.wait_for_timeout(2500)
     calls = pg.evaluate("window.__calls")
-    chk('Word: written as .docx and shared', any(c['fn']=='writeFile' and c['path'].endswith('.docx') for c in calls) and any(c['fn']=='share' for c in calls), calls)
+    chk('Word: saved as .docx to the device, no share sheet by itself', any(c['fn']=='writeFile' and c['path'].endswith('.docx') for c in calls) and not any(c['fn']=='share' for c in calls), calls)
     chk('Word: PK zip header (base64 UEsD)', any(c['fn']=='writeFile' and c.get('head','').startswith('UEsDB') for c in calls), [c.get('head') for c in calls if c['fn']=='writeFile'])
     # My Downloads: both exports were kept; share the first one
     pg.evaluate("document.querySelector('.back-btn') && document.querySelector('.back-btn').click()"); pg.wait_for_timeout(500)
