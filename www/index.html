@@ -6171,6 +6171,16 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
     rs.active = id; rsApplyData(data); rsStore(); rsSyncActive(); rsRefreshAll();
     return id;
   }
+  // Simple guesses from the job ad text, so the fields are pre-filled (the user can change them)
+  function jdGuessCompany(jd){
+    const pats = [/\b(?:at|join|joining)\s+([A-Z][\w&.\-]+(?:\s+[A-Z][\w&.\-]+){0,2})\b/, /\b([A-Z][\w&.\-]+(?:\s+[A-Z][\w&.\-]+){0,2})\s+(?:is|are)\s+(?:looking|seeking|hiring)/];
+    for(const re of pats){ const m = String(jd || '').match(re); if(m && !/^(The|This|Our|We|You|Role|Job|Team)$/.test(m[1])) return m[1].trim().slice(0, 40); }
+    return '';
+  }
+  function jdGuessRole(jd){
+    const m = String(jd || '').match(/\b(?:job title|position|role|vacancy|post)\s*[:\-]\s*([^\n,.|]{3,40})/i);
+    return m ? m[1].trim() : '';
+  }
   // ---- Sample or my own content: switch any time, nothing is lost (saved with the resume on this phone) ----
   const sameData = (a, b)=> JSON.stringify(a) === JSON.stringify(b);
   function sampleData(){ const d = {}; SAMPLE_KEYS.forEach(k=> d[k] = clone(SAMPLE_SNAP[k])); return d; }
@@ -7075,10 +7085,22 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
           ${r.missing.length ? `<p class="tl-h">Missing from your resume <button class="tl-link" id="jdAddAll">Add all to skills</button></p><div class="tl-chips">${r.missing.map(x=> `<button class="tl-chip miss" data-kw="${H(x.k)}" aria-label="Add ${H(x.k)} to skills">${ico('plus')}${H(x.k)}</button>`).join('')}</div><p class="tl-note">Only add a skill if you really have it. Adding puts it in your Skills list.</p>` : '<div class="tl-empty">Your resume already covers every key term. 🎯</div>'}
           ${r.matched.length ? `<p class="tl-h">Already covered</p><div class="tl-chips">${r.matched.map(x=> `<span class="tl-chip hit">${ico('check')}${H(x.k)}</span>`).join('')}</div>` : ''}
           <p class="tl-note">How this score works: it counts how many of the job's main words appear in your resume. It is a guide, not a promise that any system will pass your resume. Add a skill only if it is true for you.</p>
-          <div class="tl-add"><button class="tl-btn primary" id="jdLetter">${ico('mail')}Write a cover letter for this job</button></div>`;
+          <div class="tl-add"><button class="tl-btn primary" id="jdLetter">${ico('mail')}Write a cover letter for this job</button></div>
+          <p class="tl-h">Save a version for this job</p>
+          <p class="tl-note">Makes a copy of your resume with its own name, so each application keeps the right version. Your other resumes stay as they are.</p>
+          <div class="tl-grid"><div><label class="tl-lab" for="jdVRole">Job title</label><input class="tl-input" id="jdVRole" maxlength="40" value="${H(jdGuessRole(jd))}" autocomplete="off"></div>
+          <div><label class="tl-lab" for="jdVCo">Company</label><input class="tl-input" id="jdVCo" maxlength="40" value="${H(jdGuessCompany(jd))}" autocomplete="off"></div></div>
+          <div class="tl-add"><button class="tl-btn" id="jdVersion">${ico('copy')}Save as a version</button></div>`;
         out.querySelectorAll('[data-kw]').forEach(b=> b.addEventListener('click', ()=>{ if(addSkill(b.dataset.kw)){ b.classList.remove('miss'); b.classList.add('done'); b.disabled = true; b.innerHTML = ico('check') + H(b.dataset.kw); buzz(8); } else showToast('Already in your skills'); }));
         const all = document.getElementById('jdAddAll'); if(all) all.addEventListener('click', ()=>{ if(!all.dataset.armed){ all.dataset.armed = '1'; all.textContent = 'Tap again — only add skills you really have'; setTimeout(()=>{ delete all.dataset.armed; all.textContent = 'Add all to skills'; }, 4000); return; } let n = 0; out.querySelectorAll('[data-kw]:not(.done)').forEach(b=>{ if(addSkill(b.dataset.kw)) n++; b.classList.remove('miss'); b.classList.add('done'); b.disabled = true; b.innerHTML = ico('check') + H(b.dataset.kw); }); showToast(n ? `Added ${n} to your skills` : 'Nothing new to add'); });
         document.getElementById('jdLetter').addEventListener('click', ()=> toolOpen('letter', { jd, skills:r.matched.map(x=> x.k).slice(0, 4) }));
+        document.getElementById('jdVersion').addEventListener('click', ()=>{
+          const role = (document.getElementById('jdVRole').value || '').trim(), co = (document.getElementById('jdVCo').value || '').trim();
+          const label = [role, co].filter(Boolean).join(' · ').slice(0, 40);
+          if(!label){ showToast('Add the job title or company first'); return; }
+          const id = rsCreate('copy'); if(!id){ return; }
+          rsRename(id, label); rsRefreshAll(); showToast('Saved as a version: ' + label);
+        });
       };
       document.getElementById('jdGo').addEventListener('click', run);
       document.getElementById('jdClear').addEventListener('click', ()=>{ ta.value = ''; out.innerHTML = ''; try{ localStorage.removeItem('resumate_jd'); }catch(e){} ta.focus(); });
@@ -7487,6 +7509,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
               <small>Applied ${H(j.applied || '—')}${j.follow ? ' · Follow up ' + H(j.follow) : ''}${j.resume ? ' · Resume: ' + H(j.resume) : ''}</small>
               ${due ? '<small class="jt-due">Follow up due</small>' : ''}
               ${j.note ? `<small>${H(j.note)}</small>` : ''}
+              ${j.link ? `<button type="button" class="tl-link jt-open" data-open="${H(j.link)}">Open posting</button>` : ''}
               <div class="jt-st" role="group" aria-label="Status">${STATUS.map(([k, l])=> `<button type="button" data-st="${k}" aria-pressed="${j.status === k}">${l}</button>`).join('')}</div>
             </div>
             <button class="tl-ic danger" data-act="del" aria-label="Delete ${H(j.role || 'application')}">${ico('trash')}</button></div>`;
@@ -7499,6 +7522,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
             <label class="tl-lab" for="jtApplied">Date applied</label><input type="date" id="jtApplied" class="tl-input" value="${today}">
             <label class="tl-lab" for="jtFollow">Follow up on (optional)</label><input type="date" id="jtFollow" class="tl-input">
             <label class="tl-lab" for="jtNote">Note (optional)</label><input id="jtNote" class="tl-input" maxlength="140" autocomplete="off">
+            <label class="tl-lab" for="jtLink">Job posting link (optional)</label><input id="jtLink" class="tl-input" type="url" maxlength="300" placeholder="https://" autocomplete="off">
             <div class="tl-add"><button class="tl-btn primary" id="jtAdd">${ico('plus')}Add application</button></div>
             <p class="tl-note" id="jtMsg" aria-live="polite"></p>
           </div>
@@ -7509,9 +7533,12 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
           const item = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), role, company: co,
             applied: toolBody.querySelector('#jtApplied').value || today, follow: toolBody.querySelector('#jtFollow').value || '',
             note: toolBody.querySelector('#jtNote').value.trim(), status: 'applied', resume: (rsActiveItem() || {}).label || resumeData.name || '' };
+          const link = (toolBody.querySelector('#jtLink').value || '').trim();
+          if(link){ if(!/^https?:\/\/[^\s]+$/i.test(link)){ msg('The link must start with https://'); return; } item.link = link.slice(0, 300); }
           if(!store([item, ...list])){ msg("Couldn't save on this phone — free up some space and try again"); return; }
           showToast('Application added'); draw();
         });
+        toolBody.querySelectorAll('.jt-open').forEach(b=> b.addEventListener('click', ()=> openExternal(b.dataset.open)));
         toolBody.querySelectorAll('.jt-row').forEach(row=>{
           const id = row.dataset.id;
           row.querySelectorAll('[data-st]').forEach(b=> b.addEventListener('click', ()=>{
@@ -7719,6 +7746,8 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
       const ROLES = {
         'Fresher': { role:'Fresher · [your field]', summary:'Recent graduate in [course] from [college]. Built [project] using [tool]. Keen to learn and contribute to a [type of company] team.', skills:['MS Excel','Communication','Teamwork','[your tool]'], order:['projects','certifications','languages','achievements'] },
         'Internship': { role:'Intern · [your field]', summary:'Student of [course] at [college], looking for a [duration] internship in [field]. Completed [project or course] that taught me [skill].', skills:['Communication','MS Office','Research','[your tool]'], order:['projects','certifications','achievements','languages'] },
+        'Government / PSU job': { role:'[Your field] professional · Government application', summary:'[Qualification] holder with [X] years of experience in [field]. Eligible for the [post] post under the [category] category. Date of birth: [DD/MM/YYYY]. Nationality: Indian.', skills:['MS Excel','MS Word','Typing (hindi / english)','Computer proficiency','[your tool]'], order:['certifications','languages','projects','achievements'] },
+        'Career switch': { role:'[New field] professional · Career changer', summary:'Professional with [X] years in [old field], now moving into [new field]. Brings [transferable skill] and [result] from past work. Completed [course or certification] to build [new skill].', skills:['Communication','Project coordination','Problem solving','[new field skill]'], order:['certifications','projects','languages','achievements'] },
         'Sales': { role:'Sales executive', summary:'Sales professional with [X] years in [industry]. Met or beat target by [result]. Strong at finding leads, closing deals and keeping customers.', skills:['Lead generation','Negotiation','CRM','Cold calling','Customer relationships','MS Excel'], order:['achievements','certifications','languages','projects'] },
         'Banking and finance': { role:'Banking officer', summary:'Banking professional with [X] years in [retail or corporate] banking. Experienced in [KYC, loans or onboarding]. Careful with accuracy and compliance.', skills:['KYC','Customer onboarding','Loan processing','Compliance','MS Excel','Cross-selling'], order:['certifications','achievements','languages','projects'] },
         'Software and IT': { role:'Software developer', summary:'Developer with [X] years building [type] applications in [languages]. Delivered [result]. Works well in agile teams.', skills:['JavaScript','Python','SQL','Git','REST APIs','[your framework]'], order:['projects','certifications','languages','achievements'] },
