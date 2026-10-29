@@ -52,3 +52,4 @@ jobs:
           python tests/smoke34_sample_or_own.py
           python tests/smoke35_job_versions_links.py
           python tests/smoke36_interview_from_resume.py
+          python tests/smoke37_paywall_interstitial.py
