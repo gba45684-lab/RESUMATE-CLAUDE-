@@ -54,3 +54,4 @@ jobs:
           python tests/smoke36_interview_from_resume.py
           python tests/smoke37_paywall_interstitial.py
           python tests/smoke38_export_limit.py
+          python tests/smoke39_download_notify_dedupe.py
