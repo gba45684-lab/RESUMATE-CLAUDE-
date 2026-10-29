@@ -1426,6 +1426,11 @@
   .pagesize-chip{ padding:6px 12px; border-radius:8px; background:var(--paper); border:1px solid var(--line); font-size:11.5px; font-weight:650; color:var(--ink-soft); cursor:pointer; }
   .pagesize-chip.on{ background:var(--maroon); color:var(--on-brand); border-color:var(--maroon); }
   .cs-row{ flex-wrap:wrap; gap:8px; margin:0 0 12px; }
+  .ex-gate{ position:fixed; inset:0; z-index:9600; background:rgba(20,12,6,.45); display:flex; align-items:center; justify-content:center; padding:20px; }
+  .ex-card{ width:100%; max-width:360px; background:var(--paper); color:var(--ink); border:1px solid var(--line); border-radius:18px; padding:20px 18px; box-shadow:var(--shadow-soft); }
+  .ex-t{ margin:0 0 6px; font-weight:700; font-size:16px; }
+  .ex-s{ margin:0 0 16px; font-size:13px; color:var(--ink-soft); line-height:1.45; }
+  .ex-row{ display:flex; gap:8px; } .ex-row .tl-btn{ flex:1; }
   .cs-row .pagesize-chips{ flex-wrap:wrap; }
   .cs-note{ width:100%; margin:0; font-size:11.5px; line-height:1.4; color:var(--ink-soft); }
   .pagesize-chip:disabled{ opacity:.4; cursor:default; }
@@ -5665,9 +5670,33 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
   }
   function isCancel(err){ return /cancel/i.test(String((err && (err.message || err.name)) || err)); }
 
+  // Free saves per day. Paying users have no limit. Watching a short ad gives one more save.
+  const EXPORT_FREE_PER_DAY = 3;
+  const exportDay = ()=> new Date().toDateString();
+  function exportsToday(){ try{ const v = JSON.parse(localStorage.getItem('resumate_exports') || 'null'); return v && v.day === exportDay() ? (v.n | 0) : 0; }catch(e){ return 0; } }
+  function exportCountUp(){ try{ localStorage.setItem('resumate_exports', JSON.stringify({ day: exportDay(), n: exportsToday() + 1 })); }catch(e){} }
+  const isUpgraded = ()=> !!(window.__billing && window.__billing.upgraded && window.__billing.upgraded());
+  function askForExport(){
+    return new Promise(resolve=>{
+      const box = document.createElement('div'); box.className = 'ex-gate'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true');
+      box.innerHTML = `<div class="ex-card"><p class="ex-t">You have used your ${EXPORT_FREE_PER_DAY} free saves for today</p>
+        <p class="ex-s">Watch one short ad to save this file, or come back tomorrow. Paid plans have no daily limit.</p>
+        <div class="ex-row"><button type="button" class="tl-btn" data-ex="no">Not now</button><button type="button" class="tl-btn primary" data-ex="yes">Watch a short ad</button></div></div>`;
+      const done = v=>{ box.remove(); resolve(v); };
+      box.addEventListener('click', e=>{ const b = e.target.closest && e.target.closest('[data-ex]'); if(b) done(b.dataset.ex === 'yes'); else if(e.target === box) done(false); });
+      document.body.appendChild(box);
+      const yes = box.querySelector('[data-ex="yes"]'); if(yes) yes.focus({ preventScroll:true });
+    });
+  }
   async function deliverBlob(blob, filename){
+    if(isNative() && !isUpgraded() && exportsToday() >= EXPORT_FREE_PER_DAY){
+      const wants = await askForExport();
+      if(!wants) return false;
+      const granted = window.__ads && window.__ads.rewarded ? await window.__ads.rewarded() : false;
+      if(!granted){ showToast("The ad did not finish, so this save was not made. Try again."); return false; }
+    }
     const ok = await deliverBlobRaw(blob, filename);
-    if(ok && window.__ads && window.__ads.afterExport){ try{ window.__ads.afterExport(); }catch(e){} }
+    if(ok){ exportCountUp(); if(window.__ads && window.__ads.afterExport){ try{ window.__ads.afterExport(); }catch(e){} } }
     return ok;
   }
   async function deliverBlobRaw(blob, filename){
@@ -8091,7 +8120,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
 
   // ---------- Ads (Google AdMob): ONE banner, only where it cannot be tapped by mistake ----------
   // These are Google's public TEST ids. Put your real AdMob ids here (and in the Android manifest) before publishing.
-  const ADS = { testing:true, banner:'ca-app-pub-3940256099942544/6300978111', interstitial:'ca-app-pub-3940256099942544/1033173712', minSeconds:10, interstitialAfterSeconds:180, tabs:['home', 'profile', 'ai'] };
+  const ADS = { testing:true, banner:'ca-app-pub-3940256099942544/6300978111', interstitial:'ca-app-pub-3940256099942544/1033173712', rewarded:'ca-app-pub-3940256099942544/5224354917', minSeconds:10, interstitialAfterSeconds:180, tabs:['home', 'profile', 'ai'] };
   window.__ads = (function(){
     const A = ()=> nativePlugin('AdMob');
     const born = Date.now(); let state = 'off', ready = false, busy = false, consentDone = false, error = '', retryAt = 0;
@@ -8149,8 +8178,18 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
         return true;
       }catch(e){ interShown = false; error = 'interstitial: ' + String((e && e.message) || e).slice(0, 80); return false; }
     }
+    // Rewarded ad: the person chooses it to save one more file. Resolves true only if the reward was earned.
+    async function rewarded(){
+      if(!isNative() || !A() || upgraded()) return false;
+      try{
+        const P = A();
+        await P.prepareRewardVideoAd({ adId: ADS.rewarded, isTesting: ADS.testing });
+        const r = await P.showRewardVideoAd();
+        return !!r;
+      }catch(e){ error = 'rewarded: ' + String((e && e.message) || e).slice(0, 80); return false; }
+    }
     setInterval(tick, 1200); document.addEventListener('visibilitychange', tick);
-    return { tick, allowed, afterExport, get state(){ return state; }, get error(){ return error; } };
+    return { tick, allowed, afterExport, rewarded, get state(){ return state; }, get error(){ return error; } };
   })();
 
   // Tell the Android update plugin this version started, otherwise it rolls the update back.
