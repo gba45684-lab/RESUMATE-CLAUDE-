@@ -49,3 +49,4 @@ jobs:
           python tests/smoke12_csp.py
           python tests/smoke13_ads_privacy.py
           python tests/smoke33_create_buttons.py
+          python tests/smoke34_sample_or_own.py

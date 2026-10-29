@@ -1425,6 +1425,10 @@
   .pagesize-chips{ display:flex; gap:6px; }
   .pagesize-chip{ padding:6px 12px; border-radius:8px; background:var(--paper); border:1px solid var(--line); font-size:11.5px; font-weight:650; color:var(--ink-soft); cursor:pointer; }
   .pagesize-chip.on{ background:var(--maroon); color:var(--on-brand); border-color:var(--maroon); }
+  .cs-row{ flex-wrap:wrap; gap:8px; margin:0 0 12px; }
+  .cs-row .pagesize-chips{ flex-wrap:wrap; }
+  .cs-note{ width:100%; margin:0; font-size:11.5px; line-height:1.4; color:var(--ink-soft); }
+  .pagesize-chip:disabled{ opacity:.4; cursor:default; }
 
   /* ---------- Profile ---------- */
   .prof-card{
@@ -2428,6 +2432,7 @@
                 </div>
                 <div class="step-track"><div class="step-fill" id="stepProgress"></div></div>
               </div>
+              <div data-content-switch></div>
               <div id="segContent"></div>
               <div class="step-nav">
                 <button class="btn btn-ghost" id="stepBack">Back</button>
@@ -2466,6 +2471,7 @@
                 <span class="hm-badge" id="pvPages">1 page</span><button type="button" class="hm-badge pv-fit" id="pvFit" hidden>Slightly over 1 page: tighten</button>
               </div>
               <div class="tpl-switch-strip" id="tplSwitchStrip" role="toolbar" aria-label="Switch template"></div>
+              <div data-content-switch></div>
               <div class="preview-stage">
                 <div id="previewZoomWrap" class="pz-wrap">
                   <div id="previewZoomInner" class="pz-inner">
@@ -2857,6 +2863,7 @@ document.querySelectorAll('[data-tiles-slot]').forEach(function(el){ el.appendCh
     extrasOrder:['certifications','projects','languages','achievements'],
     photo:null,
   };
+  const SAMPLE_SNAP = JSON.parse(JSON.stringify(resumeData));   // the fully filled sample, kept untouched so it can be loaded again any time
   // Resume text: saved on this phone as you edit (photo has its own key), restored on the next visit.
   const RESUME_KEY = 'resumate_resume_v1';
   (function restoreResume(){
@@ -2871,7 +2878,7 @@ document.querySelectorAll('[data-tiles-slot]').forEach(function(el){ el.appendCh
   let saveHintTimer = 0;
   function flashSaved(){ const el = document.getElementById('saveHint'); if(!el) return; el.textContent = 'Saved on this phone ✓'; el.classList.add('on'); clearTimeout(saveHintTimer); saveHintTimer = setTimeout(()=> el.classList.remove('on'), 1500); }
   function saveResume(){
-    try{ const { photo, ...rest } = resumeData; localStorage.setItem(RESUME_KEY, JSON.stringify(rest)); try{ rsSyncActive(); }catch(e2){} flashSaved(); return true; }catch(e){ return false; }
+    try{ const { photo, ...rest } = resumeData; localStorage.setItem(RESUME_KEY, JSON.stringify(rest)); try{ rsSyncActive(); }catch(e2){} try{ renderContentSwitch(); }catch(e3){} flashSaved(); return true; }catch(e){ return false; }
   }
   // Profile photo: kept on this device so it is still there next visit, and shown everywhere (profile avatar + every template with a photo slot)
   const PHOTO_KEY = 'resumate_profile_photo';
@@ -6146,6 +6153,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
     contentStep = 0; renderContentTab(); applyIdentityEverywhere(); syncAll(); if(typeof renderPreviewTemplate === 'function') renderPreviewTemplate();
     bdRender(); studioRefreshTiles();
     try{ renderAiTips(); aiHeroQuota(); }catch(e){}
+    try{ renderContentSwitch(); }catch(e){}
   }
   function rsSwitch(id){
     if(id === rs.active) return;
@@ -6163,6 +6171,42 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
     rs.active = id; rsApplyData(data); rsStore(); rsSyncActive(); rsRefreshAll();
     return id;
   }
+  // ---- Sample or my own content: switch any time, nothing is lost (saved with the resume on this phone) ----
+  const sameData = (a, b)=> JSON.stringify(a) === JSON.stringify(b);
+  function sampleData(){ const d = {}; SAMPLE_KEYS.forEach(k=> d[k] = clone(SAMPLE_SNAP[k])); return d; }
+  function rsContentMode(){ return sameData(rsCapture(), sampleData()) ? 'sample' : 'own'; }
+  function rsSetContent(kind){
+    const it = rsActiveItem(); rsSyncActive();
+    const cur = rsCapture(), isSample = sameData(cur, sampleData());
+    let next;
+    if(kind === 'sample'){ if(isSample) return 'The sample is already showing'; it.own = clone(cur); next = sampleData(); }
+    else { if(!isSample) return 'Your own content is already showing'; next = it.own ? clone(it.own) : blankData(''); }
+    it.undo = clone(cur); rsApplyData(next); rsSyncActive(); rsStore(); rsRefreshAll();
+    return kind === 'sample' ? 'Sample content loaded. Your own is kept.' : (it.own ? 'Your own content is back' : 'Ready for your own content');
+  }
+  function rsUndoContent(){
+    const it = rsActiveItem(); if(!it || !it.undo) return 'Nothing to undo';
+    const cur = rsCapture(), prev = it.undo; it.undo = clone(cur);
+    if(sameData(cur, sampleData()) === false && sameData(prev, sampleData())) it.own = clone(cur);
+    rsApplyData(prev); rsSyncActive(); rsStore(); rsRefreshAll();
+    return 'Undone. Tap Undo again to go back.';
+  }
+  function renderContentSwitch(){
+    const mounts = document.querySelectorAll('[data-content-switch]'); if(!mounts.length) return;
+    const it = rsActiveItem(), mode = rsContentMode();
+    const html = `<div class="pagesize-row cs-row"><span class="pagesize-lab">Content</span><div class="pagesize-chips" role="group" aria-label="Resume content">`
+      + `<button type="button" class="pagesize-chip${mode === 'own' ? ' on' : ''}" data-cs="own" aria-pressed="${mode === 'own'}">My content</button>`
+      + `<button type="button" class="pagesize-chip${mode === 'sample' ? ' on' : ''}" data-cs="sample" aria-pressed="${mode === 'sample'}">Sample</button>`
+      + `<button type="button" class="pagesize-chip" data-cs="undo"${it && it.undo ? '' : ' disabled'}>Undo</button></div>`
+      + `<p class="cs-note">${mode === 'sample' ? 'Showing a fully filled sample. Tap My content to go back to yours.' : 'Tap Sample to see a fully filled resume. Your own content is kept and Undo brings it back.'}</p></div>`;
+    mounts.forEach(m=> { if(m.innerHTML !== html) m.innerHTML = html; });
+  }
+  document.addEventListener('click', e=>{
+    const b = e.target.closest && e.target.closest('[data-cs]'); if(!b || b.disabled) return;
+    const kind = b.dataset.cs; let msg;
+    try{ msg = kind === 'undo' ? rsUndoContent() : rsSetContent(kind); }catch(err){ msg = "That didn't work: " + String(err && err.message ? err.message : err).slice(0, 80); }
+    showToast(msg); renderContentSwitch();
+  });
   // A tap that still works if the browser drops the click (the finger slid a little, or the screen redrew mid-tap).
   // It runs once, and a failure is shown and kept for "Copy diagnostics" instead of silently doing nothing.
   function tapOn(el, fn, what){
