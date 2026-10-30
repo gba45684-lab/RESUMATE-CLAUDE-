@@ -6674,6 +6674,20 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
     if(b && b.type !== st.fmt){ st.fmtNote = true; b = await toBlobAsync(c, 'image/jpeg', q); }
     return b;
   }
+  // finds the highest quality whose file is at or under the target size (bytes); falls back to the lowest quality tried
+  async function cmpFit(st, c, target){
+    const keep = st.q; let lo = 20, hi = 95, best = null;
+    for(let i = 0; i < 7 && lo <= hi; i++){
+      const mid = Math.round((lo + hi) / 2);
+      st.q = mid;
+      const b = await cmpEncode(st, c);
+      if(b && b.size <= target){ best = { blob:b, q:mid }; lo = mid + 1; }
+      else hi = mid - 1;
+    }
+    if(!best){ st.q = 20; const b = await cmpEncode(st, c); best = { blob:b, q:20, missed:true }; }
+    st.q = best.q;
+    return best;
+  }
   async function mergePdfs(items, onStep){
     await loadScriptOnce('vendor/pdf-lib.min.js');
     const { PDFDocument } = PDFLib, out = await PDFDocument.create();
@@ -7332,7 +7346,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
 
     compress:{ render(){
       setHead('Compress image', 'Smaller file, same photo');
-      const st = toolState.compress || (toolState.compress = { file:null, orig:null, cache:null, est:null, fmt:'image/jpeg', fmtNote:false, side:'2048', q:80, token:0 });
+      const st = toolState.compress || (toolState.compress = { file:null, orig:null, cache:null, est:null, fmt:'image/jpeg', fmtNote:false, side:'2048', q:80, token:0, target:0 });
       const SIDES = [['2048','2048 px'], ['1280','1280 px'], ['800','800 px']];
       const msg = t=> { const m = toolBody.querySelector('#cmpMsg'); if(m) m.textContent = t || ''; };
       const estText = ()=>{
@@ -7349,10 +7363,16 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
       const save = async ()=>{
         msg('Preparing…');
         try{
-          const blob = await cmpEncode(st, await cmpSource(st));
+          const src = await cmpSource(st);
+          let blob, note = '';
+          if(st.target > 0){
+            const f = await cmpFit(st, src, st.target * 1024);
+            blob = f.blob; st.est = blob;
+            note = f.missed ? ` · couldn't reach ${st.target} KB, lowest quality used` : ` · quality ${f.q}%`;
+          } else blob = await cmpEncode(st, src);
           if(!blob){ msg("Couldn't make the file — try again"); return; }
           const ext = blob.type === 'image/webp' ? 'webp' : 'jpg';
-          if(await deliverBlob(blob, `${toolBase()}_compressed.${ext}`)) msg(`Saved ✓ · ${fmtKB(blob.size)}`);
+          if(await deliverBlob(blob, `${toolBase()}_compressed.${ext}`)) msg(`Saved ✓ · ${fmtKB(blob.size)}${note}`);
         }catch(e){ msg("Couldn't compress this image — try a JPG or PNG"); }
       };
       const bind = ()=>{
@@ -7370,6 +7390,8 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
         const q = toolBody.querySelector('#cmpQ');
         q.addEventListener('input', ()=>{ st.q = +q.value; toolBody.querySelector('#cmpQv').textContent = st.q; });
         q.addEventListener('change', ()=>{ st.q = +q.value; st.est = null; estimate(); });
+        const tg = toolBody.querySelector('#cmpTarget');
+        tg.addEventListener('change', ()=>{ const v = Math.round(+tg.value); st.target = v >= 5 ? v : 0; estimate(); });
         toolBody.querySelector('#cmpSave').addEventListener('click', save);
       };
       const draw = ()=>{
@@ -7382,6 +7404,8 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
             <div class="tl-seg" role="radiogroup" aria-label="Longest side">${SIDES.map(([v, l])=> `<button type="button" role="radio" aria-checked="${st.side === v}" data-side="${v}">${l}</button>`).join('')}</div>
             <label class="tl-lab" for="cmpQ">Quality: <span id="cmpQv">${st.q}</span>%</label>
             <input type="range" class="ip-range" id="cmpQ" min="40" max="95" step="1" value="${st.q}">
+            <label class="tl-lab" for="cmpTarget">Target size (optional, KB)</label>
+            <input type="number" class="ip-range" id="cmpTarget" min="5" max="20000" step="5" inputmode="numeric" placeholder="e.g. 50" value="${st.target > 0 ? st.target : ''}" aria-describedby="cmpEst">
             <p class="tl-note" id="cmpEst" aria-live="polite">${estText()}</p>
             <div class="tl-add"><button class="tl-btn primary" id="cmpSave">${ico('download')}Save compressed image</button></div>` : ''}
           <p class="tl-note" id="cmpMsg" aria-live="polite"></p>`;
@@ -7454,21 +7478,36 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
       } }),
 
     shrinkpdf: pdfOneTool({ key:'shrinkpdf', title:'Shrink PDF', sub:'Smaller file size', icon:'shrink', action:'Shrink and save', lead:'Each page is saved as a picture, which makes files with photos or scans much smaller. The text can no longer be selected afterwards.', init:{ level:'balanced' },
-      options: st => `<label class="tl-lab">Quality</label><div class="tl-seg" role="radiogroup" aria-label="Quality">${SHRINK_LEVELS.map(([v,l])=> `<button type="button" role="radio" aria-checked="${st.level === v}" data-lvl="${v}">${l}</button>`).join('')}</div>`,
-      bind: (st, root, draw)=> root.querySelectorAll('[data-lvl]').forEach(b=> b.addEventListener('click', ()=>{ st.level = b.dataset.lvl; draw(); })),
+      options: st => `<label class="tl-lab">Quality</label><div class="tl-seg" role="radiogroup" aria-label="Quality">${SHRINK_LEVELS.map(([v,l])=> `<button type="button" role="radio" aria-checked="${st.level === v}" data-lvl="${v}">${l}</button>`).join('')}</div>
+        <label class="tl-lab" for="shrinkTarget">Target size (optional, KB)</label>
+        <input type="number" class="ip-range" id="shrinkTarget" min="20" max="20000" step="10" inputmode="numeric" placeholder="e.g. 200" value="${st.target > 0 ? st.target : ''}">`,
+      bind: (st, root, draw)=> {
+        root.querySelectorAll('[data-lvl]').forEach(b=> b.addEventListener('click', ()=>{ st.level = b.dataset.lvl; draw(); }));
+        const tg = root.querySelector('#shrinkTarget');
+        if(tg) tg.addEventListener('input', ()=>{ const v = Math.round(+tg.value); st.target = v >= 20 ? v : 0; });
+      },
       run: async (st, msg)=>{
         const L = SHRINK_LEVELS.find(x=> x[0] === st.level) || SHRINK_LEVELS[1];
-        let pdf = null;
-        await renderPdfPages(st.file, L[2], async (c, p, total, base)=>{
-          msg(`Page ${p} of ${total}…`);
-          const o = base.width > base.height ? 'l' : 'p';
-          if(!pdf) pdf = new window.jspdf.jsPDF({ unit:'pt', format:[base.width, base.height], orientation:o, compress:true });
-          else pdf.addPage([base.width, base.height], o);
-          pdf.addImage(c.toDataURL('image/jpeg', L[3]), 'JPEG', 0, 0, base.width, base.height);
-        });
-        const blob = pdf.output('blob');
+        // with a target, step down from the chosen level (smaller pictures, lower quality) until the file fits
+        const steps = st.target > 0
+          ? [[L[2], L[3]], [1.5, .7], [1.2, .55], [1, .45], [.8, .35]].filter((x, i, a)=> i === 0 || x[0] < a[i-1][0] || x[1] < a[i-1][1])
+          : [[L[2], L[3]]];
+        let blob = null, used = null;
+        for(const [scale, quality] of steps){
+          let pdf = null;
+          await renderPdfPages(st.file, scale, async (c, p, total, base)=>{
+            msg(`${st.target > 0 ? 'Trying a smaller setting · ' : ''}Page ${p} of ${total}…`);
+            const o = base.width > base.height ? 'l' : 'p';
+            if(!pdf) pdf = new window.jspdf.jsPDF({ unit:'pt', format:[base.width, base.height], orientation:o, compress:true });
+            else pdf.addPage([base.width, base.height], o);
+            pdf.addImage(c.toDataURL('image/jpeg', quality), 'JPEG', 0, 0, base.width, base.height);
+          });
+          blob = pdf.output('blob'); used = scale;
+          if(!(st.target > 0) || blob.size <= st.target * 1024) break;
+        }
+        const note = st.target > 0 && blob.size > st.target * 1024 ? ` · couldn't reach ${st.target} KB` : '';
         if(!(await deliverBlob(blob, `${toolBase()}_small.pdf`))) return '';
-        return blob.size < st.file.size ? `Saved ✓ · ${fmtKB(st.file.size)} → ${fmtKB(blob.size)}` : `Saved, but it isn't smaller (${fmtKB(st.file.size)} → ${fmtKB(blob.size)}). The original is the better choice.`;
+        return (blob.size < st.file.size ? `Saved ✓ · ${fmtKB(st.file.size)} → ${fmtKB(blob.size)}` : `Saved, but it isn't smaller (${fmtKB(st.file.size)} → ${fmtKB(blob.size)}). The original is the better choice.`) + note;
       } }),
 
     rotateimg: imageOneTool({ key:'rotateimg', title:'Rotate image', sub:'Turn clockwise', icon:'rotate', action:'Rotate and save', busy:'Rotating…', lead:'Turn a picture a quarter, half or three-quarter turn.', init:{ deg:'90', fmt:'image/jpeg' },
