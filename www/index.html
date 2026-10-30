@@ -2704,12 +2704,15 @@ document.querySelectorAll('[data-tiles-slot]').forEach(function(el){ el.appendCh
       return wrap;
     }
     function place(wrap){
-      const step = STEPS[idx], el = targetFor(step), ring = wrap.querySelector('.tour-ring');
+      const step = STEPS[idx], el = targetFor(step), ring = wrap.querySelector('.tour-ring'), card = wrap.querySelector('.tour-card');
+      // bring the target into the middle of the screen first, then measure it
+      if(el) el.scrollIntoView({ block: 'center' });
       if(el){ const r = el.getBoundingClientRect(); ring.style.display = 'block'; ring.style.left = (r.left - 6) + 'px'; ring.style.top = (r.top - 6) + 'px'; ring.style.width = (r.width + 12) + 'px'; ring.style.height = (r.height + 12) + 'px'; }
       else ring.style.display = 'none';
-      // the card goes above a target that sits low on screen, so it never hides what it points at
-      const card = wrap.querySelector('.tour-card');
-      if(el && el.getBoundingClientRect().bottom > window.innerHeight * 0.5){ card.style.top = 'auto'; card.style.bottom = (window.innerHeight - el.getBoundingClientRect().top + 14) + 'px'; }
+      // a target low on screen sits over the bottom bar, so the card moves to the top and stays fully on screen
+      // otherwise the card sits above the bottom bar as usual
+      const low = el && (el.getBoundingClientRect().top + el.getBoundingClientRect().height / 2) > window.innerHeight * 0.5;
+      if(low){ card.style.bottom = 'auto'; card.style.top = 'calc(24px + env(safe-area-inset-top, 0px))'; }
       else { card.style.top = 'auto'; card.style.bottom = ''; }
     }
     function go(i){
@@ -2722,7 +2725,6 @@ document.querySelectorAll('[data-tiles-slot]').forEach(function(el){ el.appendCh
       wrap.querySelector('#tourText').textContent = STEPS[i].text;
       wrap.querySelector('#tourNext').textContent = last ? 'Done' : 'Next';
       place(wrap);
-      const el = targetFor(STEPS[i]); if(el) el.scrollIntoView({ block: 'nearest' });
     }
     function finish(){
       put(KEY_PENDING, null); put(KEY_DONE, '1');

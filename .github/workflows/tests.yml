@@ -65,3 +65,4 @@ jobs:
           python tests/smoke46_pdf_extract_images.py
           python tests/smoke47_fingerprint_lock.py
           python tests/smoke48_lock_before_tour.py
+          python tests/smoke49_tour_on_screen.py
