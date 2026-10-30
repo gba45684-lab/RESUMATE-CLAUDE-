@@ -63,3 +63,4 @@ jobs:
           python tests/smoke44_job_tracker.py
           python tests/smoke45_app_lock.py
           python tests/smoke46_pdf_extract_images.py
+          python tests/smoke47_fingerprint_lock.py

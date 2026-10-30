@@ -156,6 +156,7 @@
 .lock-keys{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .lock-keys button{min-height:56px;border-radius:14px;border:1px solid rgba(127,127,127,.35);background:transparent;color:inherit;font-size:22px}
 .lock-keys button:disabled{opacity:.4}
+.lock-fp{margin-top:14px;min-height:44px;padding:0 18px;border-radius:12px;border:1px solid rgba(127,127,127,.5);background:transparent;color:inherit;font-size:15px}
 .jt-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}
 .jt-stat{border:1px solid rgba(127,127,127,.3);border-radius:12px;padding:10px 6px;text-align:center}
 .jt-stat b{display:block;font-size:18px}
@@ -7293,9 +7294,19 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(salt + ':' + pin));
     return [...new Uint8Array(buf)].map(b=> b.toString(16).padStart(2, '0')).join('');
   }
-  async function lockSet(pin){
+  async function lockSet(pin, bio){
     const salt = Math.random().toString(36).slice(2) + Date.now().toString(36);
-    localStorage.setItem(LOCK_KEY, JSON.stringify({ salt, hash: await lockHash(pin, salt), len: pin.length }));
+    localStorage.setItem(LOCK_KEY, JSON.stringify({ salt, hash: await lockHash(pin, salt), len: pin.length, bio: !!bio }));
+  }
+  // fingerprint or face unlock, through the native biometric plugin (native app only)
+  async function bioAvailable(){
+    const B = nativePlugin('BiometricAuthNative'); if(!B) return false;
+    try{ const r = await B.checkBiometry(); return !!(r && r.isAvailable); }catch(e){ return false; }
+  }
+  async function bioUnlock(){
+    const B = nativePlugin('BiometricAuthNative'); if(!B) return false;
+    try{ await B.internalAuthenticate({ androidTitle:'ResuMate', reason:'Unlock ResuMate', cancelTitle:'Use PIN', allowDeviceCredential:false }); return true; }
+    catch(e){ return false; }
   }
   async function lockCheck(pin){ const st = lockState(); return !!st && (await lockHash(pin, st.salt)) === st.hash; }
   function lockClear(){ try{ localStorage.removeItem(LOCK_KEY); }catch(e){} }
@@ -7306,6 +7317,13 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
       <div class="lock-keys">${[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map(k=> k === '' ? '<span></span>' : `<button type="button" data-k="${k}" aria-label="${k === '⌫' ? 'Delete' : k}">${k}</button>`).join('')}</div></div>`;
     document.body.appendChild(ov);
     let typed = '', fails = 0;
+    if(st.bio){
+      const fp = document.createElement('button'); fp.type = 'button'; fp.className = 'lock-fp'; fp.textContent = 'Use fingerprint';
+      ov.querySelector('.lock-card').appendChild(fp);
+      const tryBio = async ()=>{ if(await bioAvailable() && await bioUnlock()) ov.remove(); };
+      fp.addEventListener('click', tryBio);
+      tryBio();
+    }
     const dots = ()=> ov.querySelectorAll('#lockDots i').forEach((d, i)=> d.classList.toggle('on', i < typed.length));
     ov.querySelectorAll('[data-k]').forEach(b=> b.addEventListener('click', async ()=>{
       const k = b.dataset.k;
@@ -7394,17 +7412,19 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
         <p class="tl-note">${on ? 'The app asks for your PIN when it opens and after it has been in the background for a while.' : 'Ask for a PIN when the app opens or comes back from the background.'} If you forget the PIN, you can only clear it by clearing the app’s data on this phone, which also removes your saved resumes. Keep a copy of anything important.</p>
         ${on ? `<label class="tl-lab" for="lkCur">Current PIN</label><input id="lkCur" class="tl-input" type="password" inputmode="numeric" maxlength="6" autocomplete="off">
           <div class="tl-add"><button class="tl-btn" id="lkOff">Turn off app lock</button></div>`
-          : `<label class="tl-lab" for="lkNew">New PIN (4 to 6 digits)</label><input id="lkNew" class="tl-input" type="password" inputmode="numeric" maxlength="6" autocomplete="off">
+          : `<div id="lkBioWrap" hidden><label class="tl-item"><input type="checkbox" id="lkBio" checked> <span class="tl-meta"><b>Also unlock with fingerprint</b><small>Your PIN still works if the fingerprint does not.</small></span></label></div><label class="tl-lab" for="lkNew">New PIN (4 to 6 digits)</label><input id="lkNew" class="tl-input" type="password" inputmode="numeric" maxlength="6" autocomplete="off">
           <label class="tl-lab" for="lkNew2">Type it again</label><input id="lkNew2" class="tl-input" type="password" inputmode="numeric" maxlength="6" autocomplete="off">
           <div class="tl-add"><button class="tl-btn primary" id="lkOn">Turn on app lock</button></div>`}
         <p class="tl-note" id="lkMsg" aria-live="polite"></p>`);
       const lkMsg = t=> { const m = toolBody.querySelector('#lkMsg'); if(m) m.textContent = t || ''; };
+      if(!on) bioAvailable().then(ok=>{ const w = toolBody.querySelector('#lkBioWrap'); if(w) w.hidden = !ok; });
       const on1 = toolBody.querySelector('#lkOn');
       if(on1) on1.addEventListener('click', async ()=>{
         const a = toolBody.querySelector('#lkNew').value.trim(), b2 = toolBody.querySelector('#lkNew2').value.trim();
         if(!/^\d{4,6}$/.test(a)){ lkMsg('Use 4 to 6 digits only'); return; }
         if(a !== b2){ lkMsg('The two PINs do not match'); return; }
-        await lockSet(a); showToast('App lock is on'); toolOpen('sections');
+        const bioBox = toolBody.querySelector('#lkBio');
+        await lockSet(a, !!(bioBox && bioBox.checked && !bioBox.parentElement.parentElement.hidden)); showToast('App lock is on'); toolOpen('sections');
       });
       const off1 = toolBody.querySelector('#lkOff');
       if(off1) off1.addEventListener('click', async ()=>{
