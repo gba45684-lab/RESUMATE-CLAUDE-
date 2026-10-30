@@ -2531,6 +2531,7 @@
               <div class="tl-group"><button type="button" class="tl-subh tl-grp" aria-expanded="true" data-grp="Resume">Resume</button><div class="tl-tilegrid">
                 <button type="button" class="tl-tile" data-tool="resumes"><i class="bd-i tl-ico" data-ic="layers"></i><b>My resumes</b><small data-tile-count>1 saved</small></button>
                 <button type="button" class="tl-tile" data-tool="score"><i class="bd-i tl-ico" data-ic="gauge"></i><b>Resume score</b><small data-tile-score>—</small></button>
+                <button type="button" class="tl-tile" data-tool="sections"><i class="bd-i tl-ico" data-ic="layout"></i><b>Sections and privacy</b><small>Hide parts or contact details</small></button>
                 <button type="button" class="tl-tile" data-tool="roleresume"><i class="bd-i tl-ico" data-ic="layers"></i><b>Start from a role</b><small>Fresher, sales, banking, IT</small></button>
                 <button type="button" class="tl-tile" data-tool="importpdf"><i class="bd-i tl-ico" data-ic="file"></i><b>Import PDF resume</b><small>Fill from an old CV</small></button>
 </div></div>
@@ -2866,6 +2867,7 @@ document.querySelectorAll('[data-tiles-slot]').forEach(function(el){ el.appendCh
       {title:'IIM Lucknow Merit Scholar', desc:'Awarded for academic performance in the MBA programme.'},
     ],
     extrasOrder:['certifications','projects','languages','achievements'],
+    hiddenSections:[], hideContact:false,
     photo:null,
   };
   const SAMPLE_SNAP = JSON.parse(JSON.stringify(resumeData));   // the fully filled sample, kept untouched so it can be loaded again any time
@@ -3341,7 +3343,7 @@ document.querySelectorAll('[data-tiles-slot]').forEach(function(el){ el.appendCh
   function fillCard(el){
     if(el._filled) return; const t = workingTemplates[+el.dataset.i]; if(!t) return;
     const atsBadge = t.tags.includes('ats-safe') ? `<span class="ats-pill good">✓ ATS-safe</span>` : `<span class="ats-pill warn">Visual layout</span>`;
-    el.innerHTML = `<div class="tsheet ${t.cls}" style="--tpl-accent:${t.accent}">${t.render(resumeData)}</div><div class="tfoot"><span>${templates.indexOf(t) + 1} · ${t.name}</span>${atsBadge}</div>`;
+    el.innerHTML = `<div class="tsheet ${t.cls}" style="--tpl-accent:${t.accent}">${t.render(viewData(resumeData))}</div><div class="tfoot"><span>${templates.indexOf(t) + 1} · ${t.name}</span>${atsBadge}</div>`;
     enrich(el.querySelector('.tsheet'), resumeData); sizeCardSheet(el.querySelector('.tsheet')); el._filled = true;
   }
   // neighbours fill one per frame so a swipe never has to render several resumes in the same frame
@@ -4282,7 +4284,7 @@ document.querySelectorAll('[data-tiles-slot]').forEach(function(el){ el.appendCh
     [[14,'c1',108],[20,'c2',108],[11,'c3',124]].forEach(([n,c,px])=>{
       const t = templates[n % templates.length], card = document.createElement('div');
       card.className = 'pw-card ' + c;
-      card.innerHTML = `<div class="tsheet ${t.cls}" style="--tpl-accent:${t.accent}; width:${W}px; zoom:${((c==='c3'?142:128) / W).toFixed(4)};">${t.render(resumeData)}</div><span class="lock"><svg class="lu" viewBox="0 0 24 24" aria-hidden="true"><path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/></svg></span>`;
+      card.innerHTML = `<div class="tsheet ${t.cls}" style="--tpl-accent:${t.accent}; width:${W}px; zoom:${((c==='c3'?142:128) / W).toFixed(4)};">${t.render(viewData(resumeData))}</div><span class="lock"><svg class="lu" viewBox="0 0 24 24" aria-hidden="true"><path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/></svg></span>`;
       stack.appendChild(card); try{ enrich(card.querySelector('.tsheet'), resumeData); }catch(e){}
     });
     let open = false, ret = null;
@@ -4469,7 +4471,7 @@ document.querySelectorAll('[data-tiles-slot]').forEach(function(el){ el.appendCh
   function renderDesignMini(){
     const mini = document.getElementById('dsMini'); if(!mini) return;
     const t = getTemplateByCode(selectedTemplateCode), W = sheetW();
-    mini.innerHTML = `<div class="tsheet ${t.cls} ${customFont}" style="--tpl-accent:${customAccent || t.accent}; width:${W}px; zoom:${(104 / W).toFixed(4)};">${t.render(resumeData)}</div>`;
+    mini.innerHTML = `<div class="tsheet ${t.cls} ${customFont}" style="--tpl-accent:${customAccent || t.accent}; width:${W}px; zoom:${(104 / W).toFixed(4)};">${t.render(viewData(resumeData))}</div>`;
     try{ enrich(mini.firstElementChild, resumeData); }catch(e){}
     document.getElementById('dsName').textContent = t.name;
     const sel = document.querySelector('#dsFonts .ds-font.on b');
@@ -4496,11 +4498,19 @@ document.querySelectorAll('[data-tiles-slot]').forEach(function(el){ el.appendCh
   // ---------- Edit screen: Preview tab — renders the EXACT selected template ----------
   const previewMount = document.getElementById('previewMount');
 
+  // what is shown and exported: sections the user hid are left out, and contact details can be hidden on export
+  function viewData(d){
+    const v = Object.assign({}, d), hid = Array.isArray(d.hiddenSections) ? d.hiddenSections : [];
+    hid.forEach(k=>{ if(k === 'summary' || k === 'skills') v[k] = ''; else if(Array.isArray(v[k])) v[k] = []; });
+    if(d.hideContact) ['email', 'phone', 'location', 'linkedin'].forEach(k=> v[k] = '');
+    return v;
+  }
+  const SECTION_ITEMS = [['summary','Summary'],['experience','Work experience'],['education','Education'],['skills','Skills'],['certifications','Certifications'],['projects','Projects'],['languages','Languages'],['achievements','Achievements']];
   function renderPreviewTemplate(){
     const t = getTemplateByCode(selectedTemplateCode);
     const accent = customAccent || t.accent;
     const W = sheetW(), pageH = nativePageHeight();
-    previewMount.innerHTML = `<div class="tsheet ${t.cls} ${customFont}" id="pvSheetInner" style="--tpl-accent:${accent}; width:${W}px;">${t.render(resumeData)}</div>`;
+    previewMount.innerHTML = `<div class="tsheet ${t.cls} ${customFont}" id="pvSheetInner" style="--tpl-accent:${accent}; width:${W}px;">${t.render(viewData(resumeData))}</div>`;
     const inner = document.getElementById('pvSheetInner');
     enrich(inner, resumeData);
     // lay the sheet out at the zoom it is shown at, keep blocks off the page edges, then snap the paper to whole pages
@@ -5565,7 +5575,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
     // build the page at its real size (the same layout the PDF uses), off screen, so measuring and page breaks are exact
     const t = getTemplateByCode(selectedTemplateCode), accent = customAccent || t.accent, W = sheetW(), pageH = nativePageHeight();
     const stage = document.createElement('div'); stage.style.cssText = `position:fixed;left:-10000px;top:0;width:${W}px;`;
-    stage.innerHTML = `<div class="tsheet ${t.cls} ${customFont}" style="--tpl-accent:${accent}; width:${W}px;">${t.render(resumeData)}</div>`;
+    stage.innerHTML = `<div class="tsheet ${t.cls} ${customFont}" style="--tpl-accent:${accent}; width:${W}px;">${t.render(viewData(resumeData))}</div>`;
     document.body.appendChild(stage);
     const inner = stage.firstElementChild; enrich(inner, resumeData); paginate(inner, pageH, 1);
     const natural = inner.getBoundingClientRect().height, pagesN = Math.max(1, Math.ceil(natural / pageH - 0.02)); inner.style.minHeight = (pagesN * pageH) + 'px';
@@ -5871,7 +5881,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
   async function generatePdfBlob(){
     const t = getTemplateByCode(selectedTemplateCode);
     const accent = customAccent || t.accent;
-    printSheet.innerHTML = `<div class="tsheet ${t.cls} ${customFont}" style="--tpl-accent:${accent}; width:${sheetW()}px;">${t.render(resumeData)}</div>`;
+    printSheet.innerHTML = `<div class="tsheet ${t.cls} ${customFont}" style="--tpl-accent:${accent}; width:${sheetW()}px;">${t.render(viewData(resumeData))}</div>`;
     const sheetEl = printSheet.firstElementChild;
     enrich(sheetEl, resumeData);
     try{ await document.fonts.ready; }catch(e){}
@@ -6180,10 +6190,10 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
 
   // ---------- several resumes ----------
   const RS_KEY = 'resumate_resumes_v2', RS_MAX = 10;
-  const SAMPLE_KEYS = ['name','role','email','phone','location','linkedin','summary','experience','education','skills','certifications','projects','languages','achievements','extrasOrder'];
-  const clone = o => JSON.parse(JSON.stringify(o));
+  const SAMPLE_KEYS = ['name','role','email','phone','location','linkedin','summary','experience','education','skills','certifications','projects','languages','achievements','extrasOrder','hiddenSections','hideContact'];
+  const clone = o => o === undefined ? undefined : JSON.parse(JSON.stringify(o));   // older saved resumes do not have every field
   const blankData = (name)=> ({ name: name || 'Your Name', role:'', email:'', phone:'', location:'', linkedin:'', summary:'', experience:[{ title:'', org:'', dates:'', bullets:[''] }], education:[{ degree:'', org:'', dates:'' }],
-    skills:'', certifications:[], projects:[], languages:[], achievements:[], extrasOrder:['certifications','projects','languages','achievements'] });
+    skills:'', certifications:[], projects:[], languages:[], achievements:[], extrasOrder:['certifications','projects','languages','achievements'], hiddenSections:[], hideContact:false });
   let rs = { active:null, items:[] }, rsReady = false;
   function rsLoad(){ try{ const v = JSON.parse(localStorage.getItem(RS_KEY) || 'null'); if(v && Array.isArray(v.items) && v.items.length){ rs = v; } }catch(e){} }
   function rsStore(){ try{ localStorage.setItem(RS_KEY, JSON.stringify(rs)); return true; }catch(e){ return false; } }
@@ -6325,6 +6335,28 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
   const ACTION_VERBS = new Set('led built launched created designed developed managed owned drove delivered improved increased reduced grew shipped implemented analysed analyzed negotiated mentored coordinated streamlined optimised optimized established introduced generated secured automated scaled migrated resolved trained partnered authored presented achieved executed planned conducted supported spearheaded transformed initiated produced won earned saved cut raised boosted expanded redesigned architected oversaw directed founded organised organized prepared processed handled maintained evaluated advised audited forecast forecasted researched wrote closed sold acquired onboarded recruited'.split(' '));
   const WEAK = [/responsible for/i, /\bworked on\b/i, /\bhelped\b/i, /\bduties\b/i, /\btried to\b/i, /\bassisted with\b/i, /\bin charge of\b/i];
   const wordsN = t => (String(t || '').trim().match(/\S+/g) || []).length;
+  // finds gaps longer than six months between jobs; years alone are read as the whole year
+  function dateGaps(exp){
+    const MON = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+    const now = new Date(), nowM = now.getFullYear() * 12 + now.getMonth();
+    const at = (txt, isEnd)=>{
+      const t = String(txt || ''), y = t.match(/(19|20)\d{2}/); if(!y) return null;
+      const m = t.match(/(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s*(19|20)\d{2}/i);
+      return +y[0] * 12 + (m ? MON.indexOf(m[1].toLowerCase()) : (isEnd ? 11 : 0));
+    };
+    const jobs = (Array.isArray(exp) ? exp : []).map(e=>{
+      const parts = String(e.dates || '').split(/\s*(?:—|–|-|to)\s*/), present = /present|current|now|today/i.test(parts[1] || '');
+      return { title: e.title || 'Untitled role', start: at(parts[0], false), end: present ? nowM : at(parts[1] || parts[0], true) };
+    }).filter(j=> j.start !== null && j.end !== null).sort((a, b)=> a.start - b.start);
+    const gaps = [];
+    for(let i = 1; i < jobs.length; i++){
+      const months = jobs[i].start - jobs[i - 1].end - 1;
+      if(months > 6) gaps.push({ months, from: jobs[i - 1].title, to: jobs[i].title });
+    }
+    return gaps;
+  }
+  window.__resume = { viewData, dateGaps, data: ()=> resumeData };   // for tests
+  function gapText(m){ return m >= 24 ? `${Math.round(m / 12)} years` : m >= 12 ? '1 year' : `${m} months`; }
   function analyseResume(d){
     const items = [];  // {ok, title, detail, step, weight, got}
     const add = (title, got, weight, okDetail, badDetail, step) => items.push({ title, got, weight, ok: got >= weight * 0.999, detail: got >= weight * 0.999 ? okDetail : badDetail, step });
@@ -6519,7 +6551,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
   async function exportFile(kind){
     const base = (resumeData.name || 'Resume').trim().replace(/\s+/g, '_');
     try{
-      const blob = kind === 'docx' ? resumeDocx(resumeData) : atsPdf(resumeData), name = kind === 'docx' ? `${base}_Resume.docx` : `${base}_Resume_ATS.pdf`;
+      const blob = kind === 'docx' ? resumeDocx(viewData(resumeData)) : atsPdf(viewData(resumeData)), name = kind === 'docx' ? `${base}_Resume.docx` : `${base}_Resume_ATS.pdf`;
       if(await deliverBlob(blob, name)){
         buzz(14); bdLog('pdf', kind === 'docx' ? 'Word file exported' : 'ATS text PDF exported', kind === 'docx' ? 'Word (.docx)' : PAGE_SIZES[pageSize].label);
         let kept = false; try{ await dlSave({ id:Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name, tpl:selectedTemplateCode, tplName:kind === 'docx' ? 'Word file' : 'ATS text PDF', size:kind === 'docx' ? 'A4' : PAGE_SIZES[pageSize].label, pages:1, bytes:blob.size, ts:Date.now(), kind }, blob, null); kept = true; }catch(e){}
@@ -7209,6 +7241,24 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
         <p class="tl-h">Looking good</p><div class="tl-list">${a.items.filter(i=> i.ok).map(i=> `<div class="tl-item ok"><span class="tl-dot">${ico('check')}</span><div class="tl-meta"><b>${H(i.title)}</b><small>${H(i.detail)}</small></div></div>`).join('') || '<div class="tl-empty">Nothing here yet.</div>'}</div>
         <p class="tl-note">The score checks structure and wording only. It can't judge how well your experience fits a particular job — use Job match for that.</p>`;
       toolBody.querySelectorAll('[data-step]').forEach(b=> b.addEventListener('click', ()=> goStep(+b.dataset.step)));
+      const gaps = dateGaps(resumeData.experience);
+      toolBody.insertAdjacentHTML('beforeend', `<p class="tl-h">Date gaps</p>${gaps.length
+        ? `<div class="tl-list">${gaps.map(g=> `<div class="tl-item bad"><span class="tl-dot">${ico('alert')}</span><div class="tl-meta"><b>${gapText(g.months)} gap</b><small>Between ${H(g.from)} and ${H(g.to)}. Explain it in your summary or interview, for example study, a course or family time.</small></div></div>`).join('')}</div>`
+        : '<p class="tl-note">No gaps longer than six months between your jobs.</p>'}`);
+    } },
+
+    sections:{ render(){
+      setHead('Sections and privacy', 'Hide parts, or your contact details');
+      const hid = Array.isArray(resumeData.hiddenSections) ? resumeData.hiddenSections : [];
+      toolBody.innerHTML = `<p class="tl-lead">Hidden sections are left out of the preview, the Word file and the ATS PDF. Nothing is deleted, so you can show them again any time.</p>
+        <p class="tl-h">Sections</p><div class="tl-list">${SECTION_ITEMS.map(([k, l])=> `<label class="tl-item"><input type="checkbox" data-sec="${k}" ${hid.includes(k) ? '' : 'checked'}> <span class="tl-meta"><b>${H(l)}</b><small>${hid.includes(k) ? 'Hidden' : 'Shown'}</small></span></label>`).join('')}</div>
+        <p class="tl-h">Privacy</p><label class="tl-item"><input type="checkbox" id="pvHideContact" ${resumeData.hideContact ? 'checked' : ''}> <span class="tl-meta"><b>Hide email, phone, location and LinkedIn</b><small>Use this when you share the file with a recruiter through a portal, or when you want to keep your details private. Your details stay in the app.</small></span></label>`;
+      toolBody.querySelectorAll('[data-sec]').forEach(cb=> cb.addEventListener('change', ()=>{
+        const set = new Set(Array.isArray(resumeData.hiddenSections) ? resumeData.hiddenSections : []);
+        cb.checked ? set.delete(cb.dataset.sec) : set.add(cb.dataset.sec);
+        resumeData.hiddenSections = [...set]; saveResume(); buzz(6); toolOpen('sections');
+      }));
+      toolBody.querySelector('#pvHideContact').addEventListener('change', e=>{ resumeData.hideContact = e.target.checked; saveResume(); buzz(6); toolOpen('sections'); });
     } },
 
     job:{ render(){
@@ -8163,7 +8213,17 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
           toolBody.innerHTML = `<p class="tl-lead">Choose a PDF resume or a photo of one. We read it on this phone and suggest your details. You check them before anything changes.</p>
             <div class="tl-add wrap">${filePick('Choose a PDF or photo', 'application/pdf,.pdf,image/*', false, 'impFile')}</div>
             <p class="tl-note">Work experience and education are suggested too. Scans are read with OCR on this phone, so check the suggestions carefully.</p>
+            <p class="tl-h">Or paste text</p>
+            <p class="tl-note">Open your LinkedIn profile, copy the text you want (or use Save to PDF, then choose that file above) and paste it here.</p>
+            <label class="tl-lab" for="impPaste">Pasted text</label>
+            <textarea class="tl-ta" id="impPaste" rows="6" maxlength="12000" placeholder="Paste your profile or resume text here…"></textarea>
+            <div class="tl-add"><button class="tl-btn" id="impPasteGo">${ico('check')}Use pasted text</button></div>
             <p class="tl-note" id="impMsg" aria-live="polite"></p>`;
+          toolBody.querySelector('#impPasteGo').addEventListener('click', ()=>{
+            const lines = toolBody.querySelector('#impPaste').value.split(/\r?\n/).map(x=> x.trim()).filter(Boolean);
+            if(lines.length < 3){ msg('Paste at least a few lines, such as your name, title and experience'); return; }
+            st.fields = parseResumeText(lines); st.fileName = 'the pasted text'; st.ocr = false; st.stage = 'review'; draw();
+          });
           toolBody.querySelector('#impFile').addEventListener('change', async e=>{
             const f = e.target.files[0]; e.target.value = ''; if(!f) return;
             const photo = isImageFile(f);
