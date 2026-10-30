@@ -55,3 +55,4 @@ jobs:
           python tests/smoke37_paywall_interstitial.py
           python tests/smoke38_export_limit.py
           python tests/smoke39_download_notify_dedupe.py
+          python tests/smoke40_target_size.py
