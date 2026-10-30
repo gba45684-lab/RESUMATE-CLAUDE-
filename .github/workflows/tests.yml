@@ -57,3 +57,4 @@ jobs:
           python tests/smoke39_download_notify_dedupe.py
           python tests/smoke40_target_size.py
           python tests/smoke41_pdf_pages.py
+          python tests/smoke42_image_tools_2.py

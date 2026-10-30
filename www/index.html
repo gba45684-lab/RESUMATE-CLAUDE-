@@ -7077,6 +7077,46 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
     }
     return out;
   }
+  // runs a canvas effect (fx) on one picture and saves it
+  async function imageFxRun(st, fx, fmt, suffix){
+    const alpha = fmt !== 'image/jpeg';
+    const c = await photoToCanvas(st.file, 3000, alpha);
+    fx(c);
+    const ext = fmt === 'image/png' ? 'png' : fmt === 'image/webp' ? 'webp' : 'jpg';
+    const blob = await toBlobAsync(c, fmt, 0.92);
+    if(!blob) throw new Error('encode');
+    return (await deliverBlob(blob, `${toolBase()}_${suffix}.${ext}`)) ? `Saved ✓ ${c.width} × ${c.height} px` : 'Not saved';
+  }
+  // black box or pixel blur over a part of the picture (x, y, w, h in %)
+  function fxRedact(c, o){
+    const cx = c.getContext('2d'), x = Math.round(o.x / 100 * c.width), y = Math.round(o.y / 100 * c.height);
+    const w = Math.max(1, Math.round(o.w / 100 * c.width)), h = Math.max(1, Math.round(o.h / 100 * c.height));
+    if(o.mode === 'black'){ cx.fillStyle = '#000'; cx.fillRect(x, y, w, h); return; }
+    const k = Math.max(4, Math.round(Math.min(w, h) / 6)), t = document.createElement('canvas');
+    t.width = Math.max(1, Math.round(w / k)); t.height = Math.max(1, Math.round(h / k));
+    t.getContext('2d').drawImage(c, x, y, w, h, 0, 0, t.width, t.height);
+    cx.imageSmoothingEnabled = false; cx.drawImage(t, 0, 0, t.width, t.height, x, y, w, h); cx.imageSmoothingEnabled = true;
+  }
+  // date or text stamp in one corner, white letters with a dark outline so they read on any picture
+  function fxStamp(c, o){
+    const text = o.kind === 'date' ? new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) : String(o.text || '').trim();
+    if(!text) return;
+    const cx = c.getContext('2d'), size = Math.max(14, Math.round(c.width * 0.04)), pad = Math.round(size * 0.8);
+    cx.font = `600 ${size}px sans-serif`; cx.textBaseline = 'alphabetic'; cx.lineWidth = Math.max(2, size / 8);
+    const tw = cx.measureText(text).width;
+    const left = o.pos.endsWith('l'), top = o.pos.startsWith('t');
+    const x = left ? pad : c.width - pad - tw, y = top ? pad + size : c.height - pad;
+    cx.strokeStyle = 'rgba(0,0,0,.7)'; cx.strokeText(text, x, y); cx.fillStyle = '#fff'; cx.fillText(text, x, y);
+  }
+  // brightness and contrast, each from -50 to 50
+  function fxAdjust(c, o){
+    const cx = c.getContext('2d'), im = cx.getImageData(0, 0, c.width, c.height), d = im.data;
+    const b = o.bright * 2.55, C = o.contrast * 2.55, f = 259 * (C + 255) / (255 * (259 - C));
+    for(let i = 0; i < d.length; i += 4){
+      for(let j = 0; j < 3; j++){ let v = d[i + j] + b; v = f * (v - 128) + 128; d[i + j] = v < 0 ? 0 : v > 255 ? 255 : v; }
+    }
+    cx.putImageData(im, 0, 0);
+  }
   async function imageEditRun(st, o, suffix){
     const fmt = o.fmt || 'image/jpeg', alpha = fmt !== 'image/jpeg';
     const src = await photoToCanvas(st.file, 3000, alpha);
@@ -7100,6 +7140,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
           <p class="tl-note" id="it-msg" aria-live="polite">${st.file ? '' : 'Choose a picture to start. It stays on this phone.'}</p>`;
         bindSwap();
         toolBody.querySelectorAll('[data-opt]').forEach(b=> b.addEventListener('click', ()=>{ st[b.dataset.opt] = b.dataset.val; draw(); }));
+        if(o.bind) o.bind(st, toolBody, draw);
         toolBody.querySelector('#it-file').addEventListener('change', e=>{
           const f = e.target.files[0]; e.target.value = ''; if(!f) return;
           if(!isImageFile(f)){ showToast('Please choose a picture'); return; }
@@ -7522,6 +7563,74 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
         return (blob.size < st.file.size ? `Saved ✓ · ${fmtKB(st.file.size)} → ${fmtKB(blob.size)}` : `Saved, but it isn't smaller (${fmtKB(st.file.size)} → ${fmtKB(blob.size)}). The original is the better choice.`) + note;
       } }),
 
+    redactimg: imageOneTool({ key:'redactimg', title:'Black out or blur', sub:'Hide part of a picture', icon:'shrink', action:'Hide and save', busy:'Hiding…', lead:'Cover part of a picture with a black box or a blur, for example an account number or a face.', init:{ mode:'black', x:0, y:0, w:100, h:15, fmt:'image/jpeg' },
+      options: st=> segOpt(st, 'mode', [['black', 'Black box'], ['blur', 'Blur']], 'Hide with') + `<div class="tl-add wrap" style="gap:8px">${[['x','Left %'],['y','Top %'],['w','Width %'],['h','Height %']].map(([k,l])=> `<label class="tl-lab" style="flex:1 1 40%">${l}<input type="number" class="tl-input" data-rk="${k}" min="0" max="100" step="1" value="${st[k]}"></label>`).join('')}</div>` + segOpt(st, 'fmt', FMT_ITEMS, 'Save as'),
+      bind: (st, root, draw)=> root.querySelectorAll('[data-rk]').forEach(i=> i.addEventListener('input', ()=>{ st[i.dataset.rk] = +i.value; })),
+      run: async st=>{
+        const x = +st.x, y = +st.y, w = +st.w, h = +st.h;
+        if(!(w > 0 && h > 0) || x < 0 || y < 0 || x + w > 100.01 || y + h > 100.01) return 'Set a box inside the picture, with width and height above 0';
+        return imageFxRun(st, c=> fxRedact(c, { mode:st.mode, x, y, w, h }), st.fmt, st.mode === 'black' ? 'blacked_out' : 'blurred');
+      } }),
+
+    stampimg: imageOneTool({ key:'stampimg', title:'Date or text stamp', sub:'Add a date or a note', icon:'image', action:'Stamp and save', busy:'Stamping…', lead:'Add today’s date or your own short text to a corner of a picture. Useful for receipts, site photos and proof of submission.', init:{ kind:'date', text:'', pos:'br', fmt:'image/jpeg' },
+      options: st=> segOpt(st, 'kind', [['date', 'Today’s date'], ['text', 'My text']], 'Stamp') + (st.kind === 'text' ? `<label class="tl-lab" for="stText">Text</label><input id="stText" class="tl-input" maxlength="40" placeholder="e.g. Received 30 Oct" value="${H(st.text)}" autocomplete="off">` : '') + segOpt(st, 'pos', [['tl', 'Top left'], ['tr', 'Top right'], ['bl', 'Bottom left'], ['br', 'Bottom right']], 'Corner') + segOpt(st, 'fmt', FMT_ITEMS, 'Save as'),
+      bind: (st, root)=>{ const t = root.querySelector('#stText'); if(t) t.addEventListener('input', ()=>{ st.text = t.value; }); },
+      run: async st=>{
+        if(st.kind === 'text' && !st.text.trim()) return 'Type the text to stamp';
+        return imageFxRun(st, c=> fxStamp(c, st), st.fmt, 'stamped');
+      } }),
+
+    adjustimg: imageOneTool({ key:'adjustimg', title:'Brightness and contrast', sub:'Lighter, darker, sharper', icon:'image', action:'Adjust and save', busy:'Adjusting…', lead:'Make a picture lighter or darker, and change how strong its colours and shadows look.', init:{ bright:0, contrast:0, fmt:'image/jpeg' },
+      options: st=> [['bright', 'Brightness'], ['contrast', 'Contrast']].map(([k, l])=> `<label class="tl-lab" for="adj_${k}">${l}: <span id="adj_${k}_v">${st[k]}</span></label><input type="range" class="ip-range" id="adj_${k}" data-adj="${k}" min="-50" max="50" step="1" value="${st[k]}">`).join('') + segOpt(st, 'fmt', FMT_ITEMS, 'Save as'),
+      bind: (st, root)=> root.querySelectorAll('[data-adj]').forEach(r=> r.addEventListener('input', ()=>{ st[r.dataset.adj] = +r.value; root.querySelector('#adj_' + r.dataset.adj + '_v').textContent = r.value; })),
+      run: st=> imageFxRun(st, c=> fxAdjust(c, { bright:+st.bright, contrast:+st.contrast }), st.fmt, 'adjusted') }),
+
+    combineimg:{ render(){
+      setHead('Combine pictures', 'Side by side or one above the other');
+      const st = toolState.combineimg || (toolState.combineimg = { files:[], dir:'row', fmt:'image/jpeg' });
+      const MAX = 10;
+      const msg = t=> { const m = toolBody.querySelector('#cbMsg'); if(m) m.textContent = t || ''; };
+      const draw = ()=>{
+        toolBody.innerHTML = `<p class="tl-lead">Join up to ${MAX} pictures into one, side by side or stacked. Pictures are scaled to the same height or width.</p>
+          <div class="tl-add wrap"><label class="tl-btn tl-filepick">${ico('plus')}Choose pictures<input type="file" id="cbFile" accept="image/*" multiple aria-label="Choose pictures to combine"></label></div>
+          ${st.files.length ? `<p class="tl-note">${st.files.length} picture${st.files.length === 1 ? '' : 's'} in order: ${st.files.map(f=> H(f.name)).join(', ')}</p>` : ''}
+          ${st.files.length > 1 ? `${segOpt(st, 'dir', [['row', 'Side by side'], ['col', 'One above the other']], 'Layout')}${segOpt(st, 'fmt', FMT_ITEMS, 'Save as')}
+          <div class="tl-add"><button class="tl-btn primary" id="cbGo">${ico('download')}Combine and save</button> <button class="tl-btn" id="cbClear">Clear</button></div>` : ''}
+          <p class="tl-note" id="cbMsg" aria-live="polite">${st.files.length ? '' : 'Choose two or more pictures. They stay on this phone.'}</p>`;
+        toolBody.querySelectorAll('[data-opt]').forEach(b=> b.addEventListener('click', ()=>{ st[b.dataset.opt] = b.dataset.val; draw(); }));
+        toolBody.querySelector('#cbFile').addEventListener('change', async e=>{
+          const picked = [...e.target.files]; e.target.value = ''; if(!picked.length) return;
+          if(picked.some(f=> !isImageFile(f))){ showToast('Please choose pictures only'); return; }
+          st.files = st.files.concat(picked).slice(0, MAX);
+          if(picked.length + st.files.length > MAX) showToast(`Up to ${MAX} pictures at a time`);
+          draw();
+        });
+        const clr = toolBody.querySelector('#cbClear'); if(clr) clr.addEventListener('click', ()=>{ st.files = []; draw(); });
+        const go = toolBody.querySelector('#cbGo'); if(!go) return;
+        go.addEventListener('click', async ()=>{
+          go.disabled = true; msg('Combining…');
+          try{
+            const canvases = [];
+            for(const f of st.files){ canvases.push(await photoToCanvas(f, 2000, false)); }
+            const row = st.dir === 'row', gap = 0;
+            const size = row ? Math.min(...canvases.map(c=> c.height)) : Math.min(...canvases.map(c=> c.width));
+            const scaled = canvases.map(c=> { const k = size / (row ? c.height : c.width), t = document.createElement('canvas'); t.width = Math.round(c.width * k); t.height = Math.round(c.height * k); t.getContext('2d').drawImage(c, 0, 0, t.width, t.height); return t; });
+            const W = row ? scaled.reduce((a, c)=> a + c.width + gap, -gap) : Math.max(...scaled.map(c=> c.width));
+            const H2 = row ? Math.max(...scaled.map(c=> c.height)) : scaled.reduce((a, c)=> a + c.height + gap, -gap);
+            const out = document.createElement('canvas'); out.width = W; out.height = H2;
+            const cx = out.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, W, H2);
+            let pos = 0;
+            for(const c of scaled){ if(row){ cx.drawImage(c, pos, 0); pos += c.width + gap; } else { cx.drawImage(c, 0, pos); pos += c.height + gap; } }
+            const fmt = st.fmt, blob = await toBlobAsync(out, fmt, 0.92);
+            const ext = fmt === 'image/png' ? 'png' : fmt === 'image/webp' ? 'webp' : 'jpg';
+            if(await deliverBlob(blob, `${toolBase()}_combined.${ext}`)) msg(`Saved ✓ ${W} × ${H2} px`);
+          }catch(e){ msg("Couldn't combine these pictures — try JPG or PNG files"); }
+          finally{ go.disabled = false; }
+        });
+      };
+      draw();
+    } },
+
     rotateimg: imageOneTool({ key:'rotateimg', title:'Rotate image', sub:'Turn clockwise', icon:'rotate', action:'Rotate and save', busy:'Rotating…', lead:'Turn a picture a quarter, half or three-quarter turn.', init:{ deg:'90', fmt:'image/jpeg' },
       options: st=> segOpt(st, 'deg', [['90', '90°'], ['180', '180°'], ['270', '270°']], 'Turn') + segOpt(st, 'fmt', FMT_ITEMS, 'Save as'),
       run: st=> imageEditRun(st, { rot:Number(st.deg), fmt:st.fmt }, 'rotated') }),
@@ -7547,6 +7656,8 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
       const GROUPS = [
         ['Turn and crop', [T('rotateimg','rotate','Rotate','Quarter, half or three-quarter turn'), T('flipimg','flip','Flip','Left and right, or top and bottom'), T('cropimg','crop','Crop','Trim the edges'), T('resizeimg','shrink','Resize','25%, 50% or 75%')]],
         ['Colour and format', [T('grayimg','image','Black and white','Grey-scale picture'), T('convertimg','file','Change format','JPG, PNG or WebP'), T('compress','shrink','Compress','Smaller file size')]],
+        ['Mark and fix', [T('redactimg','shrink','Black out or blur','Hide part of a picture'), T('stampimg','image','Date or text stamp','Add a date or a note'), T('adjustimg','image','Brightness and contrast','Lighter, darker, sharper')]],
+        ['Combine', [T('combineimg','layout','Combine pictures','Side by side or stacked')]],
         ['Photos for forms', [T('idphoto','image','Passport photo','Exact size for forms')]]
       ];
       const home = [...document.querySelectorAll('.tl-tiles')].find(t=> t.offsetParent);
