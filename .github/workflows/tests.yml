@@ -59,3 +59,6 @@ jobs:
           python tests/smoke41_pdf_pages.py
           python tests/smoke42_image_tools_2.py
           python tests/smoke43_resume_sections.py
+
+          python tests/smoke44_job_tracker.py
+          python tests/smoke45_app_lock.py
