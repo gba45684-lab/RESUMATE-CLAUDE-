@@ -1,3 +1,5 @@
 playwright
 python-docx
 pillow
+pypdf
+reportlab

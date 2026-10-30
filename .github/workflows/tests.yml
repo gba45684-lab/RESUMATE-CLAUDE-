@@ -56,3 +56,4 @@ jobs:
           python tests/smoke38_export_limit.py
           python tests/smoke39_download_notify_dedupe.py
           python tests/smoke40_target_size.py
+          python tests/smoke41_pdf_pages.py

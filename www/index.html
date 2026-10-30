@@ -6996,6 +6996,18 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
       }
     } finally { doc.destroy(); }
   }
+  // turns "1-3, 7" into [0,1,2,6]; bad parts become null. Pages are 1-based in the text.
+  function parsePageList(text, n, ordered){
+    const out = [];
+    for(const part of String(text || '').split(',').map(x=> x.trim()).filter(Boolean)){
+      const m = part.match(/^(\d+)(?:\s*-\s*(\d+))?$/);
+      if(!m){ out.push(null); continue; }
+      const a = +m[1], b = m[2] ? +m[2] : a;
+      if(a < 1 || b > n || a > b){ out.push(null); continue; }
+      for(let i = a; i <= b; i++) out.push(i - 1);
+    }
+    return ordered ? out : [...new Set(out)].sort((x, y)=> x - y);
+  }
   function pdfOneTool(o){
     return { render(){
       setHead(o.title, o.sub);
@@ -7593,6 +7605,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
       const GROUPS = [
         ['Documents', [T('imgpdf','file','Images to PDF','Photos in one file'), T('mergepdf','merge','Merge PDFs','Join in order')]],
         ['Edit PDF', [T('rotatepdf','rotate','Rotate PDF','Turn every page'), T('croppdf','crop','Crop PDF','Trim the edges'), T('shrinkpdf','shrink','Shrink PDF','Smaller file size'), T('signpdf','file','Sign PDF','Draw and place a signature'), T('splitpdf','layout','Split PDF','Separate page ranges'), T('pagenums','check','Page numbers','1 of 10 on each page'), T('watermark','image','Watermark','DRAFT or COPY on each page')]],
+        ['Pages and privacy', [T('deletepages','layout','Delete pages','Remove pages you do not need'), T('extractpages','layout','Extract pages','Keep only some pages'), T('reorderpages','layout','Reorder pages','Change the page order'), T('redactpdf','shrink','Black out an area','Hide part of every page')]],
         ['Convert', [T('pdf2jpg','image','PDF to JPG','A picture per page'), T('pdf2txt','file','PDF to text','Copy the words')]],
         ['Security', [T('protectpdf','shield','Protect PDF','Add a password'), T('unlockpdf','check','Unlock PDF','Remove a password')]]
       ];
@@ -7699,6 +7712,59 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
         const x = st.pos === 'left' ? 48 : st.pos === 'right' ? width - 48 - w : (width - w) / 2;
         pg.drawImage(img, { x, y: 48, width: w, height: h });
         return (await deliverBlob(new Blob([await doc.save()], { type:'application/pdf' }), `${toolBase()}_signed.pdf`)) ? 'Saved ✓' : '';
+      } }),
+
+    deletepages: pdfOneTool({ key:'deletepages', title:'Delete pages', sub:'Remove pages you do not need', icon:'layout', action:'Delete and save', busy:'Deleting…', lead:'Remove pages from a PDF. Type the pages to remove, for example 2, 5-7.', init:{ list:'' },
+      options: st => `<label class="tl-lab" for="dpL">Pages to delete</label><input id="dpL" class="tl-input" placeholder="e.g. 2, 5-7" value="${H(st.list)}" autocomplete="off">`,
+      bind: (st, root)=>{ const r = root.querySelector('#dpL'); if(r) r.addEventListener('input', ()=>{ st.list = r.value; }); },
+      run: async st => {
+        await loadScriptOnce('vendor/pdf-lib.min.js');
+        const { PDFDocument } = PDFLib, src = await PDFDocument.load(await st.file.arrayBuffer()), n = src.getPageCount();
+        const drop = new Set(parsePageList(st.list, n)); if(drop.has(null) || !drop.size) return 'Type page numbers to delete, like 2, 5-7';
+        if(drop.size >= n) return "You can't delete every page";
+        const keep = []; for(let i = 0; i < n; i++) if(!drop.has(i)) keep.push(i);
+        const out = await PDFDocument.create(); (await out.copyPages(src, keep)).forEach(pg=> out.addPage(pg));
+        return (await deliverBlob(new Blob([await out.save()], { type:'application/pdf' }), `${toolBase()}_pages_removed.pdf`)) ? `Saved ✓ · ${keep.length} of ${n} pages kept` : '';
+      } }),
+
+    extractpages: pdfOneTool({ key:'extractpages', title:'Extract pages', sub:'Keep only some pages', icon:'layout', action:'Extract and save', busy:'Extracting…', lead:'Make a new PDF with only the pages you name, in the order you type them.', init:{ list:'' },
+      options: st => `<label class="tl-lab" for="epL">Pages to keep</label><input id="epL" class="tl-input" placeholder="e.g. 1-3, 7" value="${H(st.list)}" autocomplete="off">`,
+      bind: (st, root)=>{ const r = root.querySelector('#epL'); if(r) r.addEventListener('input', ()=>{ st.list = r.value; }); },
+      run: async st => {
+        await loadScriptOnce('vendor/pdf-lib.min.js');
+        const { PDFDocument } = PDFLib, src = await PDFDocument.load(await st.file.arrayBuffer()), n = src.getPageCount();
+        const keep = parsePageList(st.list, n, true); if(keep.includes(null) || !keep.length) return 'Type page numbers to keep, like 1-3, 7';
+        const out = await PDFDocument.create(); (await out.copyPages(src, keep)).forEach(pg=> out.addPage(pg));
+        return (await deliverBlob(new Blob([await out.save()], { type:'application/pdf' }), `${toolBase()}_extract.pdf`)) ? `Saved ✓ · ${keep.length} pages` : '';
+      } }),
+
+    reorderpages: pdfOneTool({ key:'reorderpages', title:'Reorder pages', sub:'Change the page order', icon:'layout', action:'Reorder and save', busy:'Reordering…', lead:'Put the pages in a new order. Type every page number in the order you want, for example 3, 1, 2.', init:{ list:'' },
+      options: st => `<label class="tl-lab" for="roL">New order</label><input id="roL" class="tl-input" placeholder="e.g. 3, 1, 2" value="${H(st.list)}" autocomplete="off">`,
+      bind: (st, root)=>{ const r = root.querySelector('#roL'); if(r) r.addEventListener('input', ()=>{ st.list = r.value; }); },
+      run: async st => {
+        await loadScriptOnce('vendor/pdf-lib.min.js');
+        const { PDFDocument } = PDFLib, src = await PDFDocument.load(await st.file.arrayBuffer()), n = src.getPageCount();
+        const order = parsePageList(st.list, n, true);
+        if(order.includes(null) || order.length !== n || new Set(order).size !== n) return `List every page once, in the new order (1 to ${n})`;
+        const out = await PDFDocument.create(); (await out.copyPages(src, order)).forEach(pg=> out.addPage(pg));
+        return (await deliverBlob(new Blob([await out.save()], { type:'application/pdf' }), `${toolBase()}_reordered.pdf`)) ? 'Saved ✓' : '';
+      } }),
+
+    redactpdf: pdfOneTool({ key:'redactpdf', title:'Black out an area', sub:'Hide part of every page', icon:'shrink', action:'Black out and save', busy:'Blacking out…', lead:'Cover the same part of every page with a black box, for example an account number. Each page is saved as a picture, so the hidden text cannot be recovered.', init:{ x:0, y:0, w:100, h:10 },
+      options: st => `<div class="tl-add wrap" style="gap:8px">${[['x','Left %'],['y','Top %'],['w','Width %'],['h','Height %']].map(([k,l])=> `<label class="tl-lab" style="flex:1 1 40%">${l}<input type="number" class="tl-input" data-rk="${k}" min="0" max="100" step="1" value="${st[k]}"></label>`).join('')}</div>`,
+      bind: (st, root)=> root.querySelectorAll('[data-rk]').forEach(i=> i.addEventListener('input', ()=>{ st[i.dataset.rk] = +i.value; })),
+      run: async st => {
+        const x = st.x / 100, y = st.y / 100, w = st.w / 100, h = st.h / 100;
+        if(!(w > 0 && h > 0) || x < 0 || y < 0 || x + w > 1.0001 || y + h > 1.0001) return 'Set a box inside the page, with width and height above 0';
+        let pdf = null;
+        await renderPdfPages(st.file, 1.5, async (c, p, total, base)=>{
+          const cx = c.getContext('2d'); cx.fillStyle = '#000'; cx.fillRect(x * c.width, y * c.height, w * c.width, h * c.height);
+          const o = base.width > base.height ? 'l' : 'p';
+          if(!pdf) pdf = new window.jspdf.jsPDF({ unit:'pt', format:[base.width, base.height], orientation:o, compress:true });
+          else pdf.addPage([base.width, base.height], o);
+          pdf.addImage(c.toDataURL('image/jpeg', .8), 'JPEG', 0, 0, base.width, base.height);
+        });
+        return (await deliverBlob(pdf.output('blob'), `${toolBase()}_blacked_out.pdf`)) ? 'Saved ✓' : '';
       } }),
 
     splitpdf: pdfOneTool({ key:'splitpdf', title:'Split PDF', sub:'Separate page ranges', icon:'layout', action:'Split and save', lead:'Make separate PDFs from page ranges. For example, 1-3, 4, 5-8 makes three files.', init:{ ranges:'' },
