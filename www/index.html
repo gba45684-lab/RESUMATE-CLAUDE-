@@ -2637,7 +2637,7 @@ document.querySelectorAll('[data-tiles-slot]').forEach(function(el){ el.appendCh
         <div class="pw-plan-in" role="radio" aria-checked="true" tabindex="0">
           <span class="rd"></span>
           <div><b>Monthly plan</b><small>Cancel anytime</small></div>
-          <div class="pr"><b id="pwPrice">₹299</b><small>per month</small></div>
+          <div class="pr"><b id="pwPrice">₹99</b><small>per month</small></div>
         </div>
       </div>
     </div>
@@ -2733,7 +2733,8 @@ document.querySelectorAll('[data-tiles-slot]').forEach(function(el){ el.appendCh
       if(get(KEY_DONE) === '1' || shown) return;
       // wait until the welcome, questions and paywall are gone, so the tour never sits underneath them
       const covered = ['welcomeScreen', 'questionScreen', 'paywall', 'splashScreen'].some(id=>{ const e = document.getElementById(id); return !!e && e.offsetParent !== null; });
-      if(covered) return setTimeout(window.resumateStartTour, 500);
+      // the app lock is fixed to the screen, so it has no offsetParent: check it by id
+      if(covered || document.getElementById('lockScreen')) return setTimeout(window.resumateStartTour, 500);
       go(0);
     };
     // a person who closed the app before the tour ended gets it on their next visit
@@ -4328,7 +4329,7 @@ document.querySelectorAll('[data-tiles-slot]').forEach(function(el){ el.appendCh
     const launchedAt = Date.now();
     const waitTimer = setInterval(()=>{
       const tourFirst = (()=>{ try{ return localStorage.getItem('resumate_tour_pending') === '1' && localStorage.getItem('resumate_tour_done') !== '1' && (Date.now() - launchedAt) < 180000; }catch(e){ return false; } })();
-      if(!tourFirst && !document.getElementById('splashScreen') && !document.getElementById('welcomeScreen') && !document.getElementById('questionScreen')){ clearInterval(waitTimer); setTimeout(()=>{ if(!(window.__billing && window.__billing.upgraded())) show(); }, 250); }
+      if(!tourFirst && !document.getElementById('splashScreen') && !document.getElementById('welcomeScreen') && !document.getElementById('questionScreen') && !document.getElementById('lockScreen')){ clearInterval(waitTimer); setTimeout(()=>{ if(!(window.__billing && window.__billing.upgraded())) show(); }, 250); }
     }, 150);
   })();
 
@@ -8209,7 +8210,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
 
     premium:{ render(){
       setHead('ResuMate Premium', isPremium() ? 'You are Premium' : 'Bigger files, no ads');
-      const PLANS = [['monthly', 'Monthly', '₹149 a month'], ['yearly', 'Yearly', '₹999 a year · best value']];
+      const PLANS = [['monthly', 'Monthly', '₹99 a month'], ['yearly', 'Yearly', '₹999 a year · best value']];
       const perks = ['No ads', `PDF files up to ${PREMIUM_FILE_MB} MB (free: ${FREE_FILE_MB} MB)`, 'Keep every resume you make'];
       toolBody.innerHTML = `<p class="tl-lead">${isPremium() ? 'Thank you. Premium is on for this phone.' : 'Choose a plan. Prices are in Indian rupees and can be changed before launch.'}</p>
         <div class="tl-list">${PLANS.map(([id, name, price])=> `<button type="button" class="tl-row prem-plan" data-plan="${id}"><div class="tl-meta"><b>${name}</b><small>${price}</small></div></button>`).join('')}</div>
