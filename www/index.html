@@ -7919,7 +7919,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
       const GROUPS = [
         ['Documents', [T('imgpdf','file','Images to PDF','Photos in one file'), T('mergepdf','merge','Merge PDFs','Join in order')]],
         ['Edit PDF', [T('rotatepdf','rotate','Rotate PDF','Turn every page'), T('croppdf','crop','Crop PDF','Trim the edges'), T('shrinkpdf','shrink','Shrink PDF','Smaller file size'), T('signpdf','file','Sign PDF','Draw and place a signature'), T('splitpdf','layout','Split PDF','Separate page ranges'), T('pagenums','check','Page numbers','1 of 10 on each page'), T('watermark','image','Watermark','DRAFT or COPY on each page')]],
-        ['Pages and privacy', [T('deletepages','layout','Delete pages','Remove pages you do not need'), T('extractpages','layout','Extract pages','Keep only some pages'), T('reorderpages','layout','Reorder pages','Change the page order'), T('redactpdf','shrink','Black out an area','Hide part of every page')]],
+        ['Pages and privacy', [T('deletepages','layout','Delete pages','Remove pages you do not need'), T('extractpages','layout','Extract pages','Keep only some pages'), T('reorderpages','layout','Reorder pages','Change the page order'), T('redactpdf','shrink','Black out an area','Hide part of every page'), T('extractimgs','image','Extract images','Save the pictures in a PDF')]],
         ['Convert', [T('pdf2jpg','image','PDF to JPG','A picture per page'), T('pdf2txt','file','PDF to text','Copy the words')]],
         ['Security', [T('protectpdf','shield','Protect PDF','Add a password'), T('unlockpdf','check','Unlock PDF','Remove a password')]]
       ];
@@ -8065,6 +8065,47 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
         if(order.includes(null) || order.length !== n || new Set(order).size !== n) return `List every page once, in the new order (1 to ${n})`;
         const out = await PDFDocument.create(); (await out.copyPages(src, order)).forEach(pg=> out.addPage(pg));
         return (await deliverBlob(new Blob([await out.save()], { type:'application/pdf' }), `${toolBase()}_reordered.pdf`)) ? 'Saved ✓' : '';
+      } }),
+
+    extractimgs: pdfOneTool({ key:'extractimgs', title:'Extract images', sub:'Save the pictures in a PDF', icon:'image', action:'Extract and save', busy:'Looking for pictures…', lead:'Save each picture inside the PDF as its own JPG. Small icons and lines are skipped. Text is not included.', init:{},
+      run: async (st, msg)=>{
+        const lib = await pdfjsLib();
+        const doc = await lib.getDocument({ data:new Uint8Array(await st.file.arrayBuffer()), isEvalSupported:false, useSystemFonts:false }).promise;
+        let saved = 0, seen = 0;
+        try{
+          for(let p = 1; p <= doc.numPages; p++){
+            msg(`Page ${p} of ${doc.numPages}…`);
+            const page = await doc.getPage(p);
+            const ops = await page.getOperatorList();
+            const names = [];
+            ops.fnArray.forEach((fn, i)=>{ if(fn === lib.OPS.paintImageXObject) names.push(ops.argsArray[i][0]); });
+            // a small render makes pdf.js load the picture data for this page
+            await page.render({ canvasContext:document.createElement('canvas').getContext('2d'), viewport:page.getViewport({ scale:0.05 }) }).promise;
+            for(const nm of [...new Set(names)]){
+              const img = await Promise.race([new Promise(res=> page.objs.get(nm, res)), new Promise(res=> setTimeout(()=> res(null), 4000))]);
+              seen++;
+              if(!img || !img.width || !img.height || img.width * img.height < 40 * 40) continue;
+              const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+              const cx = c.getContext('2d');
+              if(img.bitmap){ cx.drawImage(img.bitmap, 0, 0); }
+              else if(img.data){
+                const n = img.width * img.height, d = img.data, out = cx.createImageData(img.width, img.height), o = out.data;
+                for(let i = 0; i < n; i++){
+                  if(d.length >= n * 4){ o[i*4] = d[i*4]; o[i*4+1] = d[i*4+1]; o[i*4+2] = d[i*4+2]; }
+                  else if(d.length >= n * 3){ o[i*4] = d[i*3]; o[i*4+1] = d[i*3+1]; o[i*4+2] = d[i*3+2]; }
+                  else { o[i*4] = o[i*4+1] = o[i*4+2] = d[i] || 0; }
+                  o[i*4+3] = 255;
+                }
+                cx.putImageData(out, 0, 0);
+              } else continue;
+              const blob = await toBlobAsync(c, 'image/jpeg', .92);
+              if(blob && await deliverBlob(blob, `${toolBase()}_image${++saved}.jpg`)) msg(`Saved ${saved} so far…`);
+              c.width = 0; c.height = 0;
+            }
+            page.cleanup();
+          }
+        } finally { doc.destroy(); }
+        return saved ? `Saved ${saved} picture${saved === 1 ? '' : 's'} ✓` : (seen ? 'No pictures large enough to save were found in this PDF' : 'No pictures were found in this PDF');
       } }),
 
     redactpdf: pdfOneTool({ key:'redactpdf', title:'Black out an area', sub:'Hide part of every page', icon:'shrink', action:'Black out and save', busy:'Blacking out…', lead:'Cover the same part of every page with a black box, for example an account number. Each page is saved as a picture, so the hidden text cannot be recovered.', init:{ x:0, y:0, w:100, h:10 },
