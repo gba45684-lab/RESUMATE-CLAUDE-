@@ -8657,7 +8657,7 @@ RESUME: ${JSON.stringify(aiScrub(textOf(resumeData)))}`;
 
   // ---------- Ads (Google AdMob): ONE banner, only where it cannot be tapped by mistake ----------
   // These are Google's public TEST ids. Put your real AdMob ids here (and in the Android manifest) before publishing.
-  const ADS = { testing:true, banner:'ca-app-pub-3940256099942544/6300978111', interstitial:'ca-app-pub-3940256099942544/1033173712', rewarded:'ca-app-pub-3940256099942544/5224354917', minSeconds:10, interstitialAfterSeconds:180, tabs:['home', 'profile', 'ai'] };
+  const ADS = { testing:false, banner:'ca-app-pub-6814864644521622/6625337184', interstitial:'ca-app-pub-6814864644521622/1006626106', rewarded:'ca-app-pub-6814864644521622/8683478130', minSeconds:10, interstitialAfterSeconds:180, tabs:['home', 'profile', 'ai'] };
   window.__ads = (function(){
     const A = ()=> nativePlugin('AdMob');
     const born = Date.now(); let state = 'off', ready = false, busy = false, consentDone = false, error = '', retryAt = 0;
