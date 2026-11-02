@@ -16,3 +16,8 @@ __pycache__/
 Thumbs.db
 .idea/
 .vscode/
+
+# signing keys (never commit)
+*.keystore
+*.jks
+keystore-base64.txt
