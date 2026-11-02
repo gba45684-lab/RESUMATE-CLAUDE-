@@ -1,11 +1,11 @@
 {
-  "appId": "com.resumate.claude",
+  "appId": "com.hightechsolutions.resumate",
   "appName": "ResuMate",
   "webDir": "www",
   "bundledWebRuntime": false,
   "plugins": {
     "CapacitorUpdater": {
-      "appId": "com.resumate.claude",
+      "appId": "com.hightechsolutions.resumate",
       "updateUrl": "https://resumate-claude.vercel.app/api/updates",
       "autoUpdate": "always",
       "version": "1.0.0",
