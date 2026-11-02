@@ -50,7 +50,7 @@ export default async function handler(req, res) {
 
   try {
     const info = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
-    if (info.app_id && info.app_id !== 'com.resumate.claude') {
+    if (info.app_id && info.app_id !== 'com.hightechsolutions.resumate') {
       return res.status(200).json({ message: 'No update for this app', version: info.version_name || '' });
     }
     const current = String(info.version_name || '0.0.0').replace(/^v/, '');
