@@ -24,7 +24,7 @@ with sync_playwright() as p:
     check('no ad in the first seconds', not calls('showBanner'))
     pg.wait_for_timeout(8000); pg.evaluate("window.__ads.tick()"); pg.wait_for_timeout(800)
     sb=calls('showBanner')
-    check('Home shows one test banner', len(sb)==1 and sb[0]['o']['isTesting'] is True and sb[0]['o']['adId'].startswith('ca-app-pub-3940256099942544/'), log())
+    check('Home shows one banner with the store ad unit', len(sb)==1 and sb[0]['o']['isTesting'] is False and sb[0]['o']['adId']=='ca-app-pub-6814864644521622/6625337184', log())
     check('banner is anchored at the bottom, adaptive, above the tab bar', sb and sb[0]['o']['position']=='BOTTOM_CENTER' and sb[0]['o']['adSize']=='ADAPTIVE_BANNER' and sb[0]['o']['margin']>=60, sb and sb[0]['o'])
     names=[c['fn'] for c in log()]
     check('consent is asked before ads are initialised', names.index('requestConsentInfo') < names.index('initialize') < names.index('showBanner'), names)
