@@ -8,9 +8,9 @@ signing = (
     '    signingConfigs {\n'
     '        release {\n'
     '            storeFile file("release.keystore")\n'
-    '            storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")\n'
-    '            keyAlias System.getenv("ANDROID_KEY_ALIAS")\n'
-    '            keyPassword System.getenv("ANDROID_KEY_PASSWORD")\n'
+    '            storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")?.trim()\n'
+    '            keyAlias System.getenv("ANDROID_KEY_ALIAS")?.trim()\n'
+    '            keyPassword System.getenv("ANDROID_KEY_PASSWORD")?.trim()\n'
     '        }\n'
     '    }\n'
 )
